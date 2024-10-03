@@ -1,0 +1,17 @@
+{
+  "name": "boids",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "watch": "tsc -w"
+  },
+  "author": "DiscRoomFan36",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "@types/offscreencanvas": "^2019.7.3"
+  }
+}

@@ -1,0 +1,14 @@
+{
+	// if I see one comment about useing cSpell >:(
+	"cSpell.words": [
+		"boidstuff",
+		"jscanvas",
+		"offscreencanvas"
+	],
+	"gopls": {
+		"build.env": {
+			"GOOS": "js",
+			"GOARCH": "wasm"
+		},
+	}
+}
