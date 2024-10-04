@@ -36,19 +36,40 @@ type Boid[T Vector.Float] struct {
 	Velocity Vector.Vector2[T]
 }
 
+// SOA for the rescue!
+// TODO SOA the vectors too? yes, but after quad tree
+type boid_array[T Vector.Float] struct {
+	positions  []Vector.Vector2[T]
+	velocities []Vector.Vector2[T]
+}
+
 type Boid_simulation[T Vector.Float] struct {
-	Boids         []Boid[T]
-	accelerations []Vector.Vector2[T]
+	Boids []Boid[T]
+
 	Width, Height T
 	// TODO add factors here (Sep, ali, coh, ect...)
+
+	// Working Areas
+	accelerations         []Vector.Vector2[T]
+	close_boids           boid_array[T]
+	super_close_positions []Vector.Vector2[T]
 }
+
+const INITIAL_ARRAY_SIZE = 32
 
 func New_boid_simulation[T Vector.Float](width, height T, num_boids int) Boid_simulation[T] {
 	boid_sim := Boid_simulation[T]{
-		Boids:         make([]Boid[T], num_boids),
+		Boids: make([]Boid[T], num_boids),
+
+		Width:  width,
+		Height: height,
+
 		accelerations: make([]Vector.Vector2[T], num_boids),
-		Width:         width,
-		Height:        height,
+		close_boids: boid_array[T]{
+			positions:  make([]Vector.Vector2[T], INITIAL_ARRAY_SIZE),
+			velocities: make([]Vector.Vector2[T], INITIAL_ARRAY_SIZE),
+		},
+		super_close_positions: make([]Vector.Vector2[T], INITIAL_ARRAY_SIZE),
 	}
 
 	for i := range boid_sim.Boids {
@@ -92,61 +113,55 @@ func (boid_sim Boid_simulation[T]) bounding_force(index int) Vector.Vector2[T] {
 	return vel
 }
 
+// NOTE 56.6% of run time is here. wow
+// TODO 2. use a smarter algorithm here, like a quad-tree
+func (boid_sim *Boid_simulation[T]) set_close_boids(index int) {
+	// clear the slices, mem optimize
+	boid_sim.close_boids.positions = boid_sim.close_boids.positions[:0]
+	boid_sim.close_boids.velocities = boid_sim.close_boids.velocities[:0]
+
+	boid_sim.super_close_positions = boid_sim.super_close_positions[:0]
+
+	my_boid_pos := boid_sim.Boids[index].Position
+	for j, other_boid := range boid_sim.Boids {
+		if index == j {
+			continue
+		}
+
+		dist_sqr := Vector.DistSqr(my_boid_pos, other_boid.Position)
+
+		if dist_sqr >= VISUAL_RANGE*VISUAL_RANGE {
+			continue
+		}
+
+		// super close boids get treated differently
+		if dist_sqr < SEPARATION_MIN_DISTANCE*SEPARATION_MIN_DISTANCE {
+			boid_sim.super_close_positions = append(boid_sim.super_close_positions, other_boid.Position)
+		} else {
+			boid_sim.close_boids.positions = append(boid_sim.close_boids.positions, other_boid.Position)
+			boid_sim.close_boids.velocities = append(boid_sim.close_boids.velocities, other_boid.Velocity)
+		}
+	}
+}
+
 // TODO speed
 // NOTE dt is in seconds
 func (boid_sim Boid_simulation[T]) Update_boids(dt T) {
-	// SOA for the rescue!
-	type boid_array[T Vector.Float] struct {
-		positions  []Vector.Vector2[T]
-		velocities []Vector.Vector2[T]
-	}
-
-	close_boids := boid_array[T]{
-		positions:  make([]Vector.Vector2[T], 32),
-		velocities: make([]Vector.Vector2[T], 32),
-	}
-
-	// TODO 1. Add super close boids, and remove them from close into super_close
-	// TODO 2. use a smarter algorithm here, like a quad-tree
-	get_close_boids := func(i int, my_boid Boid[T]) {
-		for j, other_boid := range boid_sim.Boids {
-			if i == j {
-				continue
-			}
-			if Vector.DistSqr(my_boid.Position, other_boid.Position) >= VISUAL_RANGE*VISUAL_RANGE {
-				continue
-			}
-			close_boids.positions = append(close_boids.positions, other_boid.Position)
-			close_boids.velocities = append(close_boids.velocities, other_boid.Velocity)
-		}
-	}
-
 	for i, my_boid := range boid_sim.Boids {
 		// find the boids in range
-		close_boids.positions = close_boids.positions[:0]   // clear the slice, mem optimize
-		close_boids.velocities = close_boids.velocities[:0] // clear the slice, mem optimize
-		get_close_boids(i, my_boid)
+		boid_sim.set_close_boids(i)
 
 		// Separation
-		move := Vector.Vector2[T]{}
+		// NOTE this is the same as move += (my_boid-pos) for all super_close_boids
+		move := Vector.Mult(my_boid.Position, T(len(boid_sim.super_close_positions)))
+		move.Sub(boid_sim.super_close_positions...)
+
 		// Alignment
-		avg_vel := Vector.Add(Vector.Vector2[T]{}, close_boids.velocities...)
+		avg_vel := Vector.Add(Vector.Vector2[T]{}, boid_sim.close_boids.velocities...)
 		// Cohesion
-		pos_sum := Vector.Add(Vector.Vector2[T]{}, close_boids.positions...)
+		pos_sum := Vector.Add(Vector.Vector2[T]{}, boid_sim.close_boids.positions...)
 
-		for _, pos := range close_boids.positions {
-			// TODO hmm, i don't like this branch. maybe move away from all boids in range? but have a falloff
-			if Vector.DistSqr(my_boid.Position, pos) < SEPARATION_MIN_DISTANCE*SEPARATION_MIN_DISTANCE {
-
-				// Theory, we can do some smart shit here, even if we need to change the formula
-				// move := Vector.Mult(my_boid, num_close)
-				// move.Sub(close_boids.positions...)
-
-				move.Add(Vector.Sub(my_boid.Position, pos))
-			}
-		}
-
-		num_close_boids := len(close_boids.positions)
+		num_close_boids := len(boid_sim.close_boids.positions)
 		if num_close_boids > 0 {
 			avg_vel.Mult(1 / T(num_close_boids))
 			avg_vel.Sub(my_boid.Velocity)
@@ -228,6 +243,7 @@ func (boid_sim Boid_simulation[T]) Draw_Into_Image(img *Image.Image) {
 		b.Position.Mult(scale_factor)
 
 		// Draw boid body
+		// TODO maybe some LOD shit, where its just a triangle? 2x speed?
 		boid_shape := [4]Vector.Vector2[T]{
 			{X: 0, Y: 1},      // tip
 			{X: 0, Y: -0.5},   // back
@@ -238,6 +254,7 @@ func (boid_sim Boid_simulation[T]) Draw_Into_Image(img *Image.Image) {
 		// Rotate to face them in the right direction
 		theta := Vector.GetTheta(b.Velocity)
 		// TODO i don't think the wings are rotating right. hmmm
+		// TODO i also think this is slowing us down, put in own function
 		for i := 0; i < len(boid_shape); i++ {
 			// someone who knows math explain this
 			to_rotate := theta + math.Pi

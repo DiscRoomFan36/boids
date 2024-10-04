@@ -19,6 +19,8 @@ const BOID_BOUNDS_WIDTH = 16 * BOID_FACTOR
 const BOID_BOUNDS_HEIGHT = 9 * BOID_FACTOR
 const NUM_BOIDS = 1000
 
+const BOID_SCALE = 2
+
 // USAGE: {Width} {Height} {array}
 //
 // Will pass back a bunch of pixels, (though array), in [RGBA] format
@@ -43,9 +45,11 @@ func GetNextFrame() js.Func {
 		img.Width = width
 		img.Height = height
 
+		// TODO theres a bug here if you full screen a window...
+
 		// Cool boid thing that makes the boid follow the screen
-		boid_sim.Width = float32(width)
-		boid_sim.Height = float32(height)
+		boid_sim.Width = float32(width) * BOID_SCALE
+		boid_sim.Height = float32(height) * BOID_SCALE
 
 		// TODO accept dt maybe
 		new_frame_time := time.Now()
