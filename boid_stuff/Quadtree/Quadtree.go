@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"boidstuff.com/Image"
 	"boidstuff.com/Vector"
 )
 
@@ -56,7 +57,7 @@ func Circle_To_AABB[T Vector.Number](pos Vector.Vector2[T], r T) Axis_aligned_bb
 	}
 }
 
-const QT_NODE_CAPACITY = 4
+const QT_NODE_CAPACITY = 1
 
 // TODO make better
 type Quadtree[T Vector.Number] struct {
@@ -65,7 +66,7 @@ type Quadtree[T Vector.Number] struct {
 
 	// Axis-aligned bounding box stored as a center with half-dimensions
 	// to represent the boundaries of this quad tree
-	boundary Axis_aligned_bb[T]
+	Boundary Axis_aligned_bb[T]
 
 	// Points in this quad tree node (is actually their index)
 	num_points int
@@ -81,7 +82,7 @@ type Quadtree[T Vector.Number] struct {
 
 func New_quadtree[T Vector.Number](aabb Axis_aligned_bb[T]) Quadtree[T] {
 	return Quadtree[T]{
-		boundary: aabb,
+		Boundary: aabb,
 
 		num_points: 0,
 
@@ -94,29 +95,29 @@ func New_quadtree[T Vector.Number](aabb Axis_aligned_bb[T]) Quadtree[T] {
 
 // TODO this is bad
 func (quadtree *Quadtree[T]) subdivide() {
-	dim_half := quadtree.boundary.Dim / 2
+	dim_half := quadtree.Boundary.Dim / 2
 	nw := New_quadtree(Axis_aligned_bb[T]{
-		Bottom_left: quadtree.boundary.Bottom_left,
+		Bottom_left: quadtree.Boundary.Bottom_left,
 		Dim:         dim_half,
 	})
 	ne := New_quadtree(Axis_aligned_bb[T]{
 		Bottom_left: Vector.Vector2[T]{
-			X: quadtree.boundary.Bottom_left.X + dim_half,
-			Y: quadtree.boundary.Bottom_left.Y,
+			X: quadtree.Boundary.Bottom_left.X + dim_half,
+			Y: quadtree.Boundary.Bottom_left.Y,
 		},
 		Dim: dim_half,
 	})
 	sw := New_quadtree(Axis_aligned_bb[T]{
 		Bottom_left: Vector.Vector2[T]{
-			X: quadtree.boundary.Bottom_left.X,
-			Y: quadtree.boundary.Bottom_left.Y + dim_half,
+			X: quadtree.Boundary.Bottom_left.X,
+			Y: quadtree.Boundary.Bottom_left.Y + dim_half,
 		},
 		Dim: dim_half,
 	})
 	se := New_quadtree(Axis_aligned_bb[T]{
 		Bottom_left: Vector.Vector2[T]{
-			X: quadtree.boundary.Bottom_left.X + dim_half,
-			Y: quadtree.boundary.Bottom_left.Y + dim_half,
+			X: quadtree.Boundary.Bottom_left.X + dim_half,
+			Y: quadtree.Boundary.Bottom_left.Y + dim_half,
 		},
 		Dim: dim_half,
 	})
@@ -134,7 +135,7 @@ func (quadtree *Quadtree[T]) Insert(p Vector.Vector2[T]) bool {
 	var recur func(*Quadtree[T]) bool
 	recur = func(q_tree *Quadtree[T]) bool {
 		// Ignore objects that do not belong in this quad tree
-		if !q_tree.boundary.containsPoint(p) {
+		if !q_tree.Boundary.containsPoint(p) {
 			return false
 		}
 		// If there is space in this quad tree and if doesn't have subdivisions, add the object here
@@ -147,9 +148,6 @@ func (quadtree *Quadtree[T]) Insert(p Vector.Vector2[T]) bool {
 		// Otherwise, subdivide and then add the point to whichever node will accept it
 		if q_tree.northWest == nil {
 			q_tree.subdivide()
-		}
-
-		if q_tree.northWest == nil {
 		}
 
 		// We have to add the points/data contained in this quad array to the
@@ -185,7 +183,7 @@ func (quadtree *Quadtree[T]) QueryRange(q_range Axis_aligned_bb[T]) []int {
 	var recur func(*Quadtree[T])
 	recur = func(q_tree *Quadtree[T]) {
 
-		if !q_tree.boundary.intersectsAABB(q_range) {
+		if !q_tree.Boundary.intersectsAABB(q_range) {
 			return
 		}
 
@@ -222,4 +220,118 @@ func (quadtree *Quadtree[T]) Clear() {
 	quadtree.northEast = nil
 	quadtree.southWest = nil
 	quadtree.southEast = nil
+}
+
+// TODO think this breaks when scale != 1
+func Draw_quadtree_onto[T Vector.Number](quadtree *Quadtree[T], img *Image.Image, scale T) {
+	// scale = 1 / scale
+	var outer_color = Image.Color{R: 255, G: 255, B: 255, A: 255}
+
+	// these guys are messing up, fix them then onto colors
+	bounding_box := [4]Vector.Vector2[T]{
+		{
+			X: quadtree.Boundary.Bottom_left.X,
+			Y: quadtree.Boundary.Bottom_left.Y,
+		},
+		{
+			X: quadtree.Boundary.Bottom_left.X + quadtree.Boundary.Dim,
+			Y: quadtree.Boundary.Bottom_left.Y,
+		},
+		{
+			X: quadtree.Boundary.Bottom_left.X + quadtree.Boundary.Dim,
+			Y: quadtree.Boundary.Bottom_left.Y + quadtree.Boundary.Dim,
+		},
+		{
+			X: quadtree.Boundary.Bottom_left.X,
+			Y: quadtree.Boundary.Bottom_left.Y + quadtree.Boundary.Dim,
+		},
+	}
+
+	for i := 0; i < len(bounding_box); i++ {
+		bounding_box[i].Mult(scale)
+	}
+
+	for i := 0; i < len(bounding_box); i++ {
+		Image.Draw_Line(
+			img,
+			bounding_box[i],
+			bounding_box[(i+1)%len(bounding_box)],
+			outer_color,
+		)
+	}
+
+	var recur func(*Quadtree[T], Image.Color)
+	recur = func(q_tree *Quadtree[T], c Image.Color) {
+		if q_tree.northWest == nil {
+			return
+		}
+
+		inner_color := Image.Color{
+			R: c.R - 50,
+			G: c.G,
+			B: c.B,
+			A: 255,
+		}
+
+		points := [4]Vector.Vector2[T]{
+			// TOP
+			Vector.Add(
+				q_tree.Boundary.Bottom_left,
+				Vector.Vector2[T]{
+					X: q_tree.Boundary.Dim / 2,
+					Y: 0,
+				},
+			),
+			// BOTTOM
+			Vector.Add(
+				q_tree.Boundary.Bottom_left,
+				Vector.Vector2[T]{
+					X: q_tree.Boundary.Dim / 2,
+					Y: q_tree.Boundary.Dim,
+				},
+			),
+			// LEFT
+			Vector.Add(
+				q_tree.Boundary.Bottom_left,
+				Vector.Vector2[T]{
+					X: 0,
+					Y: q_tree.Boundary.Dim / 2,
+				},
+			),
+			// RIGHT
+			Vector.Add(
+				q_tree.Boundary.Bottom_left,
+				Vector.Vector2[T]{
+					X: q_tree.Boundary.Dim,
+					Y: q_tree.Boundary.Dim / 2,
+				},
+			),
+		}
+		for i := 0; i < len(points); i++ {
+			points[i].Mult(scale)
+		}
+
+		// top to bottom
+		Image.Draw_Line(
+			img,
+			points[0],
+			points[1],
+			inner_color,
+		)
+
+		// left to right
+		Image.Draw_Line(
+			img,
+			points[2],
+			points[3],
+			inner_color,
+		)
+
+		recur(q_tree.northWest, inner_color)
+		recur(q_tree.northEast, inner_color)
+		recur(q_tree.southWest, inner_color)
+		recur(q_tree.southEast, inner_color)
+	}
+
+	recur(quadtree, outer_color)
 }

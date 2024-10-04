@@ -1,6 +1,7 @@
 package boid
 
 import (
+	"log"
 	"math"
 	"math/rand"
 
@@ -27,10 +28,11 @@ const MAX_SPEED = 25
 const MIN_SPEED = 5
 
 const BOUNDING = true
-const WRAPPING = true
+const WRAPPING = false
 
 const DEBUG_HEADING = false
 const DEBUG_BOUNDARY = true
+const DEBUG_QUADTREE = true
 
 type Boid[T Vector.Float] struct {
 	Position Vector.Vector2[T]
@@ -124,14 +126,29 @@ func (boid_sim Boid_simulation[T]) bounding_force(index int) Vector.Vector2[T] {
 
 func (boid_sim *Boid_simulation[T]) set_up_quadtree() {
 	boid_sim.quadtree.Clear()
+	min_x := boid_sim.Boids[0].Position.X
+	max_x := boid_sim.Boids[0].Position.X
+	min_y := boid_sim.Boids[0].Position.Y
+	max_y := boid_sim.Boids[0].Position.Y
+	for _, boid := range boid_sim.Boids {
+		min_x = min(min_x, boid.Position.X)
+		max_x = max(max_x, boid.Position.X)
+		min_y = min(min_y, boid.Position.Y)
+		max_y = max(max_y, boid.Position.Y)
+	}
+	boid_sim.quadtree.Boundary = quadtree.Axis_aligned_bb[T]{
+		Bottom_left: Vector.Vector2[T]{X: min_x, Y: min_y},
+		Dim:         max(max_x-min_x, max_y-min_y) * 1.001,
+	}
+
 	// TODO set bounding box better, to combat oob boids
 	for _, b := range boid_sim.Boids {
-		// res := boid_sim.quadtree.Insert(b.Position)
-		boid_sim.quadtree.Insert(b.Position)
-		// if !res {
-		// 	fmt.Printf("boid out of bounds %v\n", b.Position)
-		// 	log.Fatalf("boid out of bounds %v\n", b.Position)
-		// }
+		res := boid_sim.quadtree.Insert(b.Position)
+		// boid_sim.quadtree.Insert(b.Position)
+		if !res {
+			// fmt.Printf("boid out of bounds %v\n", b.Position)
+			log.Fatalf("boid out of bounds %v\n", b.Position)
+		}
 	}
 }
 
@@ -264,6 +281,11 @@ func (boid_sim Boid_simulation[T]) Draw_Into_Image(img *Image.Image) {
 
 	// we map the world-space to match the image space
 	scale_factor := T(img.Width) / boid_sim.Width
+
+	if DEBUG_QUADTREE {
+		boid_sim.set_up_quadtree() // so our visualization is accurate
+		quadtree.Draw_quadtree_onto(&boid_sim.quadtree, img, scale_factor)
+	}
 
 	if DEBUG_BOUNDARY {
 		margin := int(MARGIN * scale_factor)
