@@ -5,6 +5,7 @@ import (
 	"math/rand"
 
 	"boidstuff.com/Image"
+	quadtree "boidstuff.com/Quadtree"
 	"boidstuff.com/Vector"
 )
 
@@ -26,7 +27,7 @@ const MAX_SPEED = 25
 const MIN_SPEED = 5
 
 const BOUNDING = true
-const WRAPPING = false
+const WRAPPING = true
 
 const DEBUG_HEADING = false
 const DEBUG_BOUNDARY = true
@@ -53,6 +54,8 @@ type Boid_simulation[T Vector.Float] struct {
 	accelerations         []Vector.Vector2[T]
 	close_boids           boid_array[T]
 	super_close_positions []Vector.Vector2[T]
+
+	quadtree quadtree.Quadtree[T]
 }
 
 const INITIAL_ARRAY_SIZE = 32
@@ -70,6 +73,12 @@ func New_boid_simulation[T Vector.Float](width, height T, num_boids int) Boid_si
 			velocities: make([]Vector.Vector2[T], INITIAL_ARRAY_SIZE),
 		},
 		super_close_positions: make([]Vector.Vector2[T], INITIAL_ARRAY_SIZE),
+
+		// quadtree: quadtree.Quadtree[T]{},
+		quadtree: quadtree.New_quadtree(quadtree.Axis_aligned_bb[T]{
+			Bottom_left: Vector.Vector2[T]{},
+			Dim:         max(width, height),
+		}),
 	}
 
 	for i := range boid_sim.Boids {
@@ -113,20 +122,54 @@ func (boid_sim Boid_simulation[T]) bounding_force(index int) Vector.Vector2[T] {
 	return vel
 }
 
+func (boid_sim *Boid_simulation[T]) set_up_quadtree() {
+	boid_sim.quadtree.Clear()
+	// TODO set bounding box better, to combat oob boids
+	for _, b := range boid_sim.Boids {
+		// res := boid_sim.quadtree.Insert(b.Position)
+		boid_sim.quadtree.Insert(b.Position)
+		// if !res {
+		// 	fmt.Printf("boid out of bounds %v\n", b.Position)
+		// 	log.Fatalf("boid out of bounds %v\n", b.Position)
+		// }
+	}
+}
+
 // NOTE 56.6% of run time is here. wow
 // TODO 2. use a smarter algorithm here, like a quad-tree
 func (boid_sim *Boid_simulation[T]) set_close_boids(index int) {
+
+	my_boid_pos := boid_sim.Boids[index].Position
+	cur_boid_bound := quadtree.Circle_To_AABB(my_boid_pos, VISUAL_RANGE)
+
+	bounded_boids_indexes := boid_sim.quadtree.QueryRange(cur_boid_bound)
+
+	// fmt.Printf("my_boid: %v, boid_bound %v, bounded_boids %v\n", my_boid_pos, cur_boid_bound, bounded_boids_indexes)
+
 	// clear the slices, mem optimize
 	boid_sim.close_boids.positions = boid_sim.close_boids.positions[:0]
 	boid_sim.close_boids.velocities = boid_sim.close_boids.velocities[:0]
 
 	boid_sim.super_close_positions = boid_sim.super_close_positions[:0]
 
-	my_boid_pos := boid_sim.Boids[index].Position
-	for j, other_boid := range boid_sim.Boids {
-		if index == j {
+	// this is possible if your out of bounds
+	// if len(bounded_boids_indexes) == 0 {
+	// 	log.Fatalf("that isn't possible, you must get yourself at least. %v\n", boid_sim.quadtree)
+	// }
+
+	for _, other_boid_index := range bounded_boids_indexes {
+		// if your comparing the boid to itself
+		if index == other_boid_index {
 			continue
 		}
+
+		other_boid := boid_sim.Boids[other_boid_index]
+		// }
+
+		// for j, other_boid := range boid_sim.Boids {
+		// 	if index == j {
+		// 		continue
+		// 	}
 
 		dist_sqr := Vector.DistSqr(my_boid_pos, other_boid.Position)
 
@@ -146,7 +189,8 @@ func (boid_sim *Boid_simulation[T]) set_close_boids(index int) {
 
 // TODO speed
 // NOTE dt is in seconds
-func (boid_sim Boid_simulation[T]) Update_boids(dt T) {
+func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
+	boid_sim.set_up_quadtree()
 	for i, my_boid := range boid_sim.Boids {
 		// find the boids in range
 		boid_sim.set_close_boids(i)

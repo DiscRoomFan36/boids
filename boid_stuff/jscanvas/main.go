@@ -14,12 +14,12 @@ var boid_sim boid.Boid_simulation[float32]
 
 var last_frame_time time.Time
 
-const BOID_FACTOR = 100
+const BOID_FACTOR = 1000
 const BOID_BOUNDS_WIDTH = 16 * BOID_FACTOR
 const BOID_BOUNDS_HEIGHT = 9 * BOID_FACTOR
-const NUM_BOIDS = 1000
+const NUM_BOIDS = 5000
 
-const BOID_SCALE = 2
+const BOID_SCALE = 10
 
 // USAGE: {Width} {Height} {array}
 //
@@ -53,11 +53,12 @@ func GetNextFrame() js.Func {
 
 		// TODO accept dt maybe
 		new_frame_time := time.Now()
-		dt := new_frame_time.Sub(last_frame_time).Seconds()
+		// dt := new_frame_time.Sub(last_frame_time).Seconds()
 		last_frame_time = new_frame_time
 
 		// Calculate the next frame of boids
-		boid_sim.Update_boids(float32(dt) * 60) // Times 60 because we want this to run at 60fps and dt=1 is supposed to be one time step
+		// boid_sim.Update_boids(float32(dt) * 60) // Times 60 because we want this to run at 60fps and dt=1 is supposed to be one time step
+		boid_sim.Update_boids(1)
 
 		// this might end up taking the most amount of time.
 		boid_sim.Draw_Into_Image(&img)
