@@ -1,7 +1,7 @@
 package boid
 
 import (
-	"log"
+	"fmt"
 	"math"
 	"math/rand"
 
@@ -71,10 +71,10 @@ func New_boid_simulation[T Vector.Float](width, height T, num_boids int) Boid_si
 
 		accelerations: make([]Vector.Vector2[T], num_boids),
 		close_boids: boid_array[T]{
-			positions:  make([]Vector.Vector2[T], INITIAL_ARRAY_SIZE),
-			velocities: make([]Vector.Vector2[T], INITIAL_ARRAY_SIZE),
+			positions:  make([]Vector.Vector2[T], 0, INITIAL_ARRAY_SIZE),
+			velocities: make([]Vector.Vector2[T], 0, INITIAL_ARRAY_SIZE),
 		},
-		super_close_positions: make([]Vector.Vector2[T], INITIAL_ARRAY_SIZE),
+		super_close_positions: make([]Vector.Vector2[T], 0, INITIAL_ARRAY_SIZE),
 
 		// quadtree: quadtree.Quadtree[T]{},
 		quadtree: quadtree.New_quadtree(quadtree.Axis_aligned_bb[T]{
@@ -126,34 +126,22 @@ func (boid_sim Boid_simulation[T]) bounding_force(index int) Vector.Vector2[T] {
 
 func (boid_sim *Boid_simulation[T]) set_up_quadtree() {
 	boid_sim.quadtree.Clear()
-	min_x := boid_sim.Boids[0].Position.X
-	max_x := boid_sim.Boids[0].Position.X
-	min_y := boid_sim.Boids[0].Position.Y
-	max_y := boid_sim.Boids[0].Position.Y
-	for _, boid := range boid_sim.Boids {
-		min_x = min(min_x, boid.Position.X)
-		max_x = max(max_x, boid.Position.X)
-		min_y = min(min_y, boid.Position.Y)
-		max_y = max(max_y, boid.Position.Y)
-	}
-	boid_sim.quadtree.Boundary = quadtree.Axis_aligned_bb[T]{
-		Bottom_left: Vector.Vector2[T]{X: min_x, Y: min_y},
-		Dim:         max(max_x-min_x, max_y-min_y) * 1.001,
+
+	// TODO make this just how we store boid positions
+	boid_positions := make([]Vector.Vector2[T], 0, len(boid_sim.Boids))
+	for _, b := range boid_sim.Boids {
+		boid_positions = append(boid_positions, b.Position)
 	}
 
-	// TODO set bounding box better, to combat oob boids
-	for _, b := range boid_sim.Boids {
-		res := boid_sim.quadtree.Insert(b.Position)
-		// boid_sim.quadtree.Insert(b.Position)
-		if !res {
-			// fmt.Printf("boid out of bounds %v\n", b.Position)
-			log.Fatalf("boid out of bounds %v\n", b.Position)
-		}
+	num_bad_boids := boid_sim.quadtree.Setup_tree(boid_positions)
+	if num_bad_boids > 0 {
+		// NOTE im actually fine with this, in this case, one frame where one boid didn't see its neighbors? im fine with that
+		// But NOTE Fucking this, i 100% could fix these fuckers, by making a "bad_boid_array" to store them in to check, id end back up in n^2 territory, but its not about the speed. its about sending a message
+		fmt.Printf("boids slipped though the cracks num %v\n", num_bad_boids)
 	}
 }
 
-// NOTE 56.6% of run time is here. wow
-// TODO 2. use a smarter algorithm here, like a quad-tree
+// TODO make a thing in the quad tree that dose some of the circle detection for us
 func (boid_sim *Boid_simulation[T]) set_close_boids(index int) {
 
 	my_boid_pos := boid_sim.Boids[index].Position
@@ -161,32 +149,19 @@ func (boid_sim *Boid_simulation[T]) set_close_boids(index int) {
 
 	bounded_boids_indexes := boid_sim.quadtree.QueryRange(cur_boid_bound)
 
-	// fmt.Printf("my_boid: %v, boid_bound %v, bounded_boids %v\n", my_boid_pos, cur_boid_bound, bounded_boids_indexes)
-
 	// clear the slices, mem optimize
 	boid_sim.close_boids.positions = boid_sim.close_boids.positions[:0]
 	boid_sim.close_boids.velocities = boid_sim.close_boids.velocities[:0]
 
 	boid_sim.super_close_positions = boid_sim.super_close_positions[:0]
 
-	// this is possible if your out of bounds
-	// if len(bounded_boids_indexes) == 0 {
-	// 	log.Fatalf("that isn't possible, you must get yourself at least. %v\n", boid_sim.quadtree)
-	// }
-
 	for _, other_boid_index := range bounded_boids_indexes {
 		// if your comparing the boid to itself
-		if index == other_boid_index {
+		if index == int(other_boid_index) {
 			continue
 		}
 
 		other_boid := boid_sim.Boids[other_boid_index]
-		// }
-
-		// for j, other_boid := range boid_sim.Boids {
-		// 	if index == j {
-		// 		continue
-		// 	}
 
 		dist_sqr := Vector.DistSqr(my_boid_pos, other_boid.Position)
 
