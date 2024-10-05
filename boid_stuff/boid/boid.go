@@ -77,10 +77,7 @@ func New_boid_simulation[T Vector.Float](width, height T, num_boids int) Boid_si
 		super_close_positions: make([]Vector.Vector2[T], 0, INITIAL_ARRAY_SIZE),
 
 		// quadtree: quadtree.Quadtree[T]{},
-		quadtree: quadtree.New_quadtree(quadtree.Axis_aligned_bb[T]{
-			Bottom_left: Vector.Vector2[T]{},
-			Dim:         max(width, height),
-		}),
+		quadtree: quadtree.New_quadtree[T](),
 	}
 
 	for i := range boid_sim.Boids {
@@ -145,7 +142,7 @@ func (boid_sim *Boid_simulation[T]) set_up_quadtree() {
 func (boid_sim *Boid_simulation[T]) set_close_boids(index int) {
 
 	my_boid_pos := boid_sim.Boids[index].Position
-	cur_boid_bound := quadtree.Circle_To_AABB(my_boid_pos, VISUAL_RANGE)
+	cur_boid_bound := quadtree.Circle_To_Rectangle(my_boid_pos, VISUAL_RANGE)
 
 	bounded_boids_indexes := boid_sim.quadtree.QueryRange(cur_boid_bound)
 
@@ -259,7 +256,7 @@ func (boid_sim Boid_simulation[T]) Draw_Into_Image(img *Image.Image) {
 
 	if DEBUG_QUADTREE {
 		boid_sim.set_up_quadtree() // so our visualization is accurate
-		quadtree.Draw_quadtree_onto(&boid_sim.quadtree, img, scale_factor)
+		quadtree.Draw_quadtree_onto(boid_sim.quadtree, img, scale_factor)
 	}
 
 	if DEBUG_BOUNDARY {

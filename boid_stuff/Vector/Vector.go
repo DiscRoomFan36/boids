@@ -49,6 +49,10 @@ type Vector2[T Number] struct {
 	X, Y T
 }
 
+func (a Vector2[Number]) Splat() (Number, Number) {
+	return a.X, a.Y
+}
+
 func (a *Vector2[Number]) Add(vs ...Vector2[Number]) {
 	for _, b := range vs {
 		a.X += b.X
