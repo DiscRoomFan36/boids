@@ -12,7 +12,7 @@ import (
 
 // TODO clean up all of these!
 const VISUAL_RANGE = 50
-const SEPARATION_MIN_DISTANCE = 15
+const SEPARATION_MIN_DISTANCE = 20
 
 // TODO change this to be a percent of total boundary size
 const BOID_DRAW_RADIUS = 7
@@ -21,14 +21,14 @@ const SEPARATION_FACTOR = 0.05
 const ALIGNMENT_FACTOR = 0.05
 const COHESION_FACTOR = 0.005
 
-const MARGIN = 100
-const MARGIN_TURN_FACTOR = 1
+const MARGIN = 200
+const MARGIN_TURN_FACTOR = 1.5
 
 const MAX_SPEED = 25
 const MIN_SPEED = 5
 
 const BOUNDING = true
-const WRAPPING = false
+const WRAPPING = true
 
 const DEBUG_HEADING = false
 const DEBUG_BOUNDARY = true
@@ -180,9 +180,13 @@ func (boid_sim *Boid_simulation[T]) set_close_boids(index int) {
 // NOTE dt is in seconds
 func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
 	boid_sim.set_up_quadtree()
-	for i, my_boid := range boid_sim.Boids {
+
+	for i := range boid_sim.quadtree.Traverse() {
+		my_boid := boid_sim.Boids[i]
+
+		// for i, my_boid := range boid_sim.Boids {
 		// find the boids in range
-		boid_sim.set_close_boids(i)
+		boid_sim.set_close_boids(int(i))
 
 		// Separation
 		// NOTE this is the same as move += (my_boid-pos) for all super_close_boids
@@ -211,7 +215,7 @@ func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
 		// TODO get rid of bounding force function, pull it in
 		bounding := Vector.Vector2[T]{}
 		if BOUNDING {
-			bounding = boid_sim.bounding_force(i)
+			bounding = boid_sim.bounding_force(int(i))
 		}
 
 		// TODO somehow put limiting speed here?
