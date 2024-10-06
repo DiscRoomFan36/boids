@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"iter"
 	"log"
+	"math"
 	"os"
 
 	"boidstuff.com/Image"
@@ -421,20 +422,15 @@ func Draw_quadtree_onto[T Vector.Number](quadtree Quadtree[T], img *Image.Image,
 	}
 
 	type tuple struct {
-		id Node_ID_Type
-		c  Image.Color
+		id    Node_ID_Type
+		depth int
 	}
 
-	draw_cross := func(checking Node_ID_Type, c Image.Color) Image.Color {
+	draw_cross := func(checking Node_ID_Type, depth int) Image.Color {
 		node := quadtree.child_array[checking]
 
-		// TODO something cooler
-		inner_color := Image.Color{
-			R: c.R - 50,
-			G: c.G,
-			B: c.B,
-			A: 255,
-		}
+		H := math.Mod(float64(depth)/10*360, 360)
+		inner_color := Image.HSL_to_RGB(H, 0.8, 0.5)
 
 		x, y, w, h := node.Boundary.Splat()
 
@@ -460,28 +456,28 @@ func Draw_quadtree_onto[T Vector.Number](quadtree Quadtree[T], img *Image.Image,
 
 	// Start with root node
 	stack := make([]tuple, 1, 4)
-	stack[0] = tuple{0, outer_color}
+	stack[0] = tuple{0, 0}
 
 	for len(stack) > 0 {
 		tup := stack[len(stack)-1]
 		stack = stack[:len(stack)-1]
 
 		checking := tup.id
-		c := tup.c
+		depth := tup.depth
 
 		node := quadtree.child_array[checking]
 		if node.children_start_index == 0 {
 			continue
 		}
 
-		inner_color := draw_cross(checking, c)
+		draw_cross(checking, depth)
 
 		if node.children_start_index == 0 {
 			log.Fatalf("a node cannot have child 0 at this time. node: %v\n", node)
 		}
 
 		for i := 0; i < QT_CHILDREN_LENGTH; i++ {
-			stack = append(stack, tuple{id: node.children_start_index + Node_ID_Type(i), c: inner_color})
+			stack = append(stack, tuple{id: node.children_start_index + Node_ID_Type(i), depth: depth + 1})
 		}
 	}
 

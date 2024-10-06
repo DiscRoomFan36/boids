@@ -21,14 +21,14 @@ const SEPARATION_FACTOR = 0.05
 const ALIGNMENT_FACTOR = 0.05
 const COHESION_FACTOR = 0.005
 
-const MARGIN = 200
-const MARGIN_TURN_FACTOR = 1.5
+const MARGIN = 100
+const MARGIN_TURN_FACTOR = 0.4
 
 const MAX_SPEED = 25
-const MIN_SPEED = 5
+const MIN_SPEED = MAX_SPEED / 5
 
 const BOUNDING = true
-const WRAPPING = true
+const WRAPPING = false
 
 const DEBUG_HEADING = false
 const DEBUG_BOUNDARY = true
@@ -81,10 +81,10 @@ func New_boid_simulation[T Vector.Float](width, height T, num_boids int) Boid_si
 	}
 
 	for i := range boid_sim.Boids {
-		boid_sim.Boids[i].Position = Vector.Vector2[T]{
-			X: T(rand.Float32() * float32(boid_sim.Width)),
-			Y: T(rand.Float32() * float32(boid_sim.Height)),
-		}
+		boid_sim.Boids[i].Position = Vector.Make_Vector2(
+			T(rand.Float32()*float32(boid_sim.Width)),
+			T(rand.Float32()*float32(boid_sim.Height)),
+		)
 		boid_sim.Boids[i].Velocity = Vector.Mult(Vector.Random_unit_vector[T](), 10)
 	}
 
@@ -105,23 +105,24 @@ func (boid_sim Boid_simulation[T]) bounding_force(index int) Vector.Vector2[T] {
 	vel := Vector.Vector2[T]{}
 
 	if boid_sim.Boids[index].Position.X < MARGIN {
-		vel.X += MARGIN_TURN_FACTOR
+		vel.X += 1
 	}
 	if boid_sim.Boids[index].Position.X > T(boid_sim.Width-MARGIN) {
-		vel.X -= MARGIN_TURN_FACTOR
+		vel.X -= 1
 	}
 
 	if boid_sim.Boids[index].Position.Y < MARGIN {
-		vel.Y += MARGIN_TURN_FACTOR
+		vel.Y += 1
 	}
 	if boid_sim.Boids[index].Position.Y > T(boid_sim.Height-MARGIN) {
-		vel.Y -= MARGIN_TURN_FACTOR
+		vel.Y -= 1
 	}
 
 	return vel
 }
 
 func (boid_sim *Boid_simulation[T]) set_up_quadtree() {
+	// TODO shouldn't need to call this. just get setup to do what you want
 	boid_sim.quadtree.Clear()
 
 	// TODO make this just how we store boid positions
@@ -190,8 +191,12 @@ func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
 
 		// Separation
 		// NOTE this is the same as move += (my_boid-pos) for all super_close_boids
-		move := Vector.Mult(my_boid.Position, T(len(boid_sim.super_close_positions)))
-		move.Sub(boid_sim.super_close_positions...)
+		move := Vector.Vector2[T]{}
+		// move := Vector.Mult(my_boid.Position, T(len(boid_sim.super_close_positions)))
+		// move.Sub(boid_sim.super_close_positions...)
+		for _, other_pos := range boid_sim.super_close_positions {
+			move.Add(Vector.Sub(my_boid.Position, other_pos))
+		}
 
 		// Alignment
 		avg_vel := Vector.Add(Vector.Vector2[T]{}, boid_sim.close_boids.velocities...)
@@ -215,13 +220,43 @@ func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
 		// TODO get rid of bounding force function, pull it in
 		bounding := Vector.Vector2[T]{}
 		if BOUNDING {
-			bounding = boid_sim.bounding_force(int(i))
+			bounding = Vector.Mult(boid_sim.bounding_force(int(i)), MARGIN_TURN_FACTOR)
 		}
 
-		// TODO somehow put limiting speed here?
-
 		// NOTE remember to not change accelerations, just assign to it. its got trash in it
+		// TODO somehow put limiting speed here?
 		boid_sim.accelerations[i] = Vector.Add(sep, align, coh, bounding)
+
+		// OTHER Additions
+
+		// TODO add noise instead
+		// const WOBBLE_FACTOR = 0.01
+		// wobble := Vector.Mult(Vector.Random_unit_vector[T](), WOBBLE_FACTOR)
+
+		// just move some of them in different directions, semi randomly
+		const RANDOM_DRAW_FACTOR = 0.01
+		random_draw := Vector.Vector2[T]{}
+		if i%3 == 0 {
+			random_draw.X += 1
+		} else if i%3 == 1 {
+			random_draw.X -= 1
+			// draw.Y += 1
+		}
+		random_draw.Mult(RANDOM_DRAW_FACTOR)
+		boid_sim.accelerations[i].Add(random_draw)
+
+		const CENTER_DRAW_FACTOR = 0.1
+		center := Vector.Make_Vector2(boid_sim.Width/2, boid_sim.Height/2)
+		if Vector.Dist(my_boid.Position, center) > min(boid_sim.Width, boid_sim.Height)/5 {
+			center_pointer := Vector.Normalized(Vector.Sub(center, my_boid.Position))
+			center_draw := Vector.Mult(center_pointer, CENTER_DRAW_FACTOR)
+
+			boid_sim.accelerations[i].Add(center_draw)
+		}
+
+		wind := Vector.Make_Vector2[T](-0.05, -0.05)
+		boid_sim.accelerations[i].Add(wind)
+
 	}
 
 	// outputs a number from [0, b). ignore the float64. go math module is dumb.
@@ -296,13 +331,13 @@ func (boid_sim Boid_simulation[T]) Draw_Into_Image(img *Image.Image) {
 		// Rotate to face them in the right direction
 		theta := Vector.GetTheta(b.Velocity)
 		// TODO i don't think the wings are rotating right. hmmm
+		to_rotate := theta + math.Pi
+		if b.Velocity.Y > 0 {
+			to_rotate = -theta
+		}
 		// TODO i also think this is slowing us down, put in own function
 		for i := 0; i < len(boid_shape); i++ {
 			// someone who knows math explain this
-			to_rotate := theta + math.Pi
-			if b.Velocity.Y > 0 {
-				to_rotate = -theta
-			}
 			boid_shape[i].Rotate(to_rotate)
 
 			boid_shape[i].Mult(BOID_DRAW_RADIUS * scale_factor)
@@ -311,18 +346,26 @@ func (boid_sim Boid_simulation[T]) Draw_Into_Image(img *Image.Image) {
 
 		// get cool color for boid
 
-		// [0, 1]
 		speed := b.Velocity.Mag() / MAX_SPEED
 
-		// TODO HSL
-		boid_color := Image.Color{
-			R: uint8(Vector.Round(speed * 255)),
-			// G: uint8(Vector.Round(speed * 255)),
-			G: 240,
-			// B: uint8(Vector.Round(speed * 255)),
-			B: uint8(Vector.Round((1 - speed) * 255)),
-			A: 255,
+		clamp := func(x, mini, maxi T) T {
+			return max(mini, min(x, maxi))
 		}
+
+		const SHIFT_FACTOR = 2
+		H := math.Mod(float64(clamp(speed, 0, 1)*360)*SHIFT_FACTOR, 360)
+
+		boid_color := Image.HSL_to_RGB(H, 0.75, 0.6)
+
+		// TODO HSL
+		// boid_color := Image.Color{
+		// 	R: uint8(Vector.Round(speed * 255)),
+		// 	// G: uint8(Vector.Round(speed * 255)),
+		// 	G: 240,
+		// 	// B: uint8(Vector.Round(speed * 255)),
+		// 	B: uint8(Vector.Round((1 - speed) * 255)),
+		// 	A: 255,
+		// }
 
 		// Draw both sides
 		Image.Draw_Triangle(img, boid_shape[0], boid_shape[1], boid_shape[2], boid_color)

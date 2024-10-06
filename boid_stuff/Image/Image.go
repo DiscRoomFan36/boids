@@ -3,6 +3,7 @@ package Image
 import (
 	"fmt"
 	"log"
+	"math"
 	"os"
 
 	"boidstuff.com/Vector"
@@ -16,6 +17,32 @@ type Color struct {
 	G uint8
 	B uint8
 	A uint8
+}
+
+func (c Color) Splat() (uint8, uint8, uint8, uint8) {
+	return c.R, c.G, c.B, c.A
+}
+
+// https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB_alternative
+func HSL_to_RGB[T Vector.Float](H, S, L T) Color {
+	if !(0 <= H && H <= 360) ||
+		!(0 <= S && S <= 1) ||
+		!(0 <= L && L <= 1) {
+		log.Fatalf("HSL got input out of range H: %v S: %v L: %v\n", H, S, L)
+	}
+
+	a := S * min(L, 1-L)
+	f := func(n T) T {
+		k := T(math.Mod(float64(n+H/30), 12))
+		return L - a*max(-1, min(k-3, 9-k, 1))
+	}
+
+	return Color{
+		R: uint8(Vector.Round(f(0) * 255)),
+		G: uint8(Vector.Round(f(8) * 255)),
+		B: uint8(Vector.Round(f(4) * 255)),
+		A: 255,
+	}
 }
 
 type Image struct {

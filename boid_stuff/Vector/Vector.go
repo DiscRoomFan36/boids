@@ -49,6 +49,10 @@ type Vector2[T Number] struct {
 	X, Y T
 }
 
+func Make_Vector2[T Number](x, y T) Vector2[T] {
+	return Vector2[T]{x, y}
+}
+
 func (a Vector2[Number]) Splat() (Number, Number) {
 	return a.X, a.Y
 }
