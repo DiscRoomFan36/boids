@@ -3,26 +3,34 @@
 // import { thing } from "./go_wasm";
 // import { Go } from "./wasm_exec";
 // Go()
-var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-};
 // TODO
 // if (typeof ImageDimensions !== 'function') {
 //     throw new Error("No ImageDimensions functions");
 // }
 const DEBUG_DISPLAY = true;
+const DEBUG_SLIDERS = true;
+// NOTE we keep the @ts-ignore's in here
+async function GetGoFunctions() {
+    // @ts-ignore
+    const go = new Go(); // NOTE this comes from the wasm_exec.js thing
+    const result = await WebAssembly.instantiateStreaming(fetch("dist/boid.wasm"), go.importObject);
+    go.run(result.instance);
+    return {
+        // @ts-ignore
+        SetProperties: SetProperties,
+        // @ts-ignore
+        GetProperties: GetProperties,
+        // @ts-ignore
+        GetNextFrame: GetNextFrame,
+    };
+}
 const NUM_COLOR_COMPONENTS = 4;
 const SQUISH_FACTOR = 1;
-function renderBoids(display) {
+function renderBoids(display, go) {
     const width = Math.floor(display.ctx.canvas.width / SQUISH_FACTOR);
     const height = Math.floor(display.ctx.canvas.height / SQUISH_FACTOR);
     const buffer_size = width * height * NUM_COLOR_COMPONENTS;
+    // TODO handle the case where the width and height perfectly swap
     if (display.backBufferArray.length !== buffer_size) {
         if (display.backBufferArray.length < buffer_size) {
             // make the buffer bigger
@@ -39,17 +47,9 @@ function renderBoids(display) {
         // display.backBufferArray
     }
     const buffer = display.backBufferArray.subarray(0, buffer_size);
-    // TODO find a way to pre-declare this
-    // @ts-ignore
-    const numFilled = GetNextFrame(width, height, buffer);
-    // console.log(`width: ${width}, height: ${height}`)
-    // console.log(`buffer_size: ${buffer_size}, numFilled: ${numFilled}`)
-    // console.log(`backBufferArray.length: ${display.backBufferArray.length}`)
+    const numFilled = go.GetNextFrame(width, height, buffer);
     if (numFilled !== buffer_size)
         throw new Error(`GetNextFrame got ${numFilled}`);
-    // if (display.backBufferArray.length % (width * 4) !== 0) {
-    //     console.log(`oh no ${display.backBufferArray.length % width * 4}`)
-    // }
     const imageData = new ImageData(buffer, width, height);
     // is this cool?
     display.backCtx.putImageData(imageData, 0, 0);
@@ -59,8 +59,9 @@ function renderBoids(display) {
     // imageData = null
 }
 const renderTimes = [];
+const deltaTimes = [];
 // Credit: https://github.com/tsoding/koil
-function renderDebugInfo(display, renderTime) {
+function renderDebugInfo(display, renderTime, deltaTime) {
     const fontSize = 28;
     display.ctx.font = `${fontSize}px bold`;
     const labels = [];
@@ -68,10 +69,16 @@ function renderDebugInfo(display, renderTime) {
     if (renderTimes.length > 60) {
         renderTimes.shift();
     }
+    deltaTimes.push(deltaTime);
+    if (deltaTimes.length > 60) {
+        deltaTimes.shift();
+    }
     const renderAvg = renderTimes.reduce((a, b) => a + b, 0) / renderTimes.length;
-    // TODO Rolling average
+    const deltaAvg = deltaTimes.reduce((a, b) => a + b, 0) / deltaTimes.length;
+    labels.push(`FPS: ${(1 / deltaAvg * 1000).toFixed(2)}`);
+    labels.push(`ms per frame: ${deltaAvg.toFixed(2)}`);
     labels.push(`Render Time Avg (ms): ${renderAvg.toFixed(2)}`);
-    labels.push(`Render/Sec (MAX): ${Math.floor(1 / renderAvg * 1000)}`);
+    labels.push(`Render/Sec (MAX): ${(1 / renderAvg * 1000).toFixed(2)}`);
     const padding = 70;
     const shadowOffset = fontSize * 0.06;
     for (let i = 0; i < labels.length; i++) {
@@ -81,21 +88,54 @@ function renderDebugInfo(display, renderTime) {
         display.ctx.fillText(labels[i], padding + shadowOffset, padding - shadowOffset + fontSize * i);
     }
 }
-(() => __awaiter(void 0, void 0, void 0, function* () {
+function setup_sliders(go) {
+    const properties = go.GetProperties();
+    if (DEBUG_SLIDERS)
+        console.log("typescript got properties", properties);
+    const slider_container = document.getElementById("slideContainer");
+    if (slider_container === null)
+        throw new Error("Cannot Get slider container");
+    for (const [key, value] of Object.entries(properties)) {
+        if (DEBUG_SLIDERS)
+            console.log(`typescript: ${key}: ${value}`);
+        const [min_s, max_s] = value.split("-");
+        const [min, max] = [parseFloat(min_s), parseFloat(max_s)];
+        if (DEBUG_SLIDERS)
+            console.log(`    min: ${min}, max: ${max}`);
+        const id = `slider_${key}`;
+        // TODO set value based on something.
+        // TODO a lot of numbers must be between 0-1, because sliders only use ints (look up if this is the case.) we will have to get creative
+        const html_string = `<input type="range" min="${min}" max="${max}" value="${(min + max) / 2}" class="slider" id="${id}">`;
+        const new_thing = document.createElement("div");
+        new_thing.className = "rangeHolder";
+        new_thing.innerHTML = html_string;
+        slider_container.appendChild(new_thing);
+        const slider = document.getElementById(id);
+        if (slider === null)
+            throw new Error("Could not find the slider");
+        slider.addEventListener("input", (event) => {
+            const slider_value_string = event.target.value;
+            const slider_number = Number(slider_value_string);
+            const obj = {};
+            obj[key] = slider_number;
+            if (DEBUG_SLIDERS)
+                console.log(obj);
+            go.SetProperties(obj);
+        });
+    }
+}
+(async () => {
+    const go = await GetGoFunctions();
+    setup_sliders(go);
     const gameCanvas = document.getElementById("game");
     if (gameCanvas === null)
         throw new Error("No canvas with id `game` is found");
-    // @ts-ignore
-    const go = new Go(); // NOTE this comes from the wasm_exec.js thing
-    const result = yield WebAssembly.instantiateStreaming(fetch("dist/boid.wasm"), go.importObject);
-    go.run(result.instance);
     const ctx = gameCanvas.getContext("2d");
     if (ctx === null)
         throw new Error("2D context is not supported");
     ctx.imageSmoothingEnabled = false;
     const [backImageWidth, backImageHeight] = [ctx.canvas.width, ctx.canvas.height];
     // TODO why is this an error?
-    // @ts-ignore
     // const backCanvas = new OffscreenCanvas(backImageWidth, backImageHeight)
     const backCanvas = new OffscreenCanvas(1, 1);
     const backCtx = backCanvas.getContext("2d");
@@ -114,22 +154,22 @@ function renderDebugInfo(display, renderTime) {
     const frame = (timestamp) => {
         ctx.canvas.width = window.innerWidth;
         ctx.canvas.height = window.innerHeight;
-        const deltaTime = (timestamp - prevTimestamp) / 1000;
+        const deltaTime = (timestamp - prevTimestamp);
         // const time = timestamp/1000;
         prevTimestamp = timestamp;
         // TODO Don't need delta time, boid thing dose it for us? change?
         let startTime = performance.now();
-        renderBoids(display);
+        renderBoids(display, go);
         let endTime = performance.now();
         // TODO Display FPS
         // In ms
         const renderTime = endTime - startTime;
         if (DEBUG_DISPLAY)
-            renderDebugInfo(display, renderTime);
+            renderDebugInfo(display, renderTime, deltaTime);
         window.requestAnimationFrame(frame);
     };
     window.requestAnimationFrame((timestamp) => {
         prevTimestamp = timestamp;
         window.requestAnimationFrame(frame);
     });
-}))();
+})();

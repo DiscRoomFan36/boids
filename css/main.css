@@ -6,6 +6,80 @@ html, body {
 	padding: 0;
 }
 
-div {
+body div {
 	display: flex;
+}
+
+.sliders {
+	position: absolute;
+	width: 50%;
+	height: 100%;
+
+	/* this will move it down a bit */
+	/* padding-top: 10rem; */
+
+	/* margin: 100px; */
+	
+	
+	/* display: flex; */
+	flex: auto;
+	flex-direction: column;
+	justify-content: space-evenly;
+	/* padding: 1rem; */
+}
+
+/* https://www.w3schools.com/howto/howto_js_rangeslider.asp */
+.slideContainer {
+	/* padding-top: 10rem; */
+	/* padding: 10rem; */
+	width: 10rem; /* Width of the outside container */
+	position: absolute;
+	height: 100%;
+	/* padding: 1rem; */
+	/* margin-top: 1rem; */
+
+	display: flex;
+	flex-direction: column;
+	justify-content: space-evenly;
+}
+
+/* .rangeHolder { */
+	/* width: 10px; */
+	/* height: 10rem; */
+/* } */
+
+.slider {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 100%;
+	height: 15px;
+	border-radius: 5px;  
+	background: #d3d3d3;
+	outline: none;
+	opacity: 0.7;
+	-webkit-transition: .2s;
+	transition: opacity .2s;
+}
+
+/* Mouse-over effects */
+.slider:hover {
+	opacity: 1; /* Fully shown on mouse-over */
+}
+
+.slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 25px;
+	height: 25px;
+	border-radius: 50%; 
+	background: #04AA6D;
+	cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+	width: 25px;
+	height: 25px;
+	border-radius: 50%;
+	background: #04AA6D;
+	cursor: pointer;
 }

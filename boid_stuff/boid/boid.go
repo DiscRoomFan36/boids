@@ -11,11 +11,8 @@ import (
 )
 
 // TODO clean up all of these!
-const VISUAL_RANGE = 50
+// const VISUAL_RANGE = 50
 const SEPARATION_MIN_DISTANCE = 20
-
-// TODO change this to be a percent of total boundary size
-const BOID_DRAW_RADIUS = 7
 
 const SEPARATION_FACTOR = 0.05
 const ALIGNMENT_FACTOR = 0.05
@@ -32,7 +29,7 @@ const WRAPPING = false
 
 const DEBUG_HEADING = false
 const DEBUG_BOUNDARY = true
-const DEBUG_QUADTREE = true
+const DEBUG_QUADTREE = false
 
 type Boid[T Vector.Float] struct {
 	Position Vector.Vector2[T]
@@ -52,6 +49,10 @@ type Boid_simulation[T Vector.Float] struct {
 	Width, Height T
 	// TODO add factors here (Sep, ali, coh, ect...)
 
+	// Properties
+	Visual_Range     T `Property:"1-100"`
+	Boid_Draw_Radius T `Property:"0-20"`
+
 	// Working Areas
 	accelerations         []Vector.Vector2[T]
 	close_boids           boid_array[T]
@@ -68,6 +69,10 @@ func New_boid_simulation[T Vector.Float](width, height T, num_boids int) Boid_si
 
 		Width:  width,
 		Height: height,
+
+		// Properties, (TODO make a note about not using constants)
+		Visual_Range:     50,
+		Boid_Draw_Radius: 7,
 
 		accelerations: make([]Vector.Vector2[T], num_boids),
 		close_boids: boid_array[T]{
@@ -143,7 +148,7 @@ func (boid_sim *Boid_simulation[T]) set_up_quadtree() {
 func (boid_sim *Boid_simulation[T]) set_close_boids(index int) {
 
 	my_boid_pos := boid_sim.Boids[index].Position
-	cur_boid_bound := quadtree.Circle_To_Rectangle(my_boid_pos, VISUAL_RANGE)
+	cur_boid_bound := quadtree.Circle_To_Rectangle(my_boid_pos, boid_sim.Visual_Range)
 
 	bounded_boids_indexes := boid_sim.quadtree.QueryRange(cur_boid_bound)
 
@@ -163,7 +168,7 @@ func (boid_sim *Boid_simulation[T]) set_close_boids(index int) {
 
 		dist_sqr := Vector.DistSqr(my_boid_pos, other_boid.Position)
 
-		if dist_sqr >= VISUAL_RANGE*VISUAL_RANGE {
+		if dist_sqr >= boid_sim.Visual_Range*boid_sim.Visual_Range {
 			continue
 		}
 
@@ -340,7 +345,7 @@ func (boid_sim Boid_simulation[T]) Draw_Into_Image(img *Image.Image) {
 			// someone who knows math explain this
 			boid_shape[i].Rotate(to_rotate)
 
-			boid_shape[i].Mult(BOID_DRAW_RADIUS * scale_factor)
+			boid_shape[i].Mult(boid_sim.Boid_Draw_Radius * scale_factor)
 			boid_shape[i].Add(b.Position)
 		}
 

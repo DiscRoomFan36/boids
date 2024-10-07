@@ -1,6 +1,13 @@
+//go:build wasm
+
 package main
 
 import (
+	"fmt"
+	"log"
+	"reflect"
+	"strconv"
+	"strings"
 	"syscall/js"
 	"time"
 
@@ -20,6 +27,120 @@ const BOID_BOUNDS_HEIGHT = 9 * BOID_FACTOR
 const NUM_BOIDS = 1000
 
 const BOID_SCALE = 2
+
+func parse_property_tag(tag string) (float64, float64, error) {
+	result := strings.Split(tag, "-")
+	if len(result) != 2 {
+		return 0, 0, fmt.Errorf("length of split is %v", len(result))
+	}
+
+	min, err := strconv.ParseFloat(result[0], 64)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	max, err := strconv.ParseFloat(result[1], 64)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	if max < min {
+		return 0, 0, fmt.Errorf("Max is greater than min")
+	}
+
+	return min, max, nil
+}
+
+func GetProperties() js.Func {
+	fun := js.FuncOf(func(this js.Value, args []js.Value) any {
+		if len(args) != 0 {
+			return "don't pass anything to this function"
+		}
+
+		var properties map[string]interface{} = make(map[string]interface{})
+
+		s := reflect.ValueOf(&boid_sim).Elem()
+		typeOfT := s.Type()
+		for i := 0; i < s.NumField(); i++ {
+			f := s.Field(i)
+			tag := typeOfT.Field(i).Tag.Get("Property")
+			if len(tag) == 0 {
+				continue
+			}
+			if !f.CanInterface() {
+				log.Panicf("tag that has property cannot be interfaced. %d: %v %v\n", i, typeOfT.Field(i).Name, f.Type())
+			}
+
+			fmt.Printf("%d: %s %s = %v\n", i, typeOfT.Field(i).Name, f.Type(), tag)
+
+			// we don't have to do this, because typescript will handle it, but well do it anyway
+			min, max, err := parse_property_tag(tag)
+			if err != nil {
+				log.Panicf("could not parse property %v with error: %v\n", typeOfT.Field(i).Name, err)
+			}
+
+			fmt.Printf("min %v, max %v\n", min, max)
+
+			properties[typeOfT.Field(i).Name] = fmt.Sprintf("%v-%v", min, max)
+		}
+
+		return properties
+	})
+
+	return fun
+}
+
+func SetProperties() js.Func {
+	fun := js.FuncOf(func(this js.Value, args []js.Value) any {
+		if len(args) != 1 {
+			return "SetProperties: please pass in a object with properties to set"
+		}
+
+		obj := args[0]
+
+		if obj.Type().String() != "object" {
+			log.Panicf("SetProperties: arg is not an object, it is a %v", args[0].Type().String())
+		}
+
+		properties_set := 0
+
+		s := reflect.ValueOf(&boid_sim).Elem()
+		typeOfT := s.Type()
+		for i := 0; i < s.NumField(); i++ {
+			f := s.Field(i)
+			field_name := typeOfT.Field(i).Name
+			tag := typeOfT.Field(i).Tag.Get("Property")
+
+			if len(tag) == 0 {
+				continue
+			}
+
+			value := obj.Get(field_name)
+			if value.IsUndefined() {
+				fmt.Printf("%v is not in obj\n", field_name)
+				continue
+			}
+
+			fmt.Printf("%v is in obj\n", field_name)
+			if value.Type().String() != "number" {
+				log.Panicf("SetProperties: value is not an string, it is a %v", value.Type().String())
+			}
+
+			println(value.Float())
+			f.SetFloat(value.Float())
+
+			properties_set += 1
+		}
+
+		if properties_set == 0 {
+			log.Panicf("SetProperties: Did not set any properties!!\n")
+		}
+
+		return properties_set
+	})
+
+	return fun
+}
 
 // USAGE: {Width} {Height} {array}
 //
@@ -79,6 +200,8 @@ func main() {
 
 	last_frame_time = time.Now()
 
+	js.Global().Set("GetProperties", GetProperties())
+	js.Global().Set("SetProperties", SetProperties())
 	js.Global().Set("GetNextFrame", GetNextFrame())
 
 	// this stalls the go program, because go has a 'run time' that needs to be aware of everything. bleh
