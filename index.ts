@@ -176,11 +176,7 @@ function setup_sliders(go: GoFunctions) {
             const slider_number = Number(slider_value_string);
 
             // https://stackoverflow.com/questions/12710905/how-do-i-dynamically-assign-properties-to-an-object-in-typescript
-            interface LooseObject {
-                [key: string]: any
-            }
-
-            const obj: LooseObject = {};
+            const obj: Record<string,number> = {};
             obj[key] = slider_number;
 
             if (DEBUG_SLIDERS) console.log(obj);

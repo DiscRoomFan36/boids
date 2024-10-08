@@ -73,6 +73,10 @@ const QT_CHILDREN_LENGTH = 4
 type Node_ID_Type uint16
 type Points_ID_Type uint16
 
+type temporary_quadtree_node[T Vector.Number] struct {
+	points [QT_NODE_CAPACITY]Points_ID_Type
+}
+
 type quadtree_node[T Vector.Number] struct {
 	// Axis-aligned bounding box stored as a center with half-dimensions
 	// to represent the boundaries of this quad tree
@@ -83,7 +87,9 @@ type quadtree_node[T Vector.Number] struct {
 
 	// Points in this quad tree node (is actually their index)
 	num_points uint8 // this is as small as possible
-	points     [QT_NODE_CAPACITY]Points_ID_Type
+	// this is an index into a secondary array of points
+	points_start_index Points_ID_Type
+	// points     [QT_NODE_CAPACITY]Points_ID_Type
 }
 
 func new_Node[T Vector.Number](boundary Rectangle[T]) quadtree_node[T] {
@@ -91,7 +97,8 @@ func new_Node[T Vector.Number](boundary Rectangle[T]) quadtree_node[T] {
 		Boundary: boundary,
 
 		num_points: 0,
-		points:     [QT_NODE_CAPACITY]Points_ID_Type{},
+		// points_start_index: 0, // this doesn't matter when
+		// points:     [QT_NODE_CAPACITY]Points_ID_Type{},
 
 		children_start_index: 0,
 	}
@@ -104,6 +111,9 @@ type Quadtree[T Vector.Number] struct {
 
 	// array[0] is special, its the root nodes thing
 	child_array []quadtree_node[T]
+
+	secondary_points_array                []Vector.Vector2[T]
+	secondary_points_original_index_array []Points_ID_Type
 }
 
 func New_quadtree[T Vector.Number]() Quadtree[T] {
@@ -118,8 +128,8 @@ func New_quadtree[T Vector.Number]() Quadtree[T] {
 	}
 }
 
-func (quadtree *Quadtree[T]) Setup_tree(points []Vector.Vector2[T]) int {
-	// Setup the bounds
+func find_bounds[T Vector.Number](points []Vector.Vector2[T]) Rectangle[T] {
+
 	min_x := points[0].X
 	max_x := points[0].X
 	min_y := points[0].Y
@@ -133,21 +143,27 @@ func (quadtree *Quadtree[T]) Setup_tree(points []Vector.Vector2[T]) int {
 	if max(max_x-min_x, max_y-min_y) < 1 {
 		log.Fatalf("our bounds is to small for my feeble mind\n")
 	}
-	quadtree.child_array[0].Boundary = Make_Rectangle(
+	return Make_Rectangle(
 		min_x,
 		min_y,
 		max_x-min_x+1,
 		max_y-min_y+1,
 	)
+}
+
+func (quadtree *Quadtree[T]) Setup_tree(points []Vector.Vector2[T]) int {
+	// Setup the bounds
+	quadtree.child_array[0].Boundary = find_bounds(points)
 
 	// this might be bad. meh. need to make it obvious that the quad tree doesn't own this
 	quadtree.all_points = points
+
+	temporary_nodes := make([]temporary_quadtree_node[T], 1)
 
 	// test if there is to many points
 	// tests for integer overflow
 	if int(Points_ID_Type(len(quadtree.all_points))) != len(quadtree.all_points) {
 		log.Fatalf("To many points in array. %v != %v\n", Points_ID_Type(len(quadtree.all_points)), len(quadtree.all_points))
-
 	}
 
 	insert_point := func(index int) bool {
@@ -174,14 +190,22 @@ func (quadtree *Quadtree[T]) Setup_tree(points []Vector.Vector2[T]) int {
 			// If there is space in this quad tree and if doesn't have subdivisions, add the object here
 			// NOTE children[0] == 0 is the root node and not allowed
 			if node.num_points < QT_NODE_CAPACITY && node.children_start_index == 0 {
-				node.points[node.num_points] = p_index
+				temporary_nodes[checking].points[node.num_points] = p_index
+				// node.points[node.num_points] = p_index
 				node.num_points += 1
-				return true
+				// continue
+				return true // we inserted the point
 			}
 
 			// Otherwise, subdivide and then add the point to whichever node will accept it
 			if node.children_start_index == 0 {
 				quadtree.subdivide(checking)
+
+				// make 4 of these, to fit the new ones.
+				temporary_nodes = append(temporary_nodes, temporary_quadtree_node[T]{})
+				temporary_nodes = append(temporary_nodes, temporary_quadtree_node[T]{})
+				temporary_nodes = append(temporary_nodes, temporary_quadtree_node[T]{})
+				temporary_nodes = append(temporary_nodes, temporary_quadtree_node[T]{})
 			}
 
 			// We have to add the points/data contained in this quad array to the
@@ -191,7 +215,6 @@ func (quadtree *Quadtree[T]) Setup_tree(points []Vector.Vector2[T]) int {
 				log.Fatalf("a node cannot have child 0 at this time. node: %v\n", node)
 			}
 
-			// TODO make better
 			stack = append(stack, node.children_start_index+0)
 			stack = append(stack, node.children_start_index+1)
 			stack = append(stack, node.children_start_index+2)
@@ -211,6 +234,54 @@ func (quadtree *Quadtree[T]) Setup_tree(points []Vector.Vector2[T]) int {
 			bad_points += 1
 		}
 	}
+
+	// we need to put the points in the right place
+	quadtree.secondary_points_array = make([]Vector.Vector2[T], len(points))
+	quadtree.secondary_points_original_index_array = make([]Points_ID_Type, len(points))
+
+	{
+		// Start with root node
+		stack := make([]Node_ID_Type, 1)
+		stack[0] = 0
+
+		secondary_points_index := 0
+
+		// TODO use queue
+		// rust would have warned me about this overflowing
+		for len(stack) > 0 {
+			// i think a queue is better here, for a breadth first search.
+			checking := stack[0]
+			stack = stack[1:]
+
+			// checking := stack[len(stack)-1]
+			// stack = stack[:len(stack)-1]
+
+			node := &quadtree.child_array[checking]
+			// we have a node, now put it into the secondary array
+
+			// fmt.Printf("here?\n")
+
+			t_node := temporary_nodes[checking]
+			node.points_start_index = Points_ID_Type(secondary_points_index)
+
+			for i := 0; i < int(node.num_points); i++ {
+				quadtree.secondary_points_array[secondary_points_index+i] = points[t_node.points[i]]
+				quadtree.secondary_points_original_index_array[secondary_points_index+i] = t_node.points[i]
+			}
+
+			secondary_points_index += int(node.num_points)
+
+			if node.children_start_index != 0 {
+				for i := 0; i < QT_CHILDREN_LENGTH; i++ {
+					stack = append(stack, node.children_start_index+Node_ID_Type(i))
+				}
+			}
+		}
+	}
+
+	temporary_nodes = nil
+
+	// return false
 
 	return bad_points
 }
@@ -278,43 +349,17 @@ func (quadtree Quadtree[T]) QueryRange(q_range Rectangle[T]) []Points_ID_Type {
 			}
 
 			check_points := func() {
-				// UNROLL THE LOOP
-				// pi0 := node.points[0]
-				// pi1 := node.points[1]
-				// pi2 := node.points[2]
-				// pi3 := node.points[3]
-
-				// p0 := quadtree.all_points[pi0]
-				// p1 := quadtree.all_points[pi1]
-				// p2 := quadtree.all_points[pi2]
-				// p3 := quadtree.all_points[pi3]
-
-				// b0 := q_range.containsPoint(p0)
-				// b1 := q_range.containsPoint(p1)
-				// b2 := q_range.containsPoint(p2)
-				// b3 := q_range.containsPoint(p3)
-
-				// if b0 || b1 || b2 || b3 {
-				// 	if b0 && node.num_points > 0 {
-				// 		points_in_range = append(points_in_range, pi0)
-				// 	}
-				// 	if b1 && node.num_points > 1 {
-				// 		points_in_range = append(points_in_range, pi1)
-				// 	}
-				// 	if b2 && node.num_points > 2 {
-				// 		points_in_range = append(points_in_range, pi2)
-				// 	}
-				// 	if b3 && node.num_points > 3 {
-				// 		points_in_range = append(points_in_range, pi3)
-				// 	}
-				// }
 
 				// hmmm is this as good as this loop gets?
+				start := int(node.children_start_index)
 				for i := 0; i < int(node.num_points); i++ {
-					p_index := node.points[i]
+					point := quadtree.secondary_points_array[start+i]
+					// p_index := node.points[i]
 
-					if q_range.containsPoint(quadtree.all_points[p_index]) {
-						points_in_range = append(points_in_range, p_index)
+					// if q_range.containsPoint(quadtree.all_points[p_index]) {
+					if q_range.containsPoint(point) {
+						// points_in_range = append(points_in_range, p_index)
+						points_in_range = append(points_in_range, quadtree.secondary_points_original_index_array[start+i])
 					}
 				}
 
@@ -360,8 +405,10 @@ func (quadtree *Quadtree[T]) Traverse() iter.Seq[Points_ID_Type] {
 				}
 			}
 
+			start := node.points_start_index
 			for i := 0; i < int(node.num_points); i++ {
-				should_continue := yield(node.points[i])
+				// should_continue := yield(node.points[i])
+				should_continue := yield(quadtree.secondary_points_original_index_array[start+Points_ID_Type(i)])
 				if !should_continue {
 					// end the whole thing
 					return false

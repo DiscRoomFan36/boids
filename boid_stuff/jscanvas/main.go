@@ -24,7 +24,7 @@ var last_frame_time time.Time
 const BOID_FACTOR = 100
 const BOID_BOUNDS_WIDTH = 16 * BOID_FACTOR
 const BOID_BOUNDS_HEIGHT = 9 * BOID_FACTOR
-const NUM_BOIDS = 1000
+const NUM_BOIDS = 2000
 
 const BOID_SCALE = 2
 

@@ -116,6 +116,7 @@ function setup_sliders(go) {
         slider.addEventListener("input", (event) => {
             const slider_value_string = event.target.value;
             const slider_number = Number(slider_value_string);
+            // https://stackoverflow.com/questions/12710905/how-do-i-dynamically-assign-properties-to-an-object-in-typescript
             const obj = {};
             obj[key] = slider_number;
             if (DEBUG_SLIDERS)
