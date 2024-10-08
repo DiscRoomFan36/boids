@@ -31,7 +31,9 @@ function renderBoids(display, go) {
     const height = Math.floor(display.ctx.canvas.height / SQUISH_FACTOR);
     const buffer_size = width * height * NUM_COLOR_COMPONENTS;
     // TODO handle the case where the width and height perfectly swap
-    if (display.backBufferArray.length !== buffer_size) {
+    if (display.backImageWidth !== width || display.backImageHeight !== height) {
+        // if (display.backBufferArray.length !== buffer_size) {
+        console.log("Oh god. were resizing the buffer");
         if (display.backBufferArray.length < buffer_size) {
             // make the buffer bigger
             display.backBufferArray = new Uint8ClampedArray(buffer_size);
@@ -42,9 +44,8 @@ function renderBoids(display, go) {
             throw new Error("2D context is not supported");
         display.backCtx = backCtx;
         display.backCtx.imageSmoothingEnabled = false;
-        // display.backBufferArray.slice()
-        // display.backCtx = new OffscreenCanvas(width, height)
-        // display.backBufferArray
+        display.backImageWidth = width;
+        display.backImageHeight = height;
     }
     const buffer = display.backBufferArray.subarray(0, buffer_size);
     const numFilled = go.GetNextFrame(width, height, buffer);
@@ -137,8 +138,8 @@ function setup_sliders(go) {
     ctx.imageSmoothingEnabled = false;
     const [backImageWidth, backImageHeight] = [ctx.canvas.width, ctx.canvas.height];
     // TODO why is this an error?
-    // const backCanvas = new OffscreenCanvas(backImageWidth, backImageHeight)
-    const backCanvas = new OffscreenCanvas(1, 1);
+    const backCanvas = new OffscreenCanvas(backImageWidth, backImageHeight);
+    // const backCanvas = new OffscreenCanvas(1, 1)
     const backCtx = backCanvas.getContext("2d");
     if (backCtx === null)
         throw new Error("2D context is not supported");
@@ -148,8 +149,8 @@ function setup_sliders(go) {
         ctx,
         backCtx,
         backBufferArray,
-        // backImageWidth,
-        // backImageHeight,
+        backImageWidth,
+        backImageHeight,
     };
     let prevTimestamp = 0;
     const frame = (timestamp) => {
@@ -162,7 +163,6 @@ function setup_sliders(go) {
         let startTime = performance.now();
         renderBoids(display, go);
         let endTime = performance.now();
-        // TODO Display FPS
         // In ms
         const renderTime = endTime - startTime;
         if (DEBUG_DISPLAY)
