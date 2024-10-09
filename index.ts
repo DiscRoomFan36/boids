@@ -138,6 +138,7 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
     }
 }
 
+// puts some sliders up to control some parameters
 function setup_sliders(go: GoFunctions) {
     const properties: Object = go.GetProperties();
     if (DEBUG_SLIDERS) console.log("typescript got properties", properties);
@@ -155,16 +156,22 @@ function setup_sliders(go: GoFunctions) {
         if (DEBUG_SLIDERS) console.log(`    min: ${min}, max: ${max}`);
 
         const id = `slider_${key}`;
+        const para_id = `${id}_paragraph`;
+        const paragraph_text = `${key.replace(/_/g, " ")}`
+        const initial_value = (min+max)/2
 
         // TODO set value based on something.
         // TODO a lot of numbers must be between 0-1, because sliders only use ints (look up if this is the case.) we will have to get creative
-        const html_string = `<input type="range" min="${min}" max="${max}" value="${(min+max)/2}" class="slider" id="${id}">`;
+        const html_string = `
+            <p class="sliderKey" id="${para_id}">${paragraph_text}: ${initial_value}</p>
+            <input type="range" min="${min}" max="${max}" value="${initial_value}" class="slider" id="${id}">
+        `;
 
-        
+
         const new_thing = document.createElement("div");
         new_thing.className = "rangeHolder";
         new_thing.innerHTML = html_string;
-        
+
         slider_container.appendChild(new_thing);
 
         const slider = document.getElementById(id) as HTMLInputElement | null;
@@ -175,6 +182,11 @@ function setup_sliders(go: GoFunctions) {
             const slider_value_string = (event.target as HTMLInputElement).value;
 
             const slider_number = Number(slider_value_string);
+
+            const slider_text = document.getElementById(para_id) as HTMLParagraphElement | null;
+            if (slider_text === null) throw new Error(`could not find slider_text ${para_id}`);
+
+            slider_text.textContent = `${paragraph_text}: ${slider_number}`
 
             // https://stackoverflow.com/questions/12710905/how-do-i-dynamically-assign-properties-to-an-object-in-typescript
             const obj: Record<string,number> = {};

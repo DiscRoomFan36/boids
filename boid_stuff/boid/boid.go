@@ -11,18 +11,12 @@ import (
 )
 
 // TODO clean up all of these!
-// const VISUAL_RANGE = 50
-const SEPARATION_MIN_DISTANCE = 20
-
 const SEPARATION_FACTOR = 0.05
 const ALIGNMENT_FACTOR = 0.05
 const COHESION_FACTOR = 0.005
 
 const MARGIN = 100
 const MARGIN_TURN_FACTOR = 0.4
-
-const MAX_SPEED = 25
-const MIN_SPEED = MAX_SPEED / 5
 
 const BOUNDING = true
 const WRAPPING = false
@@ -50,7 +44,13 @@ type Boid_simulation[T Vector.Float] struct {
 	// TODO add factors here (Sep, ali, coh, ect...)
 
 	// Properties
-	Visual_Range     T `Property:"1-100"`
+	// TODO Set defaults based on tags, and also inform typescript
+	Visual_Range            T `Property:"1-100"`
+	Separation_Min_Distance T `Property:"0-50"`
+
+	Max_Speed T `Property:"1-50"`
+	Min_Speed T `Property:"0-25"`
+
 	Boid_Draw_Radius T `Property:"0-20"`
 
 	// Working Areas
@@ -71,7 +71,12 @@ func New_boid_simulation[T Vector.Float](width, height T, num_boids int) Boid_si
 		Height: height,
 
 		// Properties, (TODO make a note about not using constants)
-		Visual_Range:     50,
+		Visual_Range:            50,
+		Separation_Min_Distance: 20,
+
+		Max_Speed: 25,
+		Min_Speed: 5,
+
 		Boid_Draw_Radius: 7,
 
 		accelerations: make([]Vector.Vector2[T], num_boids),
@@ -97,12 +102,13 @@ func New_boid_simulation[T Vector.Float](width, height T, num_boids int) Boid_si
 }
 
 // TODO: make this return a Vector, so it can also be affected by dt
-func (b *Boid[T]) adjust_speed() {
+func (boid_sim *Boid_simulation[T]) adjust_speed(b *Boid[T]) {
+	// func (b *Boid[T]) adjust_speed() {
 	speed := b.Velocity.Mag()
-	if speed > MAX_SPEED {
-		b.Velocity.Mult(MAX_SPEED / speed)
-	} else if speed < MIN_SPEED {
-		b.Velocity.Mult(MIN_SPEED / speed)
+	if speed > boid_sim.Max_Speed {
+		b.Velocity.Mult(boid_sim.Max_Speed / speed)
+	} else if speed < boid_sim.Min_Speed {
+		b.Velocity.Mult(boid_sim.Min_Speed / speed)
 	}
 }
 
@@ -173,7 +179,7 @@ func (boid_sim *Boid_simulation[T]) set_close_boids(index int) {
 		}
 
 		// super close boids get treated differently
-		if dist_sqr < SEPARATION_MIN_DISTANCE*SEPARATION_MIN_DISTANCE {
+		if dist_sqr < boid_sim.Separation_Min_Distance*boid_sim.Separation_Min_Distance {
 			boid_sim.super_close_positions = append(boid_sim.super_close_positions, other_boid.Position)
 		} else {
 			boid_sim.close_boids.positions = append(boid_sim.close_boids.positions, other_boid.Position)
@@ -275,7 +281,8 @@ func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
 		boid_sim.Boids[i].Velocity.Add(Vector.Mult(boid_sim.accelerations[i], dt))
 
 		// TODO make this cleaner somehow, do we even have to limit speed?
-		boid_sim.Boids[i].adjust_speed()
+		boid_sim.adjust_speed(&boid_sim.Boids[i])
+		// boid_sim.Boids[i].adjust_speed()
 
 		boid_sim.Boids[i].Position.Add(Vector.Mult(boid_sim.Boids[i].Velocity, dt))
 
@@ -351,7 +358,7 @@ func (boid_sim Boid_simulation[T]) Draw_Into_Image(img *Image.Image) {
 
 		// get cool color for boid
 
-		speed := b.Velocity.Mag() / MAX_SPEED
+		speed := b.Velocity.Mag() / boid_sim.Max_Speed
 
 		clamp := func(x, mini, maxi T) T {
 			return max(mini, min(x, maxi))
@@ -361,16 +368,6 @@ func (boid_sim Boid_simulation[T]) Draw_Into_Image(img *Image.Image) {
 		H := math.Mod(float64(clamp(speed, 0, 1)*360)*SHIFT_FACTOR, 360)
 
 		boid_color := Image.HSL_to_RGB(H, 0.75, 0.6)
-
-		// TODO HSL
-		// boid_color := Image.Color{
-		// 	R: uint8(Vector.Round(speed * 255)),
-		// 	// G: uint8(Vector.Round(speed * 255)),
-		// 	G: 240,
-		// 	// B: uint8(Vector.Round(speed * 255)),
-		// 	B: uint8(Vector.Round((1 - speed) * 255)),
-		// 	A: 255,
-		// }
 
 		// Draw both sides
 		Image.Draw_Triangle(img, boid_shape[0], boid_shape[1], boid_shape[2], boid_color)
