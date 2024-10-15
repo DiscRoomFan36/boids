@@ -246,7 +246,6 @@ func (quadtree *Quadtree[T]) Setup_tree(points []Vector.Vector2[T]) int {
 
 		secondary_points_index := 0
 
-		// TODO use queue
 		// rust would have warned me about this overflowing
 		for len(stack) > 0 {
 			// i think a queue is better here, for a breadth first search.

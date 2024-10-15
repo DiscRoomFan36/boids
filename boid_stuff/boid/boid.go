@@ -13,11 +13,7 @@ import (
 	"boidstuff.com/Vector"
 )
 
-// TODO clean up all of these!
-
-// const MARGIN = 100
-// const MARGIN_TURN_FACTOR = 0.4
-
+// TODO put these into the boid_sim as well.
 const BOUNDING = true
 const WRAPPING = false
 
@@ -31,7 +27,6 @@ type Boid[T Vector.Float] struct {
 }
 
 // SOA for the rescue!
-// TODO SOA the vectors too? yes, but after quad tree
 type boid_array[T Vector.Float] struct {
 	positions  []Vector.Vector2[T]
 	velocities []Vector.Vector2[T]
@@ -42,8 +37,7 @@ type Boid_simulation[T Vector.Float] struct {
 
 	Width, Height T
 
-	// Properties
-	// TODO inform typescript
+	// Properties, in rough order of when their used
 
 	Visual_Range            T `Property:"1;100" Default:"50"`
 	Separation_Min_Distance T `Property:"0;50" Default:"20"`
@@ -218,7 +212,6 @@ func (boid_sim *Boid_simulation[T]) set_close_boids(index int) {
 	}
 }
 
-// TODO speed
 // NOTE dt is in seconds
 func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
 	boid_sim.set_up_quadtree()
@@ -231,43 +224,39 @@ func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
 		boid_sim.set_close_boids(int(i))
 
 		// Separation
-		// NOTE this is the same as move += (my_boid-pos) for all super_close_boids
-		// TODO clean up here
-		move := Vector.Vector2[T]{}
-		// move := Vector.Mult(my_boid.Position, T(len(boid_sim.super_close_positions)))
-		// move.Sub(boid_sim.super_close_positions...)
+		sep := Vector.Vector2[T]{}
 		for _, other_pos := range boid_sim.super_close_positions {
-			move.Add(Vector.Sub(my_boid.Position, other_pos))
+			sep.Add(Vector.Sub(my_boid.Position, other_pos))
 		}
 
 		// Alignment
-		avg_vel := Vector.Add(Vector.Vector2[T]{}, boid_sim.close_boids.velocities...)
+		align := Vector.Add(Vector.Vector2[T]{}, boid_sim.close_boids.velocities...)
 		// Cohesion
-		pos_sum := Vector.Add(Vector.Vector2[T]{}, boid_sim.close_boids.positions...)
+		coh := Vector.Add(Vector.Vector2[T]{}, boid_sim.close_boids.positions...)
 
 		num_close_boids := len(boid_sim.close_boids.positions)
 		if num_close_boids > 0 {
-			avg_vel.Mult(1 / T(num_close_boids))
-			avg_vel.Sub(my_boid.Velocity)
+			align.Mult(1 / T(num_close_boids))
+			align.Sub(my_boid.Velocity)
 
-			pos_sum.Mult(1 / T(num_close_boids))
-			pos_sum.Sub(my_boid.Position)
+			coh.Mult(1 / T(num_close_boids))
+			coh.Sub(my_boid.Position)
 		}
 
-		// TODO refactor so move is sep ect... maybe?
-		sep := Vector.Mult(move, boid_sim.Separation_Factor)
-		align := Vector.Mult(avg_vel, boid_sim.Alignment_Factor)
-		coh := Vector.Mult(pos_sum, boid_sim.Cohesion_Factor)
-
-		// TODO get rid of bounding force function, pull it in
-		bounding := Vector.Vector2[T]{}
-		if BOUNDING {
-			bounding = Vector.Mult(boid_sim.bounding_force(int(i)), boid_sim.Margin_Turn_Factor)
-		}
+		sep.Mult(boid_sim.Separation_Factor)
+		align.Mult(boid_sim.Alignment_Factor)
+		coh.Mult(boid_sim.Cohesion_Factor)
 
 		// NOTE remember to not change accelerations, just assign to it. its got trash in it
-		// TODO somehow put limiting speed here?
-		boid_sim.accelerations[i] = Vector.Add(sep, align, coh, bounding)
+		boid_sim.accelerations[i] = Vector.Add(sep, align, coh)
+
+		if BOUNDING {
+			// TODO get rid of bounding force function, pull it in
+			bounding := Vector.Mult(boid_sim.bounding_force(int(i)), boid_sim.Margin_Turn_Factor)
+			boid_sim.accelerations[i].Add(bounding)
+		}
+
+		// TODO somehow put limiting speed around here?
 
 		// OTHER Additions
 
@@ -313,7 +302,6 @@ func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
 
 		// TODO make this cleaner somehow, do we even have to limit speed?
 		boid_sim.adjust_speed(&boid_sim.Boids[i])
-		// boid_sim.Boids[i].adjust_speed()
 
 		boid_sim.Boids[i].Position.Add(Vector.Mult(boid_sim.Boids[i].Velocity, dt))
 
@@ -325,7 +313,6 @@ func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
 	}
 }
 
-// TODO HSL colors
 var boid_heading_color = Image.Color{R: 10, G: 240, B: 10, A: 255}
 var boid_boundary_color = Image.Color{R: 240, G: 240, B: 240, A: 255}
 

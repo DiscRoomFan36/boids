@@ -159,10 +159,6 @@ func GetNextFrame() js.Func {
 		if len(args) != 3 {
 			return "dumb-ass, you gotta pass in specific stuff. check the description of this function"
 		}
-		// TODO this could work but i think Type() just returns Object. no love for ts
-		// if args[0].Type().String() != "Uint8ClampedArray" {
-		// 	return "dumb-ass, you gotta pass in an array buffer to this function"
-		// }
 
 		width := args[0].Int()
 		height := args[1].Int()

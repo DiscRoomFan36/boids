@@ -33,7 +33,7 @@ func Round[T Number](x T) int {
 		rounded = int((x*2 - 1) / 2)
 	}
 
-	// TODO Speed up if we need it
+	// NOTE Speed up if we need it
 	if Abs(T(rounded)-x) >= 1 {
 		// Overflow!!!
 		log.Fatalf("oh no, the rounding did not work!! orig: %v got: %v\n", x, rounded)
@@ -126,7 +126,7 @@ func Transform[T Number, U Number](v Vector2[T]) Vector2[U] {
 	}
 }
 
-// TODO math.Asin might be wrong here, can work around with + Pi/2
+// NOTE math.Asin might be wrong here, can work around with + Pi/2
 func GetTheta[T Float](a Vector2[T]) T {
 	return T(math.Asin(float64(Normalized(a).X)))
 }

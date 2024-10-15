@@ -1,12 +1,4 @@
-// TODO: Something about this
-// import { thing } from "./go_wasm";
-// import { Go } from "./wasm_exec";
-// Go()
-
-// TODO
-// if (typeof ImageDimensions !== 'function') {
-//     throw new Error("No ImageDimensions functions");
-// }
+// typescript glue code.
 
 const DEBUG_DISPLAY = true
 const DEBUG_SLIDERS = true
@@ -41,7 +33,6 @@ async function GetGoFunctions(): Promise<GoFunctions> {
 // Credit to rexim for the inspiration: https://github.com/tsoding/koil
 interface Display {
     ctx: CanvasRenderingContext2D;
-    // TODO why is this an error?
     backCtx: OffscreenCanvasRenderingContext2D;
 
     // imageData: ImageData
@@ -61,9 +52,7 @@ function renderBoids(display: Display, go: GoFunctions) {
 
     const buffer_size = width * height * NUM_COLOR_COMPONENTS;
 
-    // TODO handle the case where the width and height perfectly swap
     if (display.backImageWidth !== width || display.backImageHeight !== height) {
-    // if (display.backBufferArray.length !== buffer_size) {
         console.log("Oh god. were resizing the buffer");
 
         if (display.backBufferArray.length < buffer_size) {
@@ -168,7 +157,6 @@ function setup_sliders(go: GoFunctions) {
             return (x-0)/(1000-0)*(max-min) + min
         }
 
-        // TODO set value based on something.
         // TODO a lot of numbers must be between 0-1, because sliders only use ints (look up if this is the case.) we will have to get creative
         const html_string = `
             <p class="sliderKey" id="${para_id}">
@@ -176,8 +164,6 @@ function setup_sliders(go: GoFunctions) {
             </p>
             <input type="range" min="0" max="1000" value="${map_range_to_slider_number(initial_value)}" class="slider" id="${id}">
             `;
-        // <input type="range" min="${min}" max="${max}" value="${initial_value}" class="slider" id="${id}">
-
 
         const new_thing = document.createElement("div");
         new_thing.className = "rangeHolder";
@@ -225,7 +211,6 @@ function setup_sliders(go: GoFunctions) {
 
     const [backImageWidth, backImageHeight] = [ctx.canvas.width, ctx.canvas.height]
 
-    // TODO why is this an error?
     const backCanvas = new OffscreenCanvas(backImageWidth, backImageHeight)
     // const backCanvas = new OffscreenCanvas(1, 1)
 
@@ -251,7 +236,6 @@ function setup_sliders(go: GoFunctions) {
         ctx.canvas.height = window.innerHeight;
 
         const deltaTime = (timestamp - prevTimestamp);
-        // const time = timestamp/1000;
         prevTimestamp = timestamp;
 
         // TODO Don't need delta time, boid thing dose it for us? change?

@@ -1,12 +1,5 @@
 "use strict";
-// TODO: Something about this
-// import { thing } from "./go_wasm";
-// import { Go } from "./wasm_exec";
-// Go()
-// TODO
-// if (typeof ImageDimensions !== 'function') {
-//     throw new Error("No ImageDimensions functions");
-// }
+// typescript glue code.
 const DEBUG_DISPLAY = true;
 const DEBUG_SLIDERS = true;
 // NOTE we keep the @ts-ignore's in here
@@ -30,9 +23,7 @@ function renderBoids(display, go) {
     const width = Math.floor(display.ctx.canvas.width / SQUISH_FACTOR);
     const height = Math.floor(display.ctx.canvas.height / SQUISH_FACTOR);
     const buffer_size = width * height * NUM_COLOR_COMPONENTS;
-    // TODO handle the case where the width and height perfectly swap
     if (display.backImageWidth !== width || display.backImageHeight !== height) {
-        // if (display.backBufferArray.length !== buffer_size) {
         console.log("Oh god. were resizing the buffer");
         if (display.backBufferArray.length < buffer_size) {
             // make the buffer bigger
@@ -116,7 +107,6 @@ function setup_sliders(go) {
         const map_range_to_real_range = (x) => {
             return (x - 0) / (1000 - 0) * (max - min) + min;
         };
-        // TODO set value based on something.
         // TODO a lot of numbers must be between 0-1, because sliders only use ints (look up if this is the case.) we will have to get creative
         const html_string = `
             <p class="sliderKey" id="${para_id}">
@@ -124,7 +114,6 @@ function setup_sliders(go) {
             </p>
             <input type="range" min="0" max="1000" value="${map_range_to_slider_number(initial_value)}" class="slider" id="${id}">
             `;
-        // <input type="range" min="${min}" max="${max}" value="${initial_value}" class="slider" id="${id}">
         const new_thing = document.createElement("div");
         new_thing.className = "rangeHolder";
         new_thing.innerHTML = html_string;
@@ -160,7 +149,6 @@ function setup_sliders(go) {
         throw new Error("2D context is not supported");
     ctx.imageSmoothingEnabled = false;
     const [backImageWidth, backImageHeight] = [ctx.canvas.width, ctx.canvas.height];
-    // TODO why is this an error?
     const backCanvas = new OffscreenCanvas(backImageWidth, backImageHeight);
     // const backCanvas = new OffscreenCanvas(1, 1)
     const backCtx = backCanvas.getContext("2d");
@@ -180,7 +168,6 @@ function setup_sliders(go) {
         ctx.canvas.width = window.innerWidth;
         ctx.canvas.height = window.innerHeight;
         const deltaTime = (timestamp - prevTimestamp);
-        // const time = timestamp/1000;
         prevTimestamp = timestamp;
         // TODO Don't need delta time, boid thing dose it for us? change?
         let startTime = performance.now();
