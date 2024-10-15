@@ -160,12 +160,22 @@ function setup_sliders(go: GoFunctions) {
         const paragraph_text = `${key.replace(/_/g, " ")}`
         const initial_value = (min+max)/2
 
+        const map_range_to_slider_number = (x: number): number => {
+            return (x-min)/(max-min)*(1000-0) + 0
+        }
+        const map_range_to_real_range = (x: number): number => {
+            return (x-0)/(1000-0)*(max-min) + min
+        }
+
         // TODO set value based on something.
         // TODO a lot of numbers must be between 0-1, because sliders only use ints (look up if this is the case.) we will have to get creative
         const html_string = `
-            <p class="sliderKey" id="${para_id}">${paragraph_text}: ${initial_value}</p>
-            <input type="range" min="${min}" max="${max}" value="${initial_value}" class="slider" id="${id}">
-        `;
+            <p class="sliderKey" id="${para_id}">
+                ${paragraph_text}: ${initial_value.toPrecision(2)}
+            </p>
+            <input type="range" min="0" max="1000" value="${map_range_to_slider_number(initial_value)}" class="slider" id="${id}">
+            `;
+        // <input type="range" min="${min}" max="${max}" value="${initial_value}" class="slider" id="${id}">
 
 
         const new_thing = document.createElement("div");
@@ -182,15 +192,16 @@ function setup_sliders(go: GoFunctions) {
             const slider_value_string = (event.target as HTMLInputElement).value;
 
             const slider_number = Number(slider_value_string);
+            // const slider_number_mapped = map_range_to_real_range(slider_number)
 
             const slider_text = document.getElementById(para_id) as HTMLParagraphElement | null;
             if (slider_text === null) throw new Error(`could not find slider_text ${para_id}`);
 
-            slider_text.textContent = `${paragraph_text}: ${slider_number}`
+            slider_text.textContent = `${paragraph_text}: ${map_range_to_real_range(slider_number).toPrecision(2)}`
 
             // https://stackoverflow.com/questions/12710905/how-do-i-dynamically-assign-properties-to-an-object-in-typescript
             const obj: Record<string,number> = {};
-            obj[key] = slider_number;
+            obj[key] = map_range_to_real_range(slider_number);
 
             if (DEBUG_SLIDERS) console.log(obj);
 
