@@ -97,17 +97,19 @@ function setup_sliders(go) {
     const slider_container = document.getElementById("slideContainer");
     if (slider_container === null)
         throw new Error("Cannot Get slider container");
+    // TODO for the lings that have a small range (like cohesion factor) make the value the square of the number.
+    // TODO sort the outputs, the entries returns sudo random order, not good
     for (const [key, value] of Object.entries(properties)) {
         if (DEBUG_SLIDERS)
             console.log(`typescript: ${key}: ${value}`);
-        const [min_s, max_s] = value.split("-");
-        const [min, max] = [parseFloat(min_s), parseFloat(max_s)];
+        const [min_s, max_s, default_s] = value.split(";");
+        const [min, max, default_value] = [parseFloat(min_s), parseFloat(max_s), parseFloat(default_s)];
         if (DEBUG_SLIDERS)
-            console.log(`    min: ${min}, max: ${max}`);
+            console.log(`    min: ${min}, max: ${max}, default: ${default_value}`);
         const id = `slider_${key}`;
         const para_id = `${id}_paragraph`;
         const paragraph_text = `${key.replace(/_/g, " ")}`;
-        const initial_value = (min + max) / 2;
+        const initial_value = default_value;
         const map_range_to_slider_number = (x) => {
             return (x - min) / (max - min) * (1000 - 0) + 0;
         };
@@ -117,7 +119,9 @@ function setup_sliders(go) {
         // TODO set value based on something.
         // TODO a lot of numbers must be between 0-1, because sliders only use ints (look up if this is the case.) we will have to get creative
         const html_string = `
-            <p class="sliderKey" id="${para_id}">${paragraph_text}: ${initial_value.toPrecision(2)}</p>
+            <p class="sliderKey" id="${para_id}">
+                ${paragraph_text}: ${initial_value.toPrecision(2)}
+            </p>
             <input type="range" min="0" max="1000" value="${map_range_to_slider_number(initial_value)}" class="slider" id="${id}">
             `;
         // <input type="range" min="${min}" max="${max}" value="${initial_value}" class="slider" id="${id}">

@@ -2,8 +2,11 @@ package boid
 
 import (
 	"fmt"
+	"log"
 	"math"
 	"math/rand"
+	"reflect"
+	"strconv"
 
 	"boidstuff.com/Image"
 	quadtree "boidstuff.com/Quadtree"
@@ -11,12 +14,9 @@ import (
 )
 
 // TODO clean up all of these!
-const SEPARATION_FACTOR = 0.05
-const ALIGNMENT_FACTOR = 0.05
-const COHESION_FACTOR = 0.005
 
-const MARGIN = 100
-const MARGIN_TURN_FACTOR = 0.4
+// const MARGIN = 100
+// const MARGIN_TURN_FACTOR = 0.4
 
 const BOUNDING = true
 const WRAPPING = false
@@ -41,17 +41,30 @@ type Boid_simulation[T Vector.Float] struct {
 	Boids []Boid[T]
 
 	Width, Height T
-	// TODO add factors here (Sep, ali, coh, ect...)
 
 	// Properties
-	// TODO Set defaults based on tags, and also inform typescript
-	Visual_Range            T `Property:"1-100"`
-	Separation_Min_Distance T `Property:"0-50"`
+	// TODO inform typescript
 
-	Max_Speed T `Property:"1-50"`
-	Min_Speed T `Property:"0-25"`
+	Visual_Range            T `Property:"1;100" Default:"50"`
+	Separation_Min_Distance T `Property:"0;50" Default:"20"`
 
-	Boid_Draw_Radius T `Property:"0-20"`
+	Separation_Factor T `Property:"0;1" Default:"0.05"`
+	Alignment_Factor  T `Property:"0;1" Default:"0.05"`
+	Cohesion_Factor   T `Property:"0;1" Default:"0.005"`
+
+	Margin             T `Property:"0;1000" Default:"100"`
+	Margin_Turn_Factor T `Property:"0;1000" Default:"0.4"`
+
+	Random_Draw_Factor T `Property:"0;1" Default:"0.01"`
+	Center_Draw_Factor T `Property:"0;1" Default:"0.1"`
+
+	Wind_X_Factor T `Property:"-1;1" Default:"-0.05"`
+	Wind_Y_Factor T `Property:"-1;1" Default:"-0.05"`
+
+	Max_Speed T `Property:"1;50" Default:"25"`
+	Min_Speed T `Property:"0;25" Default:"5"`
+
+	Boid_Draw_Radius T `Property:"0;20" Default:"7"`
 
 	// Working Areas
 	accelerations         []Vector.Vector2[T]
@@ -70,15 +83,6 @@ func New_boid_simulation[T Vector.Float](width, height T, num_boids int) Boid_si
 		Width:  width,
 		Height: height,
 
-		// Properties, (TODO make a note about not using constants)
-		Visual_Range:            50,
-		Separation_Min_Distance: 20,
-
-		Max_Speed: 25,
-		Min_Speed: 5,
-
-		Boid_Draw_Radius: 7,
-
 		accelerations: make([]Vector.Vector2[T], num_boids),
 		close_boids: boid_array[T]{
 			positions:  make([]Vector.Vector2[T], 0, INITIAL_ARRAY_SIZE),
@@ -86,8 +90,34 @@ func New_boid_simulation[T Vector.Float](width, height T, num_boids int) Boid_si
 		},
 		super_close_positions: make([]Vector.Vector2[T], 0, INITIAL_ARRAY_SIZE),
 
-		// quadtree: quadtree.Quadtree[T]{},
 		quadtree: quadtree.New_quadtree[T](),
+	}
+
+	// Set Defaults
+	s := reflect.ValueOf(&boid_sim).Elem()
+	typeOfT := s.Type()
+	for i := 0; i < s.NumField(); i++ {
+		f := s.Field(i)
+		property_tag := typeOfT.Field(i).Tag.Get("Property")
+		if len(property_tag) == 0 {
+			continue // we don't need to set a default
+		}
+
+		tag := typeOfT.Field(i).Tag.Get("Default")
+		if len(tag) == 0 {
+			log.Fatalf("Property field (%v) needs a default value", typeOfT.Field(i).Name)
+		}
+
+		if !f.CanInterface() {
+			log.Panicf("tag that has property cannot be interfaced. %d: %v %v\n", i, typeOfT.Field(i).Name, f.Type())
+		}
+
+		default_value, err := strconv.ParseFloat(tag, 64)
+		if err != nil {
+			log.Fatalf("default value (from %v) could not be parsed into float\n", typeOfT.Field(i).Name)
+		}
+
+		f.SetFloat(default_value)
 	}
 
 	for i := range boid_sim.Boids {
@@ -115,17 +145,17 @@ func (boid_sim *Boid_simulation[T]) adjust_speed(b *Boid[T]) {
 func (boid_sim Boid_simulation[T]) bounding_force(index int) Vector.Vector2[T] {
 	vel := Vector.Vector2[T]{}
 
-	if boid_sim.Boids[index].Position.X < MARGIN {
+	if boid_sim.Boids[index].Position.X < boid_sim.Margin {
 		vel.X += 1
 	}
-	if boid_sim.Boids[index].Position.X > T(boid_sim.Width-MARGIN) {
+	if boid_sim.Boids[index].Position.X > T(boid_sim.Width-boid_sim.Margin) {
 		vel.X -= 1
 	}
 
-	if boid_sim.Boids[index].Position.Y < MARGIN {
+	if boid_sim.Boids[index].Position.Y < boid_sim.Margin {
 		vel.Y += 1
 	}
-	if boid_sim.Boids[index].Position.Y > T(boid_sim.Height-MARGIN) {
+	if boid_sim.Boids[index].Position.Y > T(boid_sim.Height-boid_sim.Margin) {
 		vel.Y -= 1
 	}
 
@@ -202,6 +232,7 @@ func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
 
 		// Separation
 		// NOTE this is the same as move += (my_boid-pos) for all super_close_boids
+		// TODO clean up here
 		move := Vector.Vector2[T]{}
 		// move := Vector.Mult(my_boid.Position, T(len(boid_sim.super_close_positions)))
 		// move.Sub(boid_sim.super_close_positions...)
@@ -224,14 +255,14 @@ func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
 		}
 
 		// TODO refactor so move is sep ect... maybe?
-		sep := Vector.Mult(move, SEPARATION_FACTOR)
-		align := Vector.Mult(avg_vel, ALIGNMENT_FACTOR)
-		coh := Vector.Mult(pos_sum, COHESION_FACTOR)
+		sep := Vector.Mult(move, boid_sim.Separation_Factor)
+		align := Vector.Mult(avg_vel, boid_sim.Alignment_Factor)
+		coh := Vector.Mult(pos_sum, boid_sim.Cohesion_Factor)
 
 		// TODO get rid of bounding force function, pull it in
 		bounding := Vector.Vector2[T]{}
 		if BOUNDING {
-			bounding = Vector.Mult(boid_sim.bounding_force(int(i)), MARGIN_TURN_FACTOR)
+			bounding = Vector.Mult(boid_sim.bounding_force(int(i)), boid_sim.Margin_Turn_Factor)
 		}
 
 		// NOTE remember to not change accelerations, just assign to it. its got trash in it
@@ -245,7 +276,7 @@ func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
 		// wobble := Vector.Mult(Vector.Random_unit_vector[T](), WOBBLE_FACTOR)
 
 		// just move some of them in different directions, semi randomly
-		const RANDOM_DRAW_FACTOR = 0.01
+		// const RANDOM_DRAW_FACTOR = 0.01
 		random_draw := Vector.Vector2[T]{}
 		if i%3 == 0 {
 			random_draw.X += 1
@@ -253,19 +284,19 @@ func (boid_sim *Boid_simulation[T]) Update_boids(dt T) {
 			random_draw.X -= 1
 			// draw.Y += 1
 		}
-		random_draw.Mult(RANDOM_DRAW_FACTOR)
+		random_draw.Mult(boid_sim.Random_Draw_Factor)
 		boid_sim.accelerations[i].Add(random_draw)
 
-		const CENTER_DRAW_FACTOR = 0.1
+		// const CENTER_DRAW_FACTOR = 0.1
 		center := Vector.Make_Vector2(boid_sim.Width/2, boid_sim.Height/2)
 		if Vector.Dist(my_boid.Position, center) > min(boid_sim.Width, boid_sim.Height)/5 {
 			center_pointer := Vector.Normalized(Vector.Sub(center, my_boid.Position))
-			center_draw := Vector.Mult(center_pointer, CENTER_DRAW_FACTOR)
+			center_draw := Vector.Mult(center_pointer, boid_sim.Center_Draw_Factor)
 
 			boid_sim.accelerations[i].Add(center_draw)
 		}
 
-		wind := Vector.Make_Vector2[T](-0.05, -0.05)
+		wind := Vector.Make_Vector2[T](boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
 		boid_sim.accelerations[i].Add(wind)
 
 	}
@@ -311,7 +342,7 @@ func (boid_sim Boid_simulation[T]) Draw_Into_Image(img *Image.Image) {
 	}
 
 	if DEBUG_BOUNDARY {
-		margin := int(MARGIN * scale_factor)
+		margin := int(boid_sim.Margin * scale_factor)
 		boundary_points := [4]Vector.Vector2[int]{
 			{X: margin, Y: margin},
 			{X: img.Width - margin, Y: margin},

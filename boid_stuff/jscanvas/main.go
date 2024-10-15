@@ -29,7 +29,7 @@ const NUM_BOIDS = 1000
 const BOID_SCALE = 2
 
 func parse_property_tag(tag string) (float64, float64, error) {
-	result := strings.Split(tag, "-")
+	result := strings.Split(tag, ";")
 	if len(result) != 2 {
 		return 0, 0, fmt.Errorf("length of split is %v", len(result))
 	}
@@ -79,9 +79,18 @@ func GetProperties() js.Func {
 				log.Panicf("could not parse property %v with error: %v\n", typeOfT.Field(i).Name, err)
 			}
 
-			fmt.Printf("min %v, max %v\n", min, max)
+			default_tag := typeOfT.Field(i).Tag.Get("Default")
+			if len(default_tag) == 0 {
+				log.Fatalf("Property %v needs a default\n", typeOfT.Field(i).Name)
+			}
+			default_value, err := strconv.ParseFloat(default_tag, 64)
+			if err != nil {
+				log.Fatalf("default value (from %v) could not be parsed into float\n", typeOfT.Field(i).Name)
+			}
 
-			properties[typeOfT.Field(i).Name] = fmt.Sprintf("%v-%v", min, max)
+			fmt.Printf("min %v, max %v, default %v\n", min, max, default_value)
+
+			properties[typeOfT.Field(i).Name] = fmt.Sprintf("%v;%v;%v", min, max, default_value)
 		}
 
 		return properties

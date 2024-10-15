@@ -146,19 +146,20 @@ function setup_sliders(go: GoFunctions) {
     const slider_container = document.getElementById("slideContainer");
     if (slider_container === null) throw new Error("Cannot Get slider container");
 
-
+    // TODO for the lings that have a small range (like cohesion factor) make the value the square of the number.
+    // TODO sort the outputs, the entries returns sudo random order, not good
     for (const [key, value] of Object.entries(properties)) {
 
         if (DEBUG_SLIDERS) console.log(`typescript: ${key}: ${value}`);
-        const [min_s, max_s] = (value as string).split("-");
+        const [min_s, max_s, default_s] = (value as string).split(";");
 
-        const [min, max] = [parseFloat(min_s), parseFloat(max_s)];
-        if (DEBUG_SLIDERS) console.log(`    min: ${min}, max: ${max}`);
+        const [min, max, default_value] = [parseFloat(min_s), parseFloat(max_s), parseFloat(default_s)];
+        if (DEBUG_SLIDERS) console.log(`    min: ${min}, max: ${max}, default: ${default_value}`);
 
         const id = `slider_${key}`;
         const para_id = `${id}_paragraph`;
         const paragraph_text = `${key.replace(/_/g, " ")}`
-        const initial_value = (min+max)/2
+        const initial_value = default_value
 
         const map_range_to_slider_number = (x: number): number => {
             return (x-min)/(max-min)*(1000-0) + 0
