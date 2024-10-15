@@ -158,6 +158,7 @@ function setup_sliders(go: GoFunctions) {
         }
 
         // TODO a lot of numbers must be between 0-1, because sliders only use ints (look up if this is the case.) we will have to get creative
+        // TODO toPrecision might not be the best function for formatting. margin is being messed with (1.0e+2)
         const html_string = `
             <p class="sliderKey" id="${para_id}">
                 ${paragraph_text}: ${initial_value.toPrecision(2)}
