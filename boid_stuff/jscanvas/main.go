@@ -182,6 +182,10 @@ func GetNextFrame() js.Func {
 		dt := new_frame_time.Sub(last_frame_time).Seconds()
 		last_frame_time = new_frame_time
 
+		if dt > 1 {
+			dt = 1
+		}
+
 		// Calculate the next frame of boids
 		boid_sim.Update_boids(float32(dt) * 60) // Times 60 because we want this to run at 60fps and dt=1 is supposed to be one time step
 		// boid_sim.Update_boids(1)
