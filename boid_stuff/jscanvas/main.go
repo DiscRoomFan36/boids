@@ -165,8 +165,8 @@ func GetNextFrame() js.Func {
 		array := args[2]
 
 		// saves space
-		if len(img.Buffer) < width*height*4 {
-			img.Buffer = make([]byte, width*height*4)
+		if len(img.Buffer) < width*height*Image.NUM_COLOR_COMPONENTS {
+			img.Buffer = make([]byte, width*height*Image.NUM_COLOR_COMPONENTS)
 		}
 		img.Width = width
 		img.Height = height
