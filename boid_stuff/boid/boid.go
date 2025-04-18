@@ -21,70 +21,72 @@ const DEBUG_HEADING = false
 const DEBUG_BOUNDARY = true
 const DEBUG_QUADTREE = false
 
+type Boid_Float float32
+
 type Boid struct {
-	Position Vector.Vector2[float32]
-	Velocity Vector.Vector2[float32]
+	Position Vector.Vector2[Boid_Float]
+	Velocity Vector.Vector2[Boid_Float]
 }
 
 // SOA for the rescue!
 type boid_array struct {
-	positions  []Vector.Vector2[float32]
-	velocities []Vector.Vector2[float32]
+	positions  []Vector.Vector2[Boid_Float]
+	velocities []Vector.Vector2[Boid_Float]
 }
 
 type Boid_simulation struct {
 	Boids []Boid
 
-	Width, Height float32
+	Width, Height Boid_Float
 
 	// Properties, in rough order of when their used
 
-	Visual_Range            float32 `Property:"1;100" Default:"50"`
-	Separation_Min_Distance float32 `Property:"0;50" Default:"20"`
+	Visual_Range            Boid_Float `Property:"1;100" Default:"50"`
+	Separation_Min_Distance Boid_Float `Property:"0;50" Default:"20"`
 
-	Separation_Factor float32 `Property:"0;1" Default:"0.05"`
-	Alignment_Factor  float32 `Property:"0;1" Default:"0.05"`
-	Cohesion_Factor   float32 `Property:"0;1" Default:"0.005"`
+	Separation_Factor Boid_Float `Property:"0;1" Default:"0.05"`
+	Alignment_Factor  Boid_Float `Property:"0;1" Default:"0.05"`
+	Cohesion_Factor   Boid_Float `Property:"0;1" Default:"0.005"`
 
-	Margin             float32 `Property:"0;1000" Default:"100"`
-	Margin_Turn_Factor float32 `Property:"0;1000" Default:"0.4"`
+	Margin             Boid_Float `Property:"0;1000" Default:"100"`
+	Margin_Turn_Factor Boid_Float `Property:"0;1000" Default:"0.4"`
 
-	Random_Draw_Factor float32 `Property:"0;1" Default:"0.01"`
-	Center_Draw_Factor float32 `Property:"0;1" Default:"0.1"`
+	Random_Draw_Factor Boid_Float `Property:"0;1" Default:"0.01"`
+	Center_Draw_Factor Boid_Float `Property:"0;1" Default:"0.1"`
 
-	Wind_X_Factor float32 `Property:"-1;1" Default:"-0.05"`
-	Wind_Y_Factor float32 `Property:"-1;1" Default:"-0.05"`
+	Wind_X_Factor Boid_Float `Property:"-1;1" Default:"-0.05"`
+	Wind_Y_Factor Boid_Float `Property:"-1;1" Default:"-0.05"`
 
-	Max_Speed float32 `Property:"1;50" Default:"25"`
-	Min_Speed float32 `Property:"0;25" Default:"5"`
+	Max_Speed Boid_Float `Property:"1;50" Default:"25"`
+	Min_Speed Boid_Float `Property:"0;25" Default:"5"`
 
-	Boid_Draw_Radius float32 `Property:"0;20" Default:"7"`
+	Boid_Draw_Radius Boid_Float `Property:"0;20" Default:"7"`
 
 	// Working Areas
-	accelerations         []Vector.Vector2[float32]
+	accelerations         []Vector.Vector2[Boid_Float]
 	close_boids           boid_array
-	super_close_positions []Vector.Vector2[float32]
+	super_close_positions []Vector.Vector2[Boid_Float]
 
-	quadtree quadtree.Quadtree[float32]
+	quadtree quadtree.Quadtree[Boid_Float]
 }
 
 const INITIAL_ARRAY_SIZE = 32
 
-func New_boid_simulation(width, height float32, num_boids int) Boid_simulation {
+func New_boid_simulation(width, height Boid_Float, num_boids int) Boid_simulation {
 	boid_sim := Boid_simulation{
 		Boids: make([]Boid, num_boids),
 
 		Width:  width,
 		Height: height,
 
-		accelerations: make([]Vector.Vector2[float32], num_boids),
+		accelerations: make([]Vector.Vector2[Boid_Float], num_boids),
 		close_boids: boid_array{
-			positions:  make([]Vector.Vector2[float32], 0, INITIAL_ARRAY_SIZE),
-			velocities: make([]Vector.Vector2[float32], 0, INITIAL_ARRAY_SIZE),
+			positions:  make([]Vector.Vector2[Boid_Float], 0, INITIAL_ARRAY_SIZE),
+			velocities: make([]Vector.Vector2[Boid_Float], 0, INITIAL_ARRAY_SIZE),
 		},
-		super_close_positions: make([]Vector.Vector2[float32], 0, INITIAL_ARRAY_SIZE),
+		super_close_positions: make([]Vector.Vector2[Boid_Float], 0, INITIAL_ARRAY_SIZE),
 
-		quadtree: quadtree.New_quadtree[float32](),
+		quadtree: quadtree.New_quadtree[Boid_Float](),
 	}
 
 	// Set Defaults
@@ -116,10 +118,10 @@ func New_boid_simulation(width, height float32, num_boids int) Boid_simulation {
 
 	for i := range boid_sim.Boids {
 		boid_sim.Boids[i].Position = Vector.Make_Vector2(
-			rand.Float32()*float32(boid_sim.Width),
-			rand.Float32()*float32(boid_sim.Height),
+			Boid_Float(rand.Float32()*float32(boid_sim.Width)),
+			Boid_Float(rand.Float32()*float32(boid_sim.Height)),
 		)
-		boid_sim.Boids[i].Velocity = Vector.Mult(Vector.Random_unit_vector[float32](), 10)
+		boid_sim.Boids[i].Velocity = Vector.Mult(Vector.Random_unit_vector[Boid_Float](), 10)
 	}
 
 	return boid_sim
@@ -136,8 +138,8 @@ func (boid_sim *Boid_simulation) adjust_speed(b *Boid) {
 	}
 }
 
-func (boid_sim Boid_simulation) bounding_force(index int) Vector.Vector2[float32] {
-	vel := Vector.Vector2[float32]{}
+func (boid_sim Boid_simulation) bounding_force(index int) Vector.Vector2[Boid_Float] {
+	vel := Vector.Vector2[Boid_Float]{}
 
 	if boid_sim.Boids[index].Position.X < boid_sim.Margin {
 		vel.X += 1
@@ -161,7 +163,7 @@ func (boid_sim *Boid_simulation) set_up_quadtree() {
 	boid_sim.quadtree.Clear()
 
 	// TODO make this just how we store boid positions
-	boid_positions := make([]Vector.Vector2[float32], 0, len(boid_sim.Boids))
+	boid_positions := make([]Vector.Vector2[Boid_Float], 0, len(boid_sim.Boids))
 	for _, b := range boid_sim.Boids {
 		boid_positions = append(boid_positions, b.Position)
 	}
@@ -224,22 +226,22 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		boid_sim.set_close_boids(int(i))
 
 		// Separation
-		sep := Vector.Vector2[float32]{}
+		sep := Vector.Vector2[Boid_Float]{}
 		for _, other_pos := range boid_sim.super_close_positions {
 			sep.Add(Vector.Sub(my_boid.Position, other_pos))
 		}
 
 		// Alignment
-		align := Vector.Add(Vector.Vector2[float32]{}, boid_sim.close_boids.velocities...)
+		align := Vector.Add(Vector.Vector2[Boid_Float]{}, boid_sim.close_boids.velocities...)
 		// Cohesion
-		coh := Vector.Add(Vector.Vector2[float32]{}, boid_sim.close_boids.positions...)
+		coh := Vector.Add(Vector.Vector2[Boid_Float]{}, boid_sim.close_boids.positions...)
 
 		num_close_boids := len(boid_sim.close_boids.positions)
 		if num_close_boids > 0 {
-			align.Mult(1 / float32(num_close_boids))
+			align.Mult(1 / Boid_Float(num_close_boids))
 			align.Sub(my_boid.Velocity)
 
-			coh.Mult(1 / float32(num_close_boids))
+			coh.Mult(1 / Boid_Float(num_close_boids))
 			coh.Sub(my_boid.Position)
 		}
 
@@ -266,7 +268,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 
 		// just move some of them in different directions, semi randomly
 		// const RANDOM_DRAW_FACTOR = 0.01
-		random_draw := Vector.Vector2[float32]{}
+		random_draw := Vector.Vector2[Boid_Float]{}
 		if i%3 == 0 {
 			random_draw.X += 1
 		} else if i%3 == 1 {
@@ -285,7 +287,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 			boid_sim.accelerations[i].Add(center_draw)
 		}
 
-		wind := Vector.Make_Vector2[float32](boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
+		wind := Vector.Make_Vector2[Boid_Float](boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
 		boid_sim.accelerations[i].Add(wind)
 
 	}
@@ -293,12 +295,12 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	// Now update boids
 	for i := 0; i < len(boid_sim.Boids); i++ {
 		// this could be better
-		boid_sim.Boids[i].Velocity.Add(Vector.Mult(boid_sim.accelerations[i], float32(dt)))
+		boid_sim.Boids[i].Velocity.Add(Vector.Mult(boid_sim.accelerations[i], Boid_Float(dt)))
 
 		// TODO make this cleaner somehow, do we even have to limit speed?
 		boid_sim.adjust_speed(&boid_sim.Boids[i])
 
-		boid_sim.Boids[i].Position.Add(Vector.Mult(boid_sim.Boids[i].Velocity, float32(dt)))
+		boid_sim.Boids[i].Position.Add(Vector.Mult(boid_sim.Boids[i].Velocity, Boid_Float(dt)))
 
 		// makes them wrap around the screen
 		if WRAPPING {
@@ -321,7 +323,7 @@ func (boid_sim Boid_simulation) Draw_Into_Image(img *Image.Image) {
 	img.Clear_background(Image.Color{R: 24, G: 24, B: 24, A: 255})
 
 	// we map the world-space to match the image space
-	scale_factor := float32(img.Width) / boid_sim.Width
+	scale_factor := Boid_Float(img.Width) / boid_sim.Width
 
 	if DEBUG_QUADTREE {
 		boid_sim.set_up_quadtree() // so our visualization is accurate
@@ -351,7 +353,7 @@ func (boid_sim Boid_simulation) Draw_Into_Image(img *Image.Image) {
 
 		// Draw boid body
 		// TODO maybe some LOD shit, where its just a triangle? 2x speed?
-		boid_shape := [4]Vector.Vector2[float32]{
+		boid_shape := [4]Vector.Vector2[Boid_Float]{
 			{X: 0, Y: 1},      // tip
 			{X: 0, Y: -0.5},   // back
 			{X: 1, Y: -0.75},  // wing1
@@ -378,7 +380,7 @@ func (boid_sim Boid_simulation) Draw_Into_Image(img *Image.Image) {
 
 		speed := b.Velocity.Mag() / boid_sim.Max_Speed
 
-		clamp := func(x, mini, maxi float32) float32 {
+		clamp := func(x, mini, maxi Boid_Float) Boid_Float {
 			return max(mini, min(x, maxi))
 		}
 

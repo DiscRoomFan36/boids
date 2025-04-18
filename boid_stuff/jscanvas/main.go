@@ -174,8 +174,8 @@ func GetNextFrame() js.Func {
 		// TODO theres a bug here if you full screen a window...
 
 		// Cool boid thing that makes the boid follow the screen
-		boid_sim.Width = float32(width) * BOID_SCALE
-		boid_sim.Height = float32(height) * BOID_SCALE
+		boid_sim.Width = boid.Boid_Float(width) * BOID_SCALE
+		boid_sim.Height = boid.Boid_Float(height) * BOID_SCALE
 
 		// TODO accept dt maybe
 		new_frame_time := time.Now()
