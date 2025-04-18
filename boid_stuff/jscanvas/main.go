@@ -17,7 +17,7 @@ import (
 
 var img Image.Image
 
-var boid_sim boid.Boid_simulation[float32]
+var boid_sim boid.Boid_simulation
 
 var last_frame_time time.Time
 
@@ -187,7 +187,7 @@ func GetNextFrame() js.Func {
 		}
 
 		// Calculate the next frame of boids
-		boid_sim.Update_boids(float32(dt) * 60) // Times 60 because we want this to run at 60fps and dt=1 is supposed to be one time step
+		boid_sim.Update_boids(dt * 60) // Times 60 because we want this to run at 60fps and dt=1 is supposed to be one time step
 		// boid_sim.Update_boids(1)
 
 		// this might end up taking the most amount of time.
@@ -205,7 +205,7 @@ func main() {
 
 	// set img to some small thing that will grow
 	img = Image.New_image(256, 256)
-	boid_sim = boid.New_boid_simulation[float32](BOID_BOUNDS_WIDTH, BOID_BOUNDS_HEIGHT, NUM_BOIDS)
+	boid_sim = boid.New_boid_simulation(BOID_BOUNDS_WIDTH, BOID_BOUNDS_HEIGHT, NUM_BOIDS)
 
 	last_frame_time = time.Now()
 

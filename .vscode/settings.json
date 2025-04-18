@@ -3,7 +3,9 @@
 	"cSpell.words": [
 		"aabb",
 		"boidstuff",
+		"GOARCH",
 		"jscanvas",
+		"nodemon",
 		"offscreencanvas",
 		"slidecontainer"
 	],
