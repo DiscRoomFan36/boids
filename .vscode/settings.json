@@ -5,9 +5,11 @@
 		"boidstuff",
 		"GOARCH",
 		"jscanvas",
+		"maxs",
 		"nodemon",
 		"offscreencanvas",
-		"slidecontainer"
+		"slidecontainer",
+		"spacialarray"
 	],
 	"gopls": {
 		"build.env": {
