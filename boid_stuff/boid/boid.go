@@ -363,7 +363,8 @@ func (boid_sim Boid_simulation) Draw_Into_Image(img *Image.Image) {
 		// Rotate to face them in the right direction
 		theta := Vector.GetTheta(b.Velocity)
 		// TODO i don't think the wings are rotating right. hmmm
-		to_rotate := theta + math.Pi
+		// TODO this is broken...
+		to_rotate := theta
 		if b.Velocity.Y > 0 {
 			to_rotate = -theta
 		}
