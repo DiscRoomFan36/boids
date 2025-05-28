@@ -6,6 +6,8 @@ import (
 	"math/rand"
 )
 
+// TODO this math stuff is dumb, "Don't needlessly abstract." - Some Smart Guy
+
 type Int interface {
 	~int | ~uint | ~int8 | ~uint8 | ~int16 | ~uint16 | ~int32 | ~uint32 | ~int64 | ~uint64
 }
@@ -24,6 +26,7 @@ func Abs[T Number](x T) T {
 	return x
 }
 
+// To Nearest Whole number
 func Round[T Number](x T) int {
 	// Adds 0.5, works for ints and floats, look out for overflow
 	var rounded int
@@ -56,6 +59,8 @@ func Make_Vector2[T Number](x, y T) Vector2[T] {
 func (a Vector2[Number]) Splat() (Number, Number) {
 	return a.X, a.Y
 }
+
+// These math operators a dumb actually.
 
 func (a *Vector2[Number]) Add(vs ...Vector2[Number]) {
 	for _, b := range vs {
@@ -126,22 +131,16 @@ func Transform[T Number, U Number](v Vector2[T]) Vector2[U] {
 	}
 }
 
-// NOTE math.Asin might be wrong here, can work around with + Pi/2
 func GetTheta[T Float](a Vector2[T]) T {
-	return T(math.Asin(float64(Normalized(a).X)))
+	return T(math.Atan2(float64(a.Y), float64(a.X)))
 }
 
 // https://math.stackexchange.com/questions/2506306/rotation-of-a-vector-around-origin
-func (a *Vector2[Float]) Rotate(theta Float) {
+func Rotate[T Float](a Vector2[T], theta T) Vector2[T] {
 	sin, cos := math.Sincos(float64(theta))
 
-	x := a.X*Float(cos) - a.Y*Float(sin)
-	y := a.X*Float(sin) + a.Y*Float(cos)
+	x := float64(a.X)*cos - float64(a.Y)*sin
+	y := float64(a.X)*sin + float64(a.Y)*cos
 
-	a.X = x
-	a.Y = y
-}
-func Rotate[T Float](a Vector2[T], theta T) Vector2[T] {
-	a.Rotate(theta)
-	return a
+	return Vector2[T]{T(x), T(y)}
 }

@@ -370,7 +370,7 @@ func (boid_sim Boid_simulation) Draw_Into_Image(img *Image.Image) {
 		// TODO i also think this is slowing us down, put in own function
 		for i := 0; i < len(boid_shape); i++ {
 			// someone who knows math explain this
-			boid_shape[i].Rotate(to_rotate)
+			boid_shape[i] = Vector.Rotate(boid_shape[i], to_rotate)
 
 			boid_shape[i].Mult(boid_sim.Boid_Draw_Radius * scale_factor)
 			boid_shape[i].Add(b.Position)
