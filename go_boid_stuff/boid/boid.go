@@ -8,7 +8,6 @@ import (
 	"reflect"
 	"strconv"
 
-	"boidstuff.com/Image"
 	quadtree "boidstuff.com/Quadtree"
 	"boidstuff.com/Vector"
 )
@@ -63,11 +62,11 @@ type Boid_simulation struct {
 	Boid_Draw_Radius Boid_Float `Property:"0;20" Default:"7"`
 
 	// Working Areas
-	accelerations         []Vector.Vector2[Boid_Float]
-	close_boids           boid_array
-	super_close_positions []Vector.Vector2[Boid_Float]
+	Accelerations         []Vector.Vector2[Boid_Float]
+	Close_boids           boid_array
+	Super_close_positions []Vector.Vector2[Boid_Float]
 
-	quadtree quadtree.Quadtree[Boid_Float]
+	Quadtree quadtree.Quadtree[Boid_Float]
 }
 
 const INITIAL_ARRAY_SIZE = 32
@@ -79,14 +78,14 @@ func New_boid_simulation(width, height Boid_Float, num_boids int) Boid_simulatio
 		Width:  width,
 		Height: height,
 
-		accelerations: make([]Vector.Vector2[Boid_Float], num_boids),
-		close_boids: boid_array{
+		Accelerations: make([]Vector.Vector2[Boid_Float], num_boids),
+		Close_boids: boid_array{
 			positions:  make([]Vector.Vector2[Boid_Float], 0, INITIAL_ARRAY_SIZE),
 			velocities: make([]Vector.Vector2[Boid_Float], 0, INITIAL_ARRAY_SIZE),
 		},
-		super_close_positions: make([]Vector.Vector2[Boid_Float], 0, INITIAL_ARRAY_SIZE),
+		Super_close_positions: make([]Vector.Vector2[Boid_Float], 0, INITIAL_ARRAY_SIZE),
 
-		quadtree: quadtree.New_quadtree[Boid_Float](),
+		Quadtree: quadtree.New_quadtree[Boid_Float](),
 	}
 
 	// Set Defaults
@@ -158,9 +157,9 @@ func (boid_sim Boid_simulation) bounding_force(index int) Vector.Vector2[Boid_Fl
 	return vel
 }
 
-func (boid_sim *Boid_simulation) set_up_quadtree() {
+func (boid_sim *Boid_simulation) Set_up_quadtree() {
 	// TODO shouldn't need to call this. just get setup to do what you want
-	boid_sim.quadtree.Clear()
+	boid_sim.Quadtree.Clear()
 
 	// TODO make this just how we store boid positions
 	boid_positions := make([]Vector.Vector2[Boid_Float], 0, len(boid_sim.Boids))
@@ -168,7 +167,7 @@ func (boid_sim *Boid_simulation) set_up_quadtree() {
 		boid_positions = append(boid_positions, b.Position)
 	}
 
-	num_bad_boids := boid_sim.quadtree.Setup_tree(boid_positions)
+	num_bad_boids := boid_sim.Quadtree.Setup_tree(boid_positions)
 	if num_bad_boids > 0 {
 		// NOTE im actually fine with this, in this case, one frame where one boid didn't see its neighbors? im fine with that
 		// But NOTE Fucking this, i 100% could fix these fuckers, by making a "bad_boid_array" to store them in to check, id end back up in n^2 territory, but its not about the speed. its about sending a message
@@ -182,13 +181,13 @@ func (boid_sim *Boid_simulation) set_close_boids(index int) {
 	my_boid_pos := boid_sim.Boids[index].Position
 	cur_boid_bound := quadtree.Circle_To_Rectangle(my_boid_pos, boid_sim.Visual_Range)
 
-	bounded_boids_indexes := boid_sim.quadtree.QueryRange(cur_boid_bound)
+	bounded_boids_indexes := boid_sim.Quadtree.QueryRange(cur_boid_bound)
 
 	// clear the slices, mem optimize
-	boid_sim.close_boids.positions = boid_sim.close_boids.positions[:0]
-	boid_sim.close_boids.velocities = boid_sim.close_boids.velocities[:0]
+	boid_sim.Close_boids.positions = boid_sim.Close_boids.positions[:0]
+	boid_sim.Close_boids.velocities = boid_sim.Close_boids.velocities[:0]
 
-	boid_sim.super_close_positions = boid_sim.super_close_positions[:0]
+	boid_sim.Super_close_positions = boid_sim.Super_close_positions[:0]
 
 	for _, other_boid_index := range bounded_boids_indexes {
 		// if your comparing the boid to itself
@@ -206,19 +205,19 @@ func (boid_sim *Boid_simulation) set_close_boids(index int) {
 
 		// super close boids get treated differently
 		if dist_sqr < boid_sim.Separation_Min_Distance*boid_sim.Separation_Min_Distance {
-			boid_sim.super_close_positions = append(boid_sim.super_close_positions, other_boid.Position)
+			boid_sim.Super_close_positions = append(boid_sim.Super_close_positions, other_boid.Position)
 		} else {
-			boid_sim.close_boids.positions = append(boid_sim.close_boids.positions, other_boid.Position)
-			boid_sim.close_boids.velocities = append(boid_sim.close_boids.velocities, other_boid.Velocity)
+			boid_sim.Close_boids.positions = append(boid_sim.Close_boids.positions, other_boid.Position)
+			boid_sim.Close_boids.velocities = append(boid_sim.Close_boids.velocities, other_boid.Velocity)
 		}
 	}
 }
 
 // NOTE dt is in seconds
 func (boid_sim *Boid_simulation) Update_boids(dt float64) {
-	boid_sim.set_up_quadtree()
+	boid_sim.Set_up_quadtree()
 
-	for i := range boid_sim.quadtree.Traverse() {
+	for i := range boid_sim.Quadtree.Traverse() {
 		my_boid := boid_sim.Boids[i]
 
 		// for i, my_boid := range boid_sim.Boids {
@@ -227,16 +226,16 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 
 		// Separation
 		sep := Vector.Vector2[Boid_Float]{}
-		for _, other_pos := range boid_sim.super_close_positions {
+		for _, other_pos := range boid_sim.Super_close_positions {
 			sep.Add(Vector.Sub(my_boid.Position, other_pos))
 		}
 
 		// Alignment
-		align := Vector.Add(Vector.Vector2[Boid_Float]{}, boid_sim.close_boids.velocities...)
+		align := Vector.Add(Vector.Vector2[Boid_Float]{}, boid_sim.Close_boids.velocities...)
 		// Cohesion
-		coh := Vector.Add(Vector.Vector2[Boid_Float]{}, boid_sim.close_boids.positions...)
+		coh := Vector.Add(Vector.Vector2[Boid_Float]{}, boid_sim.Close_boids.positions...)
 
-		num_close_boids := len(boid_sim.close_boids.positions)
+		num_close_boids := len(boid_sim.Close_boids.positions)
 		if num_close_boids > 0 {
 			align.Mult(1 / Boid_Float(num_close_boids))
 			align.Sub(my_boid.Velocity)
@@ -250,12 +249,12 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		coh.Mult(boid_sim.Cohesion_Factor)
 
 		// NOTE remember to not change accelerations, just assign to it. its got trash in it
-		boid_sim.accelerations[i] = Vector.Add(sep, align, coh)
+		boid_sim.Accelerations[i] = Vector.Add(sep, align, coh)
 
 		if BOUNDING {
 			// TODO get rid of bounding force function, pull it in
 			bounding := Vector.Mult(boid_sim.bounding_force(int(i)), boid_sim.Margin_Turn_Factor)
-			boid_sim.accelerations[i].Add(bounding)
+			boid_sim.Accelerations[i].Add(bounding)
 		}
 
 		// TODO somehow put limiting speed around here?
@@ -276,7 +275,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 			// draw.Y += 1
 		}
 		random_draw.Mult(boid_sim.Random_Draw_Factor)
-		boid_sim.accelerations[i].Add(random_draw)
+		boid_sim.Accelerations[i].Add(random_draw)
 
 		// const CENTER_DRAW_FACTOR = 0.1
 		center := Vector.Make_Vector2(boid_sim.Width/2, boid_sim.Height/2)
@@ -284,18 +283,18 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 			center_pointer := Vector.Normalized(Vector.Sub(center, my_boid.Position))
 			center_draw := Vector.Mult(center_pointer, boid_sim.Center_Draw_Factor)
 
-			boid_sim.accelerations[i].Add(center_draw)
+			boid_sim.Accelerations[i].Add(center_draw)
 		}
 
 		wind := Vector.Make_Vector2[Boid_Float](boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
-		boid_sim.accelerations[i].Add(wind)
+		boid_sim.Accelerations[i].Add(wind)
 
 	}
 
 	// Now update boids
 	for i := 0; i < len(boid_sim.Boids); i++ {
 		// this could be better
-		boid_sim.Boids[i].Velocity.Add(Vector.Mult(boid_sim.accelerations[i], Boid_Float(dt)))
+		boid_sim.Boids[i].Velocity.Add(Vector.Mult(boid_sim.Accelerations[i], Boid_Float(dt)))
 
 		// TODO make this cleaner somehow, do we even have to limit speed?
 		boid_sim.adjust_speed(&boid_sim.Boids[i])
@@ -313,91 +312,4 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 // outputs a number from [0, b). ignore the float64. go math module is dumb.
 func proper_mod[T Vector.Float](a, b T) T {
 	return T(math.Mod(math.Mod(float64(a), float64(b))+float64(b), float64(b)))
-}
-
-var boid_heading_color = Image.Color{R: 10, G: 240, B: 10, A: 255}
-var boid_boundary_color = Image.Color{R: 240, G: 240, B: 240, A: 255}
-
-// TODO have some sort of view mode here, so we can 'move' the 'camera'
-func (boid_sim Boid_simulation) Draw_Into_Image(img *Image.Image) {
-	img.Clear_background(Image.Color{R: 24, G: 24, B: 24, A: 255})
-
-	// we map the world-space to match the image space
-	scale_factor := Boid_Float(img.Width) / boid_sim.Width
-
-	if DEBUG_QUADTREE {
-		boid_sim.set_up_quadtree() // so our visualization is accurate
-		quadtree.Draw_quadtree_onto(boid_sim.quadtree, img, scale_factor)
-	}
-
-	if DEBUG_BOUNDARY {
-		margin := int(boid_sim.Margin * scale_factor)
-		boundary_points := [4]Vector.Vector2[int]{
-			{X: margin, Y: margin},
-			{X: img.Width - margin, Y: margin},
-			{X: img.Width - margin, Y: img.Height - margin},
-			{X: margin, Y: img.Height - margin},
-		}
-
-		for i := 0; i < len(boundary_points); i++ {
-			Image.Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], boid_boundary_color)
-		}
-	}
-
-	// NOTE i would put this in a go routine, but wasm doesn't do multithreading, fuck
-	for _, b := range boid_sim.Boids {
-		// img.Draw_Circle(int(b.Position.X*scale_factor), int(b.Position.Y*scale_factor), BOID_DRAW_RADIUS, boid_color2)
-
-		// put them in img space
-		b.Position.Mult(scale_factor)
-
-		// Draw boid body
-		// TODO maybe some LOD shit, where its just a triangle? 2x speed?
-		boid_shape := [4]Vector.Vector2[Boid_Float]{
-			{X: 0, Y: 1},      // tip
-			{X: 0, Y: -0.5},   // back
-			{X: 1, Y: -0.75},  // wing1
-			{X: -1, Y: -0.75}, // wing2
-		}
-
-		// Rotate to face them in the right direction
-		theta := Vector.GetTheta(b.Velocity)
-		// TODO i don't think the wings are rotating right. hmmm
-		// TODO this is broken...
-		to_rotate := theta
-		if b.Velocity.Y > 0 {
-			to_rotate = -theta
-		}
-		// TODO i also think this is slowing us down, put in own function
-		for i := 0; i < len(boid_shape); i++ {
-			// someone who knows math explain this
-			boid_shape[i] = Vector.Rotate(boid_shape[i], to_rotate)
-
-			boid_shape[i].Mult(boid_sim.Boid_Draw_Radius * scale_factor)
-			boid_shape[i].Add(b.Position)
-		}
-
-		// get cool color for boid
-
-		speed := b.Velocity.Mag() / boid_sim.Max_Speed
-
-		clamp := func(x, mini, maxi Boid_Float) Boid_Float {
-			return max(mini, min(x, maxi))
-		}
-
-		const SHIFT_FACTOR = 2
-		H := math.Mod(float64(clamp(speed, 0, 1)*360)*SHIFT_FACTOR, 360)
-
-		boid_color := Image.HSL_to_RGB(H, 0.75, 0.6)
-
-		// Draw both sides
-		Image.Draw_Triangle(img, boid_shape[0], boid_shape[1], boid_shape[2], boid_color)
-		Image.Draw_Triangle(img, boid_shape[0], boid_shape[1], boid_shape[3], boid_color)
-
-		if DEBUG_HEADING {
-			// Draw heading line
-			where_boid_will_be := Vector.Add(b.Position, b.Velocity)
-			Image.Draw_Line(img, b.Position, where_boid_will_be, boid_heading_color)
-		}
-	}
 }

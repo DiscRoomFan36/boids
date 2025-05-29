@@ -52,6 +52,8 @@ func parse_property_tag(tag string) (float64, float64, error) {
 }
 
 // Javascript function
+//
+// Uses reflection to dynamically get the parameters of the simulation
 func GetProperties(this js.Value, args []js.Value) any {
 	if len(args) != 0 {
 		return "don't pass anything to this function"
@@ -97,6 +99,8 @@ func GetProperties(this js.Value, args []js.Value) any {
 }
 
 // Javascript function
+//
+// Uses reflection to dynamically set the parameters of the simulation
 func SetProperties(this js.Value, args []js.Value) any {
 	if len(args) != 1 {
 		return "SetProperties: please pass in a object with properties to set"
@@ -189,7 +193,8 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 
 	// this might end up taking the most amount of time.
 	// TODO make a 'Draw a thing' file. (maybe in this module, stop boid from requiring Image...)
-	boid_sim.Draw_Into_Image(&img)
+	draw_boids_into_image(&img, &boid_sim)
+	// boid_sim.Draw_Into_Image(&img)
 
 	// copy the pixels
 	copied_bytes := js.CopyBytesToJS(array, img.Buffer[:width*height*Image.NUM_COLOR_COMPONENTS])

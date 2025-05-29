@@ -4,7 +4,7 @@ full_watch: boid.wasm
 
 
 boid.wasm:
-	GOOS=js GOARCH=wasm go build -C ./boid_stuff/js_go_main/ -o ../../dist/boid.wasm
+	GOOS=js GOARCH=wasm go build -C ./go_boid_stuff/js_go_main/ -o ../../dist/boid.wasm
 
 boid.wat:
 	wasm2wat dist/boid.wasm > dist/boid.wat
@@ -18,4 +18,4 @@ serve:
 	python3 -m http.server 8080
 
 go-watch:
-	GOOS=js GOARCH=wasm nodemon --watch './boid_stuff/**/*.go' --signal SIGTERM -e 'go' --exec 'go build -C ./boid_stuff/js_go_main/ -o ../../dist/boid.wasm'
+	GOOS=js GOARCH=wasm nodemon --watch './go_boid_stuff/**/*.go' --signal SIGTERM -e 'go' --exec 'go build -C ./go_boid_stuff/js_go_main/ -o ../../dist/boid.wasm'
