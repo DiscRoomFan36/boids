@@ -271,15 +271,13 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array s
 		Image.Draw_Line(img, p1, p2, inner_color)
 	}
 
-	// finally, draw the cells that cotain the boids. (intensity on how many boids.)
+	// finally, draw the cells that contain the boids. (intensity on how many boids.)
 	{
 		// TODO don't calc twice, just clean this function up...
 		w := sp_array.Max_x - sp_array.Min_x
 		h := sp_array.Max_y - sp_array.Min_y
 		step_x := w / T(sp_array.Boxes_wide)
 		step_y := h / T(sp_array.Boxes_high)
-
-		var color = Image.Color{R: 0, G: 0, B: 255, A: 255}
 
 		for j := range sp_array.Boxes_high {
 			for i := range sp_array.Boxes_wide {
@@ -293,22 +291,35 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array s
 					continue
 				}
 
-				fill_amount := float32(box.Count) / 3 // spacialarray.BOX_SIZE
+				const start_number = 180
+				const end_number = 360
+
+				fill_amount := float32(box.Count) / spacialarray.BOX_SIZE
 				fill_amount = min(fill_amount, 1)
 
-				// fade alpha based on how many points are in it.
-				faded_color := color
-				faded_color.A = uint8(float32(faded_color.A) * fill_amount)
+				blended := lerp(start_number, end_number, fill_amount)
 
-				img.Draw_Rect_With_Alpha(int(x*scale), int(y*scale), int(step_x*scale), int(step_y*scale), faded_color)
+				// fade alpha based on how many points are in it.
+				faded_color := Image.HSL_to_RGB(blended, 0.7, 0.7)
+
+				img.Draw_Rect(int(x*scale), int(y*scale), int(step_x*scale), int(step_y*scale), faded_color)
 			}
 		}
 	}
 
-	const STEP = 10
-	for i := 0; i < img.Width; i += STEP {
-		percent := float32(i) / float32(img.Width)
-		color := Image.Color{R: 255, G: 255, B: 255, A: uint8(percent * 256)}
-		img.Draw_Rect_With_Alpha(i, 0, STEP, 25, color)
-	}
+	// { // Test Color interpolation
+	// 	const STEP = 10
+	// 	for i := 0; i < img.Width; i += STEP {
+	// 		const start_number = 180
+	// 		const end_number = 360
+
+	// 		percent := float32(i) / float32(img.Width)
+	// 		color := Image.HSL_to_RGB(lerp(start_number, end_number, percent), 0.7, 0.7)
+	// 		img.Draw_Rect(i, 0, STEP, 25, color)
+	// 	}
+	// }
+}
+
+func lerp(a, b, t float32) float32 {
+	return (1-t)*a + t*b
 }
