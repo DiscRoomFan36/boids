@@ -4,8 +4,6 @@ go 1.23.0
 
 replace boidstuff.com/Vector => ../Vector
 
-replace boidstuff.com/Image => ../Image
-
 replace boidstuff.com/Quadtree => ../Quadtree
 
 require (
