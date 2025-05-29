@@ -96,10 +96,51 @@ func (img *Image) put_pixel(x, y int, c Color) {
 	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3] = c.A
 }
 
+type f32 float32
+
+func (img *Image) put_pixel_with_alpha(x, y int, c Color) {
+	// don't pass a fully transparent color in here!
+	if c.A == 0 {
+		return
+	}
+
+	// get our components.
+	r0i := img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0]
+	g0i := img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1]
+	b0i := img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2]
+	a0i := img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3]
+
+	r1i, g1i, b1i, a1i := c.Splat()
+
+	// cast them all to floats.
+	r0, g0, b0, a0 := f32(r0i), f32(g0i), f32(b0i), f32(a0i)
+	r1, g1, b1, a1 := f32(r1i), f32(g1i), f32(b1i), f32(a1i)
+
+	// blend the colors.
+	a01 := (1-a0)*a1 + a0
+	r01 := ((1-a0)*a1*r1 + a0*r0) / a01
+	g01 := ((1-a0)*a1*g1 + a0*g0) / a01
+	b01 := ((1-a0)*a1*b1 + a0*b0) / a01
+
+	// write to buffer
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0] = uint8(r01 * 255)
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1] = uint8(g01 * 255)
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2] = uint8(b01 * 255)
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3] = uint8(a01 * 255)
+}
+
 func (img *Image) Draw_Rect(x, y, w, h int, c Color) {
 	for j := max(y, 0); j < min(y+h, img.Height); j++ {
 		for i := max(x, 0); i < min(x+w, img.Width); i++ {
 			img.put_pixel(i, j, c)
+		}
+	}
+}
+
+func (img *Image) Draw_Rect_With_Alpha(x, y, w, h int, c Color) {
+	for j := max(y, 0); j < min(y+h, img.Height); j++ {
+		for i := max(x, 0); i < min(x+w, img.Width); i++ {
+			img.put_pixel_with_alpha(i, j, c)
 		}
 	}
 }

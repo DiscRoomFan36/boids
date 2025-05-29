@@ -1,14 +1,13 @@
 package boid
 
 import (
-	"fmt"
 	"log"
 	"math"
 	"math/rand"
 	"reflect"
 	"strconv"
 
-	quadtree "boidstuff.com/Quadtree"
+	spacialarray "boidstuff.com/Spacial_Array"
 	"boidstuff.com/Vector"
 )
 
@@ -66,7 +65,8 @@ type Boid_simulation struct {
 	Close_boids           boid_array
 	Super_close_positions []Vector.Vector2[Boid_Float]
 
-	Quadtree quadtree.Quadtree[Boid_Float]
+	// Quadtree      quadtree.Quadtree[Boid_Float]
+	Spacial_array spacialarray.Spacial_Array[Boid_Float]
 }
 
 const INITIAL_ARRAY_SIZE = 32
@@ -85,7 +85,8 @@ func New_boid_simulation(width, height Boid_Float, num_boids int) Boid_simulatio
 		},
 		Super_close_positions: make([]Vector.Vector2[Boid_Float], 0, INITIAL_ARRAY_SIZE),
 
-		Quadtree: quadtree.New_quadtree[Boid_Float](),
+		// Quadtree:      quadtree.New_quadtree[Boid_Float](),
+		Spacial_array: spacialarray.New_Spacial_Array[Boid_Float](),
 	}
 
 	// Set Defaults
@@ -157,29 +158,45 @@ func (boid_sim Boid_simulation) bounding_force(index int) Vector.Vector2[Boid_Fl
 	return vel
 }
 
-func (boid_sim *Boid_simulation) Set_up_quadtree() {
-	// TODO shouldn't need to call this. just get setup to do what you want
-	boid_sim.Quadtree.Clear()
+func (boid_sim *Boid_simulation) Set_up_Spacial_Array() {
+	// Clear out previous uses.
+	boid_sim.Spacial_array.Clear()
 
-	// TODO make this just how we store boid positions
+	// TODO make this just how we store boid positions or something.
 	boid_positions := make([]Vector.Vector2[Boid_Float], 0, len(boid_sim.Boids))
 	for _, b := range boid_sim.Boids {
 		boid_positions = append(boid_positions, b.Position)
 	}
 
-	num_bad_boids := boid_sim.Quadtree.Setup_tree(boid_positions)
-	if num_bad_boids > 0 {
-		// NOTE im actually fine with this, in this case, one frame where one boid didn't see its neighbors? im fine with that
-		// But NOTE Fucking this, i 100% could fix these fuckers, by making a "bad_boid_array" to store them in to check, id end back up in n^2 territory, but its not about the speed. its about sending a message
-		fmt.Printf("boids slipped though the cracks num %v\n", num_bad_boids)
-	}
+	boid_sim.Spacial_array.Append_points(boid_positions)
 }
 
+// func (boid_sim *Boid_simulation) Set_up_quadtree() {
+// 	// TODO shouldn't need to call this. just get setup to do what you want
+// 	boid_sim.Quadtree.Clear()
+
+// 	// TODO make this just how we store boid positions
+// 	boid_positions := make([]Vector.Vector2[Boid_Float], 0, len(boid_sim.Boids))
+// 	for _, b := range boid_sim.Boids {
+// 		boid_positions = append(boid_positions, b.Position)
+// 	}
+
+// 	num_bad_boids := boid_sim.Quadtree.Setup_tree(boid_positions)
+// 	if num_bad_boids > 0 {
+// 		// NOTE im actually fine with this, in this case, one frame where one boid didn't see its neighbors? im fine with that
+// 		// But NOTE Fucking this, i 100% could fix these fuckers, by making a "bad_boid_array" to store them in to check, id end back up in n^2 territory, but its not about the speed. its about sending a message
+// 		fmt.Printf("boids slipped though the cracks num %v\n", num_bad_boids)
+// 	}
+// }
+
+/*
 // TODO make a thing in the quad tree that dose some of the circle detection for us
 func (boid_sim *Boid_simulation) set_close_boids(index int) {
 
 	my_boid_pos := boid_sim.Boids[index].Position
 	cur_boid_bound := quadtree.Circle_To_Rectangle(my_boid_pos, boid_sim.Visual_Range)
+
+	boid_sim.Spacial_array.Get_Near(my_boid_pos, boid_sim.Visual_Range)
 
 	bounded_boids_indexes := boid_sim.Quadtree.QueryRange(cur_boid_bound)
 
@@ -212,48 +229,59 @@ func (boid_sim *Boid_simulation) set_close_boids(index int) {
 		}
 	}
 }
+*/
 
 // NOTE dt is in seconds
 func (boid_sim *Boid_simulation) Update_boids(dt float64) {
-	boid_sim.Set_up_quadtree()
+	// boid_sim.Set_up_quadtree()
+	// TODO inline
+	boid_sim.Set_up_Spacial_Array()
 
-	for i := range boid_sim.Quadtree.Traverse() {
-		my_boid := boid_sim.Boids[i]
-
-		// for i, my_boid := range boid_sim.Boids {
-		// find the boids in range
-		boid_sim.set_close_boids(int(i))
+	// get the new velocities for all the boids
+	for i := range len(boid_sim.Boids) {
+		this_boid := boid_sim.Boids[i]
 
 		// Separation
 		sep := Vector.Vector2[Boid_Float]{}
-		for _, other_pos := range boid_sim.Super_close_positions {
-			sep.Add(Vector.Sub(my_boid.Position, other_pos))
+		// Alignment
+		align := Vector.Vector2[Boid_Float]{}
+		// Cohesion
+		coh := Vector.Vector2[Boid_Float]{}
+
+		num_close_boids := 0
+		for j, near_pos := range boid_sim.Spacial_array.Iter_Over_Near(this_boid.Position, boid_sim.Visual_Range) {
+			num_close_boids += 1
+
+			// if the near guy is super close. move away
+			if Vector.DistSqr(this_boid.Position, near_pos) < boid_sim.Separation_Min_Distance*boid_sim.Separation_Min_Distance {
+				sep.Add(Vector.Sub(this_boid.Position, near_pos))
+			}
+
+			// make the velocity's match.
+			align.Add(boid_sim.Boids[j].Velocity)
+			// go to the center of the pack.
+			coh.Add(near_pos)
 		}
 
-		// Alignment
-		align := Vector.Add(Vector.Vector2[Boid_Float]{}, boid_sim.Close_boids.velocities...)
-		// Cohesion
-		coh := Vector.Add(Vector.Vector2[Boid_Float]{}, boid_sim.Close_boids.positions...)
-
-		num_close_boids := len(boid_sim.Close_boids.positions)
+		// divide by number of close boids.
 		if num_close_boids > 0 {
 			align.Mult(1 / Boid_Float(num_close_boids))
-			align.Sub(my_boid.Velocity)
+			align.Sub(this_boid.Velocity)
 
 			coh.Mult(1 / Boid_Float(num_close_boids))
-			coh.Sub(my_boid.Position)
+			coh.Sub(this_boid.Position)
 		}
 
 		sep.Mult(boid_sim.Separation_Factor)
 		align.Mult(boid_sim.Alignment_Factor)
 		coh.Mult(boid_sim.Cohesion_Factor)
 
-		// NOTE remember to not change accelerations, just assign to it. its got trash in it
+		// NOTE this assign clears the trash that was here before.
 		boid_sim.Accelerations[i] = Vector.Add(sep, align, coh)
 
 		if BOUNDING {
 			// TODO get rid of bounding force function, pull it in
-			bounding := Vector.Mult(boid_sim.bounding_force(int(i)), boid_sim.Margin_Turn_Factor)
+			bounding := Vector.Mult(boid_sim.bounding_force(i), boid_sim.Margin_Turn_Factor)
 			boid_sim.Accelerations[i].Add(bounding)
 		}
 
@@ -279,8 +307,8 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 
 		// const CENTER_DRAW_FACTOR = 0.1
 		center := Vector.Make_Vector2(boid_sim.Width/2, boid_sim.Height/2)
-		if Vector.Dist(my_boid.Position, center) > min(boid_sim.Width, boid_sim.Height)/5 {
-			center_pointer := Vector.Normalized(Vector.Sub(center, my_boid.Position))
+		if Vector.Dist(this_boid.Position, center) > min(boid_sim.Width, boid_sim.Height)/5 {
+			center_pointer := Vector.Normalized(Vector.Sub(center, this_boid.Position))
 			center_draw := Vector.Mult(center_pointer, boid_sim.Center_Draw_Factor)
 
 			boid_sim.Accelerations[i].Add(center_draw)
@@ -288,8 +316,84 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 
 		wind := Vector.Make_Vector2[Boid_Float](boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
 		boid_sim.Accelerations[i].Add(wind)
-
 	}
+
+	/*
+		// get the new velocities for all the boids
+		for i := range boid_sim.Quadtree.Traverse() {
+			my_boid := boid_sim.Boids[i]
+
+			// for i, my_boid := range boid_sim.Boids {
+			// find the boids in range
+			boid_sim.set_close_boids(int(i))
+
+			// Separation
+			sep := Vector.Vector2[Boid_Float]{}
+			for _, other_pos := range boid_sim.Super_close_positions {
+				sep.Add(Vector.Sub(my_boid.Position, other_pos))
+			}
+
+			// Alignment
+			align := Vector.Add(Vector.Vector2[Boid_Float]{}, boid_sim.Close_boids.velocities...)
+			// Cohesion
+			coh := Vector.Add(Vector.Vector2[Boid_Float]{}, boid_sim.Close_boids.positions...)
+
+			num_close_boids := len(boid_sim.Close_boids.positions)
+			if num_close_boids > 0 {
+				align.Mult(1 / Boid_Float(num_close_boids))
+				align.Sub(my_boid.Velocity)
+
+				coh.Mult(1 / Boid_Float(num_close_boids))
+				coh.Sub(my_boid.Position)
+			}
+
+			sep.Mult(boid_sim.Separation_Factor)
+			align.Mult(boid_sim.Alignment_Factor)
+			coh.Mult(boid_sim.Cohesion_Factor)
+
+			// NOTE remember to not change accelerations, just assign to it. its got trash in it
+			boid_sim.Accelerations[i] = Vector.Add(sep, align, coh)
+
+			if BOUNDING {
+				// TODO get rid of bounding force function, pull it in
+				bounding := Vector.Mult(boid_sim.bounding_force(int(i)), boid_sim.Margin_Turn_Factor)
+				boid_sim.Accelerations[i].Add(bounding)
+			}
+
+			// TODO somehow put limiting speed around here?
+
+			// OTHER Additions
+
+			// TODO add noise instead
+			// const WOBBLE_FACTOR = 0.01
+			// wobble := Vector.Mult(Vector.Random_unit_vector[T](), WOBBLE_FACTOR)
+
+			// just move some of them in different directions, semi randomly
+			// const RANDOM_DRAW_FACTOR = 0.01
+			random_draw := Vector.Vector2[Boid_Float]{}
+			if i%3 == 0 {
+				random_draw.X += 1
+			} else if i%3 == 1 {
+				random_draw.X -= 1
+				// draw.Y += 1
+			}
+			random_draw.Mult(boid_sim.Random_Draw_Factor)
+			boid_sim.Accelerations[i].Add(random_draw)
+
+			// const CENTER_DRAW_FACTOR = 0.1
+			center := Vector.Make_Vector2(boid_sim.Width/2, boid_sim.Height/2)
+			if Vector.Dist(my_boid.Position, center) > min(boid_sim.Width, boid_sim.Height)/5 {
+				center_pointer := Vector.Normalized(Vector.Sub(center, my_boid.Position))
+				center_draw := Vector.Mult(center_pointer, boid_sim.Center_Draw_Factor)
+
+				boid_sim.Accelerations[i].Add(center_draw)
+			}
+
+			wind := Vector.Make_Vector2[Boid_Float](boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
+			boid_sim.Accelerations[i].Add(wind)
+
+		}
+	*/
 
 	// Now update boids
 	for i := 0; i < len(boid_sim.Boids); i++ {
@@ -298,7 +402,10 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 
 		// TODO make this cleaner somehow, do we even have to limit speed?
 		boid_sim.adjust_speed(&boid_sim.Boids[i])
+		// TODO add drag force, cant fo this until dt get set back to a reasonable number
+		// boid_sim.Boids[i].Velocity.Mult(0.9)
 
+		// add velocity * dt to position.
 		boid_sim.Boids[i].Position.Add(Vector.Mult(boid_sim.Boids[i].Velocity, Boid_Float(dt)))
 
 		// makes them wrap around the screen

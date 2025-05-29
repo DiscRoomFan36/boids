@@ -24,7 +24,7 @@ var last_frame_time time.Time
 const BOID_FACTOR = 100
 const BOID_BOUNDS_WIDTH = 16 * BOID_FACTOR
 const BOID_BOUNDS_HEIGHT = 9 * BOID_FACTOR
-const NUM_BOIDS = 1000
+const NUM_BOIDS = 25
 
 const BOID_SCALE = 2
 
@@ -100,7 +100,9 @@ func GetProperties(this js.Value, args []js.Value) any {
 
 // Javascript function
 //
-// Uses reflection to dynamically set the parameters of the simulation
+// # Uses reflection to dynamically set the parameters of the simulation
+//
+// TODO this might be slightly stupid... make a method on boid_sim that accepts a map or something.
 func SetProperties(this js.Value, args []js.Value) any {
 	if len(args) != 1 {
 		return "SetProperties: please pass in a object with properties to set"
@@ -193,7 +195,7 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 
 	// this might end up taking the most amount of time.
 	// TODO make a 'Draw a thing' file. (maybe in this module, stop boid from requiring Image...)
-	draw_boids_into_image(&img, &boid_sim)
+	Draw_boids_into_image(&img, &boid_sim)
 	// boid_sim.Draw_Into_Image(&img)
 
 	// copy the pixels

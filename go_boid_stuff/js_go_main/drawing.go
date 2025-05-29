@@ -6,11 +6,13 @@ import (
 
 	"boidstuff.com/Image"
 	quadtree "boidstuff.com/Quadtree"
+	spacialarray "boidstuff.com/Spacial_Array"
 	"boidstuff.com/Vector"
 	"boidstuff.com/boid"
 )
 
-const DEBUG_QUADTREE = false
+// const DEBUG_QUADTREE = true
+const DEBUG_SPACIAL_ARRAY = true
 const DEBUG_BOUNDARY = true
 const DEBUG_HEADING = true
 
@@ -20,18 +22,27 @@ var boid_boundary_color = Image.Color{R: 240, G: 240, B: 240, A: 255}
 type Boid_Float = boid.Boid_Float
 
 // TODO have some sort of view mode here, so we can 'move' the 'camera'
-func draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
+//
+// go incorrectly reports this function as unused if it is not public...
+func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 
-	// func (boid_sim boid.Boid_simulation) Draw_Into_Image(img *Image.Image) {
 	img.Clear_background(Image.Color{R: 24, G: 24, B: 24, A: 255})
 
 	// we map the world-space to match the image space
 	scale_factor := boid.Boid_Float(img.Width) / boid_sim.Width
 
-	if DEBUG_QUADTREE {
-		// TODO this is giga slow...
-		boid_sim.Set_up_quadtree() // so our visualization is accurate
-		draw_quadtree_onto_image(img, boid_sim.Quadtree, scale_factor)
+	// if DEBUG_QUADTREE {
+	// 	// // TODO this is giga slow...
+	// 	// boid_sim.Set_up_quadtree() // so our visualization is accurate
+	// 	// draw_quadtree_onto_image(img, boid_sim.Quadtree, scale_factor)
+	// }
+
+	if DEBUG_SPACIAL_ARRAY {
+		// // TODO this is giga slow... and do we even have to do it?
+		boid_sim.Set_up_Spacial_Array()
+		draw_spacial_array_into_image(img, boid_sim.Spacial_array, scale_factor)
+		// boid_sim.Set_up_quadtree() // so our visualization is accurate
+		// draw_quadtree_onto_image(img, boid_sim.Quadtree, scale_factor)
 	}
 
 	if DEBUG_BOUNDARY {
@@ -200,4 +211,104 @@ func draw_quadtree_onto_image[T Vector.Number](img *Image.Image, my_quadtree qua
 
 	// Start with root node
 	// recur(0, outer_color)
+}
+
+func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array spacialarray.Spacial_Array[T], scale T) {
+	var outer_color = Image.Color{R: 255, G: 255, B: 255, A: 255}
+
+	{
+		// draw the outsides.
+		x, y := sp_array.Min_x, sp_array.Min_y
+		max_x, max_y := sp_array.Max_x, sp_array.Max_y
+		bounding_box := [4]Vector.Vector2[T]{
+			{X: x, Y: y},
+			{X: max_x, Y: y},
+			{X: max_x, Y: max_y},
+			{X: x, Y: max_y},
+		}
+		for i := 0; i < len(bounding_box); i++ {
+			bounding_box[i].Mult(scale)
+		}
+
+		for i := 0; i < len(bounding_box); i++ {
+			Image.Draw_Line(
+				img,
+				bounding_box[i],
+				bounding_box[(i+1)%len(bounding_box)],
+				outer_color,
+			)
+		}
+	}
+
+	// now draw the inner lines. Vertical
+	var inner_color = Image.Color{R: 255, G: 0, B: 0, A: 255}
+	for i := 1; i < sp_array.Boxes_wide; i++ {
+		w := sp_array.Max_x - sp_array.Min_x
+		step := w / T(sp_array.Boxes_wide)
+		x := sp_array.Min_x + step*T(i)
+
+		p1 := Vector.Vector2[T]{X: x, Y: sp_array.Min_y}
+		p2 := Vector.Vector2[T]{X: x, Y: sp_array.Max_y}
+
+		p1.Mult(scale)
+		p2.Mult(scale)
+
+		Image.Draw_Line(img, p1, p2, inner_color)
+	}
+
+	// now draw the inner lines. Horizontal
+	for j := 1; j < sp_array.Boxes_high; j++ {
+		h := sp_array.Max_y - sp_array.Min_y
+		step := h / T(sp_array.Boxes_high)
+		y := sp_array.Min_y + step*T(j)
+
+		p1 := Vector.Vector2[T]{X: sp_array.Min_x, Y: y}
+		p2 := Vector.Vector2[T]{X: sp_array.Max_x, Y: y}
+
+		p1.Mult(scale)
+		p2.Mult(scale)
+
+		Image.Draw_Line(img, p1, p2, inner_color)
+	}
+
+	// finally, draw the cells that cotain the boids. (intensity on how many boids.)
+	{
+		// TODO don't calc twice, just clean this function up...
+		w := sp_array.Max_x - sp_array.Min_x
+		h := sp_array.Max_y - sp_array.Min_y
+		step_x := w / T(sp_array.Boxes_wide)
+		step_y := h / T(sp_array.Boxes_high)
+
+		var color = Image.Color{R: 0, G: 0, B: 255, A: 255}
+
+		for j := range sp_array.Boxes_high {
+			for i := range sp_array.Boxes_wide {
+				// where we are,
+				x := sp_array.Min_x + step_x*T(i)
+				y := sp_array.Min_y + step_y*T(j)
+
+				// if there is some points in the box, show a color.
+				box := &sp_array.Boxes[j*sp_array.Boxes_wide+i]
+				if box.Count == 0 {
+					continue
+				}
+
+				fill_amount := float32(box.Count) / 3 // spacialarray.BOX_SIZE
+				fill_amount = min(fill_amount, 1)
+
+				// fade alpha based on how many points are in it.
+				faded_color := color
+				faded_color.A = uint8(float32(faded_color.A) * fill_amount)
+
+				img.Draw_Rect_With_Alpha(int(x*scale), int(y*scale), int(step_x*scale), int(step_y*scale), faded_color)
+			}
+		}
+	}
+
+	const STEP = 10
+	for i := 0; i < img.Width; i += STEP {
+		percent := float32(i) / float32(img.Width)
+		color := Image.Color{R: 255, G: 255, B: 255, A: uint8(percent * 256)}
+		img.Draw_Rect_With_Alpha(i, 0, STEP, 25, color)
+	}
 }
