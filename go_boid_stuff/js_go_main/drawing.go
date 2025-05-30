@@ -1,11 +1,9 @@
 package main
 
 import (
-	"log"
 	"math"
 
 	"boidstuff.com/Image"
-	quadtree "boidstuff.com/Quadtree"
 	spacialarray "boidstuff.com/Spacial_Array"
 	"boidstuff.com/Vector"
 	"boidstuff.com/boid"
@@ -31,18 +29,10 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 	// we map the world-space to match the image space
 	scale_factor := boid.Boid_Float(img.Width) / boid_sim.Width
 
-	// if DEBUG_QUADTREE {
-	// 	// // TODO this is giga slow...
-	// 	// boid_sim.Set_up_quadtree() // so our visualization is accurate
-	// 	// draw_quadtree_onto_image(img, boid_sim.Quadtree, scale_factor)
-	// }
-
 	if DEBUG_SPACIAL_ARRAY {
 		// // TODO this is giga slow... and do we even have to do it?
 		boid_sim.Set_up_Spacial_Array()
 		draw_spacial_array_into_image(img, boid_sim.Spacial_array, scale_factor)
-		// boid_sim.Set_up_quadtree() // so our visualization is accurate
-		// draw_quadtree_onto_image(img, boid_sim.Quadtree, scale_factor)
 	}
 
 	if DEBUG_BOUNDARY {
@@ -115,102 +105,6 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 			Image.Draw_Line(img, b.Position, where_boid_will_be, boid_heading_color)
 		}
 	}
-}
-
-func draw_quadtree_onto_image[T Vector.Number](img *Image.Image, my_quadtree quadtree.Quadtree[T], scale T) {
-	// scale = 1 / scale
-	var outer_color = Image.Color{R: 255, G: 255, B: 255, A: 255}
-
-	root_node := my_quadtree.Child_array[0]
-	// fmt.Printf("root children? %v\n", quadtree.child_array)
-
-	{ // draw bounding box
-		x, y, w, h := root_node.Boundary.Splat()
-
-		// these guys are messing up, fix them then onto colors
-		bounding_box := [4]Vector.Vector2[T]{
-			{X: x, Y: y},
-			{X: x + w, Y: y},
-			{X: x + w, Y: y + h},
-			{X: x, Y: y + h},
-		}
-
-		for i := 0; i < len(bounding_box); i++ {
-			bounding_box[i].Mult(scale)
-		}
-
-		for i := 0; i < len(bounding_box); i++ {
-			Image.Draw_Line(
-				img,
-				bounding_box[i],
-				bounding_box[(i+1)%len(bounding_box)],
-				outer_color,
-			)
-		}
-	}
-
-	type tuple struct {
-		id    quadtree.Node_ID_Type
-		depth int
-	}
-
-	draw_cross := func(checking quadtree.Node_ID_Type, depth int) Image.Color {
-		node := my_quadtree.Child_array[checking]
-
-		H := math.Mod(float64(depth)/10*360, 360)
-		inner_color := Image.HSL_to_RGB(H, 0.8, 0.5)
-
-		x, y, w, h := node.Boundary.Splat()
-
-		points := [4]Vector.Vector2[T]{
-			{X: x + w/2, Y: y},     // TOP
-			{X: x + w/2, Y: y + h}, // BOTTOM
-			{X: x, Y: y + h/2},     // LEFT
-			{X: x + w, Y: y + h/2}, // RIGHT
-		}
-
-		for i := 0; i < len(points); i++ {
-			points[i].Mult(scale)
-		}
-
-		// top to bottom
-		Image.Draw_Line(img, points[0], points[1], inner_color)
-
-		// left to right
-		Image.Draw_Line(img, points[2], points[3], inner_color)
-
-		return inner_color
-	}
-
-	// Start with root node
-	stack := make([]tuple, 1, 4)
-	stack[0] = tuple{0, 0}
-
-	for len(stack) > 0 {
-		tup := stack[len(stack)-1]
-		stack = stack[:len(stack)-1]
-
-		checking := tup.id
-		depth := tup.depth
-
-		node := my_quadtree.Child_array[checking]
-		if node.Children_start_index == 0 {
-			continue
-		}
-
-		draw_cross(checking, depth)
-
-		if node.Children_start_index == 0 {
-			log.Fatalf("a node cannot have child 0 at this time. node: %v\n", node)
-		}
-
-		for i := 0; i < quadtree.QT_CHILDREN_LENGTH; i++ {
-			stack = append(stack, tuple{id: node.Children_start_index + quadtree.Node_ID_Type(i), depth: depth + 1})
-		}
-	}
-
-	// Start with root node
-	// recur(0, outer_color)
 }
 
 func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array spacialarray.Spacial_Array[T], scale T) {

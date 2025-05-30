@@ -65,7 +65,6 @@ type Boid_simulation struct {
 	Close_boids           boid_array
 	Super_close_positions []Vector.Vector2[Boid_Float]
 
-	// Quadtree      quadtree.Quadtree[Boid_Float]
 	Spacial_array spacialarray.Spacial_Array[Boid_Float]
 }
 
@@ -170,66 +169,6 @@ func (boid_sim *Boid_simulation) Set_up_Spacial_Array() {
 
 	boid_sim.Spacial_array.Append_points(boid_positions)
 }
-
-// func (boid_sim *Boid_simulation) Set_up_quadtree() {
-// 	// TODO shouldn't need to call this. just get setup to do what you want
-// 	boid_sim.Quadtree.Clear()
-
-// 	// TODO make this just how we store boid positions
-// 	boid_positions := make([]Vector.Vector2[Boid_Float], 0, len(boid_sim.Boids))
-// 	for _, b := range boid_sim.Boids {
-// 		boid_positions = append(boid_positions, b.Position)
-// 	}
-
-// 	num_bad_boids := boid_sim.Quadtree.Setup_tree(boid_positions)
-// 	if num_bad_boids > 0 {
-// 		// NOTE im actually fine with this, in this case, one frame where one boid didn't see its neighbors? im fine with that
-// 		// But NOTE Fucking this, i 100% could fix these fuckers, by making a "bad_boid_array" to store them in to check, id end back up in n^2 territory, but its not about the speed. its about sending a message
-// 		fmt.Printf("boids slipped though the cracks num %v\n", num_bad_boids)
-// 	}
-// }
-
-/*
-// TODO make a thing in the quad tree that dose some of the circle detection for us
-func (boid_sim *Boid_simulation) set_close_boids(index int) {
-
-	my_boid_pos := boid_sim.Boids[index].Position
-	cur_boid_bound := quadtree.Circle_To_Rectangle(my_boid_pos, boid_sim.Visual_Range)
-
-	boid_sim.Spacial_array.Get_Near(my_boid_pos, boid_sim.Visual_Range)
-
-	bounded_boids_indexes := boid_sim.Quadtree.QueryRange(cur_boid_bound)
-
-	// clear the slices, mem optimize
-	boid_sim.Close_boids.positions = boid_sim.Close_boids.positions[:0]
-	boid_sim.Close_boids.velocities = boid_sim.Close_boids.velocities[:0]
-
-	boid_sim.Super_close_positions = boid_sim.Super_close_positions[:0]
-
-	for _, other_boid_index := range bounded_boids_indexes {
-		// if your comparing the boid to itself
-		if index == int(other_boid_index) {
-			continue
-		}
-
-		other_boid := boid_sim.Boids[other_boid_index]
-
-		dist_sqr := Vector.DistSqr(my_boid_pos, other_boid.Position)
-
-		if dist_sqr >= boid_sim.Visual_Range*boid_sim.Visual_Range {
-			continue
-		}
-
-		// super close boids get treated differently
-		if dist_sqr < boid_sim.Separation_Min_Distance*boid_sim.Separation_Min_Distance {
-			boid_sim.Super_close_positions = append(boid_sim.Super_close_positions, other_boid.Position)
-		} else {
-			boid_sim.Close_boids.positions = append(boid_sim.Close_boids.positions, other_boid.Position)
-			boid_sim.Close_boids.velocities = append(boid_sim.Close_boids.velocities, other_boid.Velocity)
-		}
-	}
-}
-*/
 
 // NOTE dt is in seconds
 func (boid_sim *Boid_simulation) Update_boids(dt float64) {
