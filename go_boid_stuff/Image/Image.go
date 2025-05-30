@@ -23,13 +23,16 @@ func (c Color) Splat() (uint8, uint8, uint8, uint8) {
 	return c.R, c.G, c.B, c.A
 }
 
+// func clamp[T Vector.Number](x, max, min T) T {
+func clamp[T Vector.Number](x, maxi, mini T) T {
+	return max(min(x, maxi), mini)
+}
+
 // https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB_alternative
 func HSL_to_RGB[T Vector.Float](H, S, L T) Color {
-	if !(0 <= H && H <= 360) ||
-		!(0 <= S && S <= 1) ||
-		!(0 <= L && L <= 1) {
-		log.Fatalf("HSL got input out of range H: %v S: %v L: %v\n", H, S, L)
-	}
+	H = clamp(H, 0, 360)
+	S = clamp(S, 0, 1)
+	L = clamp(L, 0, 1)
 
 	a := S * min(L, 1-L)
 	f := func(n T) T {
