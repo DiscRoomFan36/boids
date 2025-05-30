@@ -96,7 +96,7 @@ func (img *Image) put_pixel(x, y int, c Color) {
 	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3] = c.A
 }
 
-func (img *Image) Draw_Rect(x, y, w, h int, c Color) {
+func Draw_Rect(img *Image, x, y, w, h int, c Color) {
 	for j := max(y, 0); j < min(y+h, img.Height); j++ {
 		for i := max(x, 0); i < min(x+w, img.Width); i++ {
 			img.put_pixel(i, j, c)
@@ -114,7 +114,7 @@ func (img *Image) Clear_background(c Color) {
 	}
 }
 
-func (img *Image) Draw_Circle(x, y, r int, c Color) {
+func Draw_Circle(img *Image, x, y, r int, c Color) {
 	for j := max(y-r-1, 0); j < min(y+r+1, img.Height); j++ {
 		for i := max(x-r-1, 0); i < min(x+r+1, img.Width); i++ {
 			a := i - x

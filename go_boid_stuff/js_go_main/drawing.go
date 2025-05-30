@@ -198,7 +198,7 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array s
 				// fade alpha based on how many points are in it.
 				faded_color := Image.HSL_to_RGB(blended, 0.7, 0.7)
 
-				img.Draw_Rect(int(x*scale), int(y*scale), int(step_x*scale), int(step_y*scale), faded_color)
+				Image.Draw_Rect(img, int(x*scale), int(y*scale), int(step_x*scale), int(step_y*scale), faded_color)
 			}
 		}
 	}
@@ -211,7 +211,7 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array s
 
 	// 		percent := float32(i) / float32(img.Width)
 	// 		color := Image.HSL_to_RGB(lerp(start_number, end_number, percent), 0.7, 0.7)
-	// 		img.Draw_Rect(i, 0, STEP, 25, color)
+	// 		Image.Draw_Rect(img, i, 0, STEP, 25, color)
 	// 	}
 	// }
 }
