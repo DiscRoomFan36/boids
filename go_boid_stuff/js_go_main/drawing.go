@@ -214,17 +214,25 @@ func draw_quadtree_onto_image[T Vector.Number](img *Image.Image, my_quadtree qua
 }
 
 func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array spacialarray.Spacial_Array[T], scale T) {
-	var outer_color = Image.Color{R: 255, G: 255, B: 255, A: 255}
+
+	min_x, min_y := sp_array.Min_x, sp_array.Min_y
+	max_x, max_y := sp_array.Max_x, sp_array.Max_y
+
+	// width and height
+	w, h := sp_array.Max_x-sp_array.Min_x, sp_array.Max_y-sp_array.Min_y
+
+	// how big the boxes are.
+	step_x, step_y := w/T(sp_array.Boxes_wide), h/T(sp_array.Boxes_high)
 
 	{
 		// draw the outsides.
-		x, y := sp_array.Min_x, sp_array.Min_y
-		max_x, max_y := sp_array.Max_x, sp_array.Max_y
+		var outer_color = Image.Color{R: 255, G: 255, B: 255, A: 255} // WHITE.
+
 		bounding_box := [4]Vector.Vector2[T]{
-			{X: x, Y: y},
-			{X: max_x, Y: y},
+			{X: min_x, Y: min_y},
+			{X: max_x, Y: min_y},
 			{X: max_x, Y: max_y},
-			{X: x, Y: max_y},
+			{X: min_x, Y: max_y},
 		}
 		for i := 0; i < len(bounding_box); i++ {
 			bounding_box[i].Mult(scale)
@@ -240,45 +248,37 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array s
 		}
 	}
 
-	// now draw the inner lines. Vertical
-	var inner_color = Image.Color{R: 255, G: 0, B: 0, A: 255}
-	for i := 1; i < sp_array.Boxes_wide; i++ {
-		w := sp_array.Max_x - sp_array.Min_x
-		step := w / T(sp_array.Boxes_wide)
-		x := sp_array.Min_x + step*T(i)
+	{ // now draw the inner lines.
+		var inner_color = Image.Color{R: 255, G: 0, B: 0, A: 255}
 
-		p1 := Vector.Vector2[T]{X: x, Y: sp_array.Min_y}
-		p2 := Vector.Vector2[T]{X: x, Y: sp_array.Max_y}
+		// Vertical
+		for i := 1; i < sp_array.Boxes_wide; i++ {
+			x := sp_array.Min_x + step_x*T(i)
 
-		p1.Mult(scale)
-		p2.Mult(scale)
+			p1 := Vector.Vector2[T]{X: x, Y: sp_array.Min_y}
+			p2 := Vector.Vector2[T]{X: x, Y: sp_array.Max_y}
 
-		Image.Draw_Line(img, p1, p2, inner_color)
+			p1.Mult(scale)
+			p2.Mult(scale)
+
+			Image.Draw_Line(img, p1, p2, inner_color)
+		}
+
+		// Horizontal
+		for j := 1; j < sp_array.Boxes_high; j++ {
+			y := sp_array.Min_y + step_y*T(j)
+
+			p1 := Vector.Vector2[T]{X: sp_array.Min_x, Y: y}
+			p2 := Vector.Vector2[T]{X: sp_array.Max_x, Y: y}
+
+			p1.Mult(scale)
+			p2.Mult(scale)
+
+			Image.Draw_Line(img, p1, p2, inner_color)
+		}
 	}
 
-	// now draw the inner lines. Horizontal
-	for j := 1; j < sp_array.Boxes_high; j++ {
-		h := sp_array.Max_y - sp_array.Min_y
-		step := h / T(sp_array.Boxes_high)
-		y := sp_array.Min_y + step*T(j)
-
-		p1 := Vector.Vector2[T]{X: sp_array.Min_x, Y: y}
-		p2 := Vector.Vector2[T]{X: sp_array.Max_x, Y: y}
-
-		p1.Mult(scale)
-		p2.Mult(scale)
-
-		Image.Draw_Line(img, p1, p2, inner_color)
-	}
-
-	// finally, draw the cells that contain the boids. (intensity on how many boids.)
-	{
-		// TODO don't calc twice, just clean this function up...
-		w := sp_array.Max_x - sp_array.Min_x
-		h := sp_array.Max_y - sp_array.Min_y
-		step_x := w / T(sp_array.Boxes_wide)
-		step_y := h / T(sp_array.Boxes_high)
-
+	{ // finally, draw the cells that contain the boids. (intensity on how many boids.)
 		for j := range sp_array.Boxes_high {
 			for i := range sp_array.Boxes_wide {
 				// where we are,
@@ -291,6 +291,8 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array s
 					continue
 				}
 
+				// The colors from blue to red.
+				// it would be better if we had something that could blend a color.
 				const start_number = 180
 				const end_number = 360
 
