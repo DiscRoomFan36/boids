@@ -133,7 +133,11 @@ function setup_sliders(go: GoFunctions) {
     if (DEBUG_SLIDERS) console.log("typescript got properties", properties);
 
     const slider_container = document.getElementById("slideContainer");
-    if (slider_container === null) throw new Error("Cannot Get slider container");
+    if (slider_container === null) {
+        return; // just dont display it. for now
+        // TODO
+        // throw new Error("Cannot Get slider container");
+    }
 
     // TODO for the lings that have a small range (like cohesion factor) make the value the square of the number.
     // TODO sort the outputs, the entries returns sudo random order, not good
@@ -213,7 +217,6 @@ function setup_sliders(go: GoFunctions) {
     const [backImageWidth, backImageHeight] = [ctx.canvas.width, ctx.canvas.height]
 
     const backCanvas = new OffscreenCanvas(backImageWidth, backImageHeight)
-    // const backCanvas = new OffscreenCanvas(1, 1)
 
     const backCtx = backCanvas.getContext("2d")
     if (backCtx === null) throw new Error("2D context is not supported")
