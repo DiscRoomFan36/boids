@@ -26,12 +26,6 @@ type Boid struct {
 	Velocity Vector.Vector2[Boid_Float]
 }
 
-// SOA for the rescue!
-type boid_array struct {
-	positions  []Vector.Vector2[Boid_Float]
-	velocities []Vector.Vector2[Boid_Float]
-}
-
 type Boid_simulation struct {
 	Boids []Boid
 
@@ -61,9 +55,7 @@ type Boid_simulation struct {
 	Boid_Draw_Radius Boid_Float `Property:"0;20" Default:"7"`
 
 	// Working Areas
-	Accelerations         []Vector.Vector2[Boid_Float]
-	Close_boids           boid_array
-	Super_close_positions []Vector.Vector2[Boid_Float]
+	Accelerations []Vector.Vector2[Boid_Float]
 
 	Spacial_array spacialarray.Spacial_Array[Boid_Float]
 }
@@ -78,11 +70,6 @@ func New_boid_simulation(width, height Boid_Float, num_boids int) Boid_simulatio
 		Height: height,
 
 		Accelerations: make([]Vector.Vector2[Boid_Float], num_boids),
-		Close_boids: boid_array{
-			positions:  make([]Vector.Vector2[Boid_Float], 0, INITIAL_ARRAY_SIZE),
-			velocities: make([]Vector.Vector2[Boid_Float], 0, INITIAL_ARRAY_SIZE),
-		},
-		Super_close_positions: make([]Vector.Vector2[Boid_Float], 0, INITIAL_ARRAY_SIZE),
 
 		// Quadtree:      quadtree.New_quadtree[Boid_Float](),
 		Spacial_array: spacialarray.New_Spacial_Array[Boid_Float](),
