@@ -15,10 +15,6 @@ import (
 const BOUNDING = true
 const WRAPPING = false
 
-const DEBUG_HEADING = false
-const DEBUG_BOUNDARY = true
-const DEBUG_QUADTREE = false
-
 type Boid_Float float32
 
 type Boid struct {
