@@ -1,7 +1,7 @@
 // typescript glue code.
 
-const DEBUG_DISPLAY = true
-const DEBUG_SLIDERS = true
+const DEBUG_DISPLAY = false
+const DEBUG_SLIDERS = false
 
 interface GoFunctions {
     SetProperties: (obj:Object) => number,
@@ -139,9 +139,12 @@ function setup_sliders(go: GoFunctions) {
         // throw new Error("Cannot Get slider container");
     }
 
-    // TODO for the lings that have a small range (like cohesion factor) make the value the square of the number.
-    // TODO sort the outputs, the entries returns sudo random order, not good
-    for (const [key, value] of Object.entries(properties)) {
+    // TODO for the slides that have a small range (like cohesion factor) make the value the square of the number.
+
+    const entries = Object.entries(properties)
+    entries.sort()
+
+    for (const [key, value] of entries) {
 
         if (DEBUG_SLIDERS) console.log(`typescript: ${key}: ${value}`);
         const [min_s, max_s, default_s] = (value as string).split(";");
