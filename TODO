@@ -1,7 +1,9 @@
 
-NOW
+DONE
 
-LATER
+
+
+NEXT
 
 * rendering of boids is broken, they are at the wrong angle
 * why is the spacial array debug white? shouldn't it be blue?
@@ -15,3 +17,18 @@ LATER
 * move all the html and web stuff into a different folder, (but some files need to be in the base folder for the github pages thing to work...)
 
 
+AFTER THE CODE IS IN A GOOD PLACE
+
+* boids follow mouse on mouse down
+
+* boids dodge obstacles, put a big rect in the middle of the screen.
+
+* make the rendering a camera like, so you can scroll and what not.
+
+* make the html canvas always be in the background of the page? so the image follows even if you scroll down, can use this for camera movement later.
+
+* draw an actual image instead of the triangles? <- would require major typescript rendering, i don't think wasm has got that speed.
+
+* have the go_boid_stuff/image use actual canvas stuff, for speed. would require a lot of refactoring on the typescript side.
+
+* Make into my personal website, aka put my name and links to my stuff on it. boids path around name.
