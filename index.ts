@@ -1,7 +1,46 @@
 // typescript glue code.
 
-const DEBUG_DISPLAY = false
-const DEBUG_SLIDERS = false
+const DEBUG_DISPLAY = false;
+const DEBUG_SLIDERS = false;
+
+enum Log_Type {
+    General,
+
+    Debug_Display,
+    Debug_Sliders,
+}
+
+function log(log_type: Log_Type, ...data: any[]): void {
+    // if this is the empty string
+    var do_log = false;
+    var log_header = "";
+
+    switch (log_type) {
+        case Log_Type.General:
+            log_header = "";
+            do_log = true;
+            break;
+
+        case Log_Type.Debug_Display:
+            log_header = "DEBUG_DISPLAY";
+            if (DEBUG_DISPLAY) do_log = true;
+            break;
+
+
+        case Log_Type.Debug_Sliders:
+            log_header = "DEBUG_SLIDERS";
+            if (DEBUG_SLIDERS) do_log = true;
+            break;
+    }
+
+    if (do_log) {
+        if (log_header != "") {
+            console.log(`${log_header}: `, ...data);
+        } else {
+            console.log(...data);
+        }
+    }
+}
 
 interface GoFunctions {
     SetProperties: (obj:Object) => number,
@@ -53,7 +92,7 @@ function renderBoids(display: Display, go: GoFunctions) {
     const buffer_size = width * height * NUM_COLOR_COMPONENTS;
 
     if (display.backImageWidth !== width || display.backImageHeight !== height) {
-        console.log("Oh god. were resizing the buffer");
+        log(Log_Type.General, "Oh god. were resizing the buffer")
 
         if (display.backBufferArray.length < buffer_size) {
             // make the buffer bigger
@@ -130,7 +169,7 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
 // puts some sliders up to control some parameters
 function setup_sliders(go: GoFunctions) {
     const properties: Object = go.GetProperties();
-    if (DEBUG_SLIDERS) console.log("typescript got properties", properties);
+    log(Log_Type.Debug_Sliders, "typescript got properties", properties)
 
     const slider_container = document.getElementById("slideContainer");
     if (slider_container === null) {
@@ -146,11 +185,11 @@ function setup_sliders(go: GoFunctions) {
 
     for (const [key, value] of entries) {
 
-        if (DEBUG_SLIDERS) console.log(`typescript: ${key}: ${value}`);
+        log(Log_Type.Debug_Sliders, `typescript: ${key}: ${value}`)
         const [min_s, max_s, default_s] = (value as string).split(";");
 
         const [min, max, default_value] = [parseFloat(min_s), parseFloat(max_s), parseFloat(default_s)];
-        if (DEBUG_SLIDERS) console.log(`    min: ${min}, max: ${max}, default: ${default_value}`);
+        log(Log_Type.Debug_Sliders, `    min: ${min}, max: ${max}, default: ${default_value}`)
 
         const id = `slider_${key}`;
         const para_id = `${id}_paragraph`;
@@ -198,7 +237,7 @@ function setup_sliders(go: GoFunctions) {
             const obj: Record<string,number> = {};
             obj[key] = map_range_to_real_range(slider_number);
 
-            if (DEBUG_SLIDERS) console.log(obj);
+            log(Log_Type.Debug_Sliders, obj)
 
             go.SetProperties(obj);
         })
