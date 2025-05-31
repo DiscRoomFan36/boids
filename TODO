@@ -1,0 +1,19 @@
+
+NOW
+
+* The slider's are out of order and change on every run
+
+LATER
+
+* rendering of boids is broken, they are at the wrong angle
+
+
+* The slider's are not in a good position, and break the entire page if uncommented.
+
+* dt is being multiplied by 60 in the js_go_main, need to change all the math to fix that
+
+* move all the html and web stuff into a different folder, (but some files need to be in the base folder for the github pages thing to work...)
+
+* why is the spacial array debug white? shouldn't it be blue?
+
+* add a Boid number parameter, to the web side can change it.
