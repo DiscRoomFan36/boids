@@ -3,11 +3,7 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"reflect"
-	"strconv"
-	"strings"
 	"syscall/js"
 	"time"
 
@@ -28,74 +24,22 @@ const NUM_BOIDS = 25
 
 const BOID_SCALE = 2
 
-func parse_property_tag(tag string) (float64, float64, error) {
-	result := strings.Split(tag, ";")
-	if len(result) != 2 {
-		return 0, 0, fmt.Errorf("length of split is %v", len(result))
-	}
-
-	min, err := strconv.ParseFloat(result[0], 64)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	max, err := strconv.ParseFloat(result[1], 64)
-	if err != nil {
-		return 0, 0, err
-	}
-
-	if max < min {
-		return 0, 0, fmt.Errorf("Max is greater than min")
-	}
-
-	return min, max, nil
-}
-
 // Javascript function
 //
 // Uses reflection to dynamically get the parameters of the simulation
 func GetProperties(this js.Value, args []js.Value) any {
 	if len(args) != 0 {
-		return "don't pass anything to this function"
+		log.Panicf("GetProperties: don't pass anything to this function")
 	}
 
-	properties := make(map[string]any)
+	properties := boid.Get_properties()
 
-	s := reflect.ValueOf(&boid_sim).Elem()
-	typeOfT := s.Type()
-	for i := 0; i < s.NumField(); i++ {
-		f := s.Field(i)
-		tag := typeOfT.Field(i).Tag.Get("Property")
-		if len(tag) == 0 {
-			continue
-		}
-		if !f.CanInterface() {
-			log.Panicf("tag that has property cannot be interfaced. %d: %v %v\n", i, typeOfT.Field(i).Name, f.Type())
-		}
-
-		fmt.Printf("%d: %s %s = %v\n", i, typeOfT.Field(i).Name, f.Type(), tag)
-
-		// we don't have to do this, because typescript will handle it, but well do it anyway
-		min, max, err := parse_property_tag(tag)
-		if err != nil {
-			log.Panicf("could not parse property %v with error: %v\n", typeOfT.Field(i).Name, err)
-		}
-
-		default_tag := typeOfT.Field(i).Tag.Get("Default")
-		if len(default_tag) == 0 {
-			log.Fatalf("Property %v needs a default\n", typeOfT.Field(i).Name)
-		}
-		default_value, err := strconv.ParseFloat(default_tag, 64)
-		if err != nil {
-			log.Fatalf("default value (from %v) could not be parsed into float\n", typeOfT.Field(i).Name)
-		}
-
-		fmt.Printf("min %v, max %v, default %v\n", min, max, default_value)
-
-		properties[typeOfT.Field(i).Name] = fmt.Sprintf("%v;%v;%v", min, max, default_value)
+	// We have to do this because js.FuncOf() expects this function to return a map to any. (aka a javascript object.)
+	properties_to_any := make(map[string]any)
+	for k, v := range properties {
+		properties_to_any[k] = v
 	}
-
-	return properties
+	return properties_to_any
 }
 
 // Javascript function
@@ -105,50 +49,34 @@ func GetProperties(this js.Value, args []js.Value) any {
 // TODO this might be slightly stupid... make a method on boid_sim that accepts a map or something.
 func SetProperties(this js.Value, args []js.Value) any {
 	if len(args) != 1 {
-		return "SetProperties: please pass in a object with properties to set"
+		log.Panicf("SetProperties: please pass in a object with properties to set")
 	}
 
 	obj := args[0]
-
 	if obj.Type().String() != "object" {
 		log.Panicf("SetProperties: arg is not an object, it is a %v", args[0].Type().String())
 	}
 
-	properties_set := 0
-
-	s := reflect.ValueOf(&boid_sim).Elem()
-	typeOfT := s.Type()
-	for i := 0; i < s.NumField(); i++ {
-		f := s.Field(i)
-		field_name := typeOfT.Field(i).Name
-		tag := typeOfT.Field(i).Tag.Get("Property")
-
-		if len(tag) == 0 {
-			continue
-		}
-
-		value := obj.Get(field_name)
+	the_map := make(map[string]boid.Boid_Float)
+	for _, name := range boid.Get_property_names() {
+		value := obj.Get(name)
 		if value.IsUndefined() {
-			fmt.Printf("%v is not in obj\n", field_name)
 			continue
 		}
 
-		fmt.Printf("%v is in obj\n", field_name)
 		if value.Type().String() != "number" {
-			log.Panicf("SetProperties: value is not an string, it is a %v", value.Type().String())
+			log.Panicf("SetProperties: property '%v' is not an string, it is a %v", name, value.Type().String())
 		}
 
-		println(value.Float())
-		f.SetFloat(value.Float())
-
-		properties_set += 1
+		the_map[name] = boid.Boid_Float(value.Float())
 	}
 
-	if properties_set == 0 {
+	if len(the_map) == 0 {
 		log.Panicf("SetProperties: Did not set any properties!!\n")
 	}
 
-	return properties_set
+	boid_sim.Set_Properties_with_map(the_map)
+	return len(the_map)
 }
 
 // Javascript function
@@ -158,7 +86,7 @@ func SetProperties(this js.Value, args []js.Value) any {
 // Will pass back a bunch of pixels, (though array), in [RGBA] format
 func GetNextFrame(this js.Value, args []js.Value) any {
 	if len(args) != 3 {
-		return "dumb-ass, you gotta pass in specific stuff. check the description of this function"
+		log.Panicf("GetNextFrame: dumb-ass, you gotta pass in specific stuff. check the description of this function")
 	}
 
 	width := args[0].Int()

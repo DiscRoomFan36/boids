@@ -1,11 +1,8 @@
 package boid
 
 import (
-	"log"
 	"math"
 	"math/rand"
-	"reflect"
-	"strconv"
 
 	spacialarray "boidstuff.com/Spacial_Array"
 	"boidstuff.com/Vector"
@@ -67,36 +64,10 @@ func New_boid_simulation(width, height Boid_Float, num_boids int) Boid_simulatio
 
 		Accelerations: make([]Vector.Vector2[Boid_Float], num_boids),
 
-		// Quadtree:      quadtree.New_quadtree[Boid_Float](),
 		Spacial_array: spacialarray.New_Spacial_Array[Boid_Float](),
 	}
 
-	// Set Defaults
-	s := reflect.ValueOf(&boid_sim).Elem()
-	typeOfT := s.Type()
-	for i := 0; i < s.NumField(); i++ {
-		f := s.Field(i)
-		property_tag := typeOfT.Field(i).Tag.Get("Property")
-		if len(property_tag) == 0 {
-			continue // we don't need to set a default
-		}
-
-		tag := typeOfT.Field(i).Tag.Get("Default")
-		if len(tag) == 0 {
-			log.Fatalf("Property field (%v) needs a default value", typeOfT.Field(i).Name)
-		}
-
-		if !f.CanInterface() {
-			log.Panicf("tag that has property cannot be interfaced. %d: %v %v\n", i, typeOfT.Field(i).Name, f.Type())
-		}
-
-		default_value, err := strconv.ParseFloat(tag, 64)
-		if err != nil {
-			log.Fatalf("default value (from %v) could not be parsed into float\n", typeOfT.Field(i).Name)
-		}
-
-		f.SetFloat(default_value)
-	}
+	set_boid_defaults(&boid_sim)
 
 	for i := range boid_sim.Boids {
 		boid_sim.Boids[i].Position = Vector.Make_Vector2(
@@ -239,83 +210,6 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		wind := Vector.Make_Vector2[Boid_Float](boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
 		boid_sim.Accelerations[i].Add(wind)
 	}
-
-	/*
-		// get the new velocities for all the boids
-		for i := range boid_sim.Quadtree.Traverse() {
-			my_boid := boid_sim.Boids[i]
-
-			// for i, my_boid := range boid_sim.Boids {
-			// find the boids in range
-			boid_sim.set_close_boids(int(i))
-
-			// Separation
-			sep := Vector.Vector2[Boid_Float]{}
-			for _, other_pos := range boid_sim.Super_close_positions {
-				sep.Add(Vector.Sub(my_boid.Position, other_pos))
-			}
-
-			// Alignment
-			align := Vector.Add(Vector.Vector2[Boid_Float]{}, boid_sim.Close_boids.velocities...)
-			// Cohesion
-			coh := Vector.Add(Vector.Vector2[Boid_Float]{}, boid_sim.Close_boids.positions...)
-
-			num_close_boids := len(boid_sim.Close_boids.positions)
-			if num_close_boids > 0 {
-				align.Mult(1 / Boid_Float(num_close_boids))
-				align.Sub(my_boid.Velocity)
-
-				coh.Mult(1 / Boid_Float(num_close_boids))
-				coh.Sub(my_boid.Position)
-			}
-
-			sep.Mult(boid_sim.Separation_Factor)
-			align.Mult(boid_sim.Alignment_Factor)
-			coh.Mult(boid_sim.Cohesion_Factor)
-
-			// NOTE remember to not change accelerations, just assign to it. its got trash in it
-			boid_sim.Accelerations[i] = Vector.Add(sep, align, coh)
-
-			if BOUNDING {
-				// TODO get rid of bounding force function, pull it in
-				bounding := Vector.Mult(boid_sim.bounding_force(int(i)), boid_sim.Margin_Turn_Factor)
-				boid_sim.Accelerations[i].Add(bounding)
-			}
-
-			// TODO somehow put limiting speed around here?
-
-			// OTHER Additions
-
-			// TODO add noise instead
-			// const WOBBLE_FACTOR = 0.01
-			// wobble := Vector.Mult(Vector.Random_unit_vector[T](), WOBBLE_FACTOR)
-
-			// just move some of them in different directions, semi randomly
-			// const RANDOM_DRAW_FACTOR = 0.01
-			random_draw := Vector.Vector2[Boid_Float]{}
-			if i%3 == 0 {
-				random_draw.X += 1
-			} else if i%3 == 1 {
-				random_draw.X -= 1
-				// draw.Y += 1
-			}
-			random_draw.Mult(boid_sim.Random_Draw_Factor)
-			boid_sim.Accelerations[i].Add(random_draw)
-
-			// const CENTER_DRAW_FACTOR = 0.1
-			center := Vector.Make_Vector2(boid_sim.Width/2, boid_sim.Height/2)
-			if Vector.Dist(my_boid.Position, center) > min(boid_sim.Width, boid_sim.Height)/5 {
-				center_pointer := Vector.Normalized(Vector.Sub(center, my_boid.Position))
-				center_draw := Vector.Mult(center_pointer, boid_sim.Center_Draw_Factor)
-
-				boid_sim.Accelerations[i].Add(center_draw)
-			}
-
-			wind := Vector.Make_Vector2[Boid_Float](boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
-			boid_sim.Accelerations[i].Add(wind)
-
-		}
-	*/
 
 	// Now update boids
 	for i := 0; i < len(boid_sim.Boids); i++ {

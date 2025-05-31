@@ -71,7 +71,7 @@ func (array *Spacial_Array[T]) Append_points(points []Vector.Vector2[T]) {
 	}
 
 	if len(points) > int(^BOX_ID_TYPE(0)) {
-		log.Fatalf("To many points to fit into BOX_ID_TYPE")
+		log.Fatalf("To many points to fit into BOX_ID_TYPE\n")
 	}
 
 	for index, point := range points {
@@ -145,7 +145,7 @@ func (array *Spacial_Array[T]) Clear() {
 // returns min_x, min_y, max_x, max_y
 func find_mins_and_maxs[T Vector.Number](points []Vector.Vector2[T]) (T, T, T, T) {
 	if len(points) == 0 {
-		log.Fatalf("find_mins_and_maxs: No points in points array.")
+		log.Fatalf("find_mins_and_maxs: No points in points array.\n")
 	}
 
 	min_x := points[0].X
