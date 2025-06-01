@@ -39,6 +39,15 @@
 				height: 0;
 			}
 
+
+			summary {
+				background-color: #151515;
+				color: lightgoldenrodyellow;
+				opacity: 0.7;
+				padding: 0.5rem;
+				font-size: 1.5rem;
+			}
+
 			/* https://www.w3schools.com/howto/howto_js_rangeslider.asp */
 			.slideContainer {
 				position: absolute;
@@ -67,11 +76,7 @@
 				opacity: 1;
 			}
 
-			.sliderKey {
-				color: lightgoldenrodyellow;
-				/* background-color: #04AA6D; */
-				/* font-size: 10px; */
-			}
+			.sliderKey { color: lightgoldenrodyellow; }
 
 
 			.slider {
@@ -87,9 +92,7 @@
 				transition: opacity .2s;
 			}
 			/* Mouse-over effects */
-			.slider:hover {
-				opacity: 1; /* Fully shown on mouse-over */
-			}
+			.slider:hover { opacity: 1; }
 			.slider::-webkit-slider-thumb {
 				-webkit-appearance: none;
 				appearance: none;
@@ -111,7 +114,10 @@
 	</head>
 	<body>
 		<div id="the_rest" style="position: absolute;">
-			<div class="slideContainer" id="slideContainer"></div>
+			<details>
+				<summary id="settings_summary">Settings</summary>
+				<div class="slideContainer" id="slideContainer"></div>
+			</details>
 		</div>
 
 		<div id="cavas_div">
