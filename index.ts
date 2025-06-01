@@ -249,10 +249,10 @@ function setup_sliders(go: GoFunctions) {
 
     setup_sliders(go)
 
-    const gameCanvas = document.getElementById("game") as HTMLCanvasElement | null
-    if (gameCanvas === null) throw new Error("No canvas with id `game` is found")
+    const boidCanvas = document.getElementById("boid_canvas") as HTMLCanvasElement | null
+    if (boidCanvas === null) throw new Error("No canvas with id `boid_canvas` is found")
 
-    const ctx = gameCanvas.getContext("2d")
+    const ctx = boidCanvas.getContext("2d")
     if (ctx === null) throw new Error("2D context is not supported")
     ctx.imageSmoothingEnabled = false
 
