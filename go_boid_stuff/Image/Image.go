@@ -28,7 +28,7 @@ func clamp[T Vector.Number](x, mini, maxi T) T {
 	if mini > maxi {
 		panic("mini was bigger than maxi")
 	}
-	return max(min(x, maxi), mini)
+	return max(mini, min(x, maxi))
 }
 
 // https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB_alternative
