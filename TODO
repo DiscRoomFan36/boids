@@ -2,11 +2,11 @@
 DONE
 
 * The slider's are not in a good position, and break the entire page if uncommented.
+* put the slider in a drop down
 
 
 NEXT
 
-* put the slidgit er in a drop down
 
 * rendering of boids is broken, they are at the wrong angle
 * why is the spacial array debug white? shouldn't it be blue?
