@@ -187,7 +187,7 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array s
 
 				// The colors from blue to red.
 				// it would be better if we had something that could blend a color.
-				const start_number = 180
+				const start_number = 230
 				const end_number = 360
 
 				fill_amount := float32(box.Count) / spacialarray.BOX_SIZE
@@ -196,7 +196,7 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array s
 				blended := lerp(start_number, end_number, fill_amount)
 
 				// fade alpha based on how many points are in it.
-				faded_color := Image.HSL_to_RGB(blended, 0.7, 0.7)
+				faded_color := Image.HSL_to_RGB(blended, 0.9, 0.5)
 
 				Image.Draw_Rect(img, int(x*scale), int(y*scale), int(step_x*scale), int(step_y*scale), faded_color)
 			}
@@ -206,11 +206,11 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array s
 	// { // Test Color interpolation
 	// 	const STEP = 10
 	// 	for i := 0; i < img.Width; i += STEP {
-	// 		const start_number = 180
+	// 		const start_number = 230
 	// 		const end_number = 360
 
 	// 		percent := float32(i) / float32(img.Width)
-	// 		color := Image.HSL_to_RGB(lerp(start_number, end_number, percent), 0.7, 0.7)
+	// 		color := Image.HSL_to_RGB(lerp(start_number, end_number, percent), 0.9, 0.5)
 	// 		Image.Draw_Rect(img, i, 0, STEP, 25, color)
 	// 	}
 	// }

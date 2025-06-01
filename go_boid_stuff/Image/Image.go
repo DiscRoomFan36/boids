@@ -24,7 +24,10 @@ func (c Color) Splat() (uint8, uint8, uint8, uint8) {
 }
 
 // func clamp[T Vector.Number](x, max, min T) T {
-func clamp[T Vector.Number](x, maxi, mini T) T {
+func clamp[T Vector.Number](x, mini, maxi T) T {
+	if mini > maxi {
+		panic("mini was bigger than maxi")
+	}
 	return max(min(x, maxi), mini)
 }
 

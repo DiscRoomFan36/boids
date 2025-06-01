@@ -3,13 +3,13 @@ DONE
 
 * The slider's are not in a good position, and break the entire page if uncommented.
 * put the slider in a drop down
+* why is the spacial array debug white? shouldn't it be blue? <- (clamp was backwards)
 
 
 NEXT
 
 
 * rendering of boids is broken, they are at the wrong angle
-* why is the spacial array debug white? shouldn't it be blue?
 
 * dt is being multiplied by 60 in the js_go_main, need to change all the math to fix that
 
