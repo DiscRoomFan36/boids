@@ -45,7 +45,7 @@ type Boid_simulation struct {
 	Max_Speed Boid_Float `Property:"1;50" Default:"25"`
 	Min_Speed Boid_Float `Property:"0;25" Default:"5"`
 
-	Boid_Draw_Radius Boid_Float `Property:"0;20" Default:"7"`
+	Boid_Draw_Radius Boid_Float `Property:"0;50" Default:"50"`
 
 	// Working Areas
 	Accelerations []Vector.Vector2[Boid_Float]
@@ -126,7 +126,6 @@ func (boid_sim *Boid_simulation) Set_up_Spacial_Array() {
 
 // NOTE dt is in seconds
 func (boid_sim *Boid_simulation) Update_boids(dt float64) {
-	// boid_sim.Set_up_quadtree()
 	// TODO inline
 	boid_sim.Set_up_Spacial_Array()
 

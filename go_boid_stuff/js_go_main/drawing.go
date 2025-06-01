@@ -9,8 +9,7 @@ import (
 	"boidstuff.com/boid"
 )
 
-// const DEBUG_QUADTREE = true
-const DEBUG_SPACIAL_ARRAY = true
+const DEBUG_SPACIAL_ARRAY = false
 const DEBUG_BOUNDARY = true
 const DEBUG_HEADING = true
 
@@ -66,17 +65,11 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 		}
 
 		// Rotate to face them in the right direction
-		theta := Vector.GetTheta(b.Velocity)
-		// TODO i don't think the wings are rotating right. hmmm
-		// TODO this is broken...
-		to_rotate := theta
-		if b.Velocity.Y > 0 {
-			to_rotate = -theta
-		}
+		theta := Vector.GetTheta(b.Velocity) - math.Pi/2
 		// TODO i also think this is slowing us down, put in own function
 		for i := 0; i < len(boid_shape); i++ {
 			// someone who knows math explain this
-			boid_shape[i] = Vector.Rotate(boid_shape[i], to_rotate)
+			boid_shape[i] = Vector.Rotate(boid_shape[i], theta)
 
 			boid_shape[i].Mult(boid_sim.Boid_Draw_Radius * scale_factor)
 			boid_shape[i].Add(b.Position)
