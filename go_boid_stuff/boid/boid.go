@@ -29,20 +29,21 @@ type Boid_simulation struct {
 
 	// 1 'Unit' is how far a boid can go in 1 second.
 
-	Visual_Range            Boid_Float `Property:"1;100" Default:"50"`
-	Separation_Min_Distance Boid_Float `Property:"0;50" Default:"20"`
+	Visual_Range            Boid_Float `Property:"1;25" Default:"15"`
+	Separation_Min_Distance Boid_Float `Property:"0;20" Default:"8.5"`
 
 	// Forward_Boost_Factor Boid_Float `Property:"0;50" Default:"20"`
 
-	Separation_Factor Boid_Float `Property:"0;1" Default:"0.05"`
-	Alignment_Factor  Boid_Float `Property:"0;1" Default:"0.05"`
-	Cohesion_Factor   Boid_Float `Property:"0;1" Default:"0.005"`
+	Separation_Factor Boid_Float `Property:"0;1" Default:"0.15"`
+	Alignment_Factor  Boid_Float `Property:"0;1" Default:"0.15"`
+	Cohesion_Factor   Boid_Float `Property:"0;1" Default:"0.015"`
 
 	Margin             Boid_Float `Property:"0;1000" Default:"50"`
 	Margin_Turn_Factor Boid_Float `Property:"0;1000" Default:"4"`
 
-	Random_Draw_Factor Boid_Float `Property:"0;1" Default:"0.1"`
-	Center_Draw_Factor Boid_Float `Property:"0;10" Default:"1"`
+	Random_Draw_Factor     Boid_Float `Property:"0;1" Default:"0.1"`
+	Center_Draw_Radius_Div Boid_Float `Property:"0;10" Default:"3"`
+	Center_Draw_Factor     Boid_Float `Property:"0;10" Default:"1"`
 
 	Wind_X_Factor Boid_Float `Property:"-10;10" Default:"0"`
 	Wind_Y_Factor Boid_Float `Property:"-10;10" Default:"0"`
@@ -50,7 +51,7 @@ type Boid_simulation struct {
 	Max_Speed Boid_Float `Property:"1;500" Default:"100"`
 	Min_Speed Boid_Float `Property:"1;50" Default:"10"`
 
-	Boid_Draw_Radius Boid_Float `Property:"0;50" Default:"2.5"`
+	Boid_Draw_Radius Boid_Float `Property:"0;10" Default:"2.5"`
 
 	// Working Areas
 	Accelerations []Vector.Vector2[Boid_Float]
@@ -159,17 +160,19 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 
 			// if the near guy is super close. move away
 			dist_sqr := Vector.DistSqr(this_boid.Position, near_pos)
-			if dist_sqr < boid_sim.Separation_Min_Distance*boid_sim.Separation_Min_Distance {
+			sep_min_dist_sqr := square(boid_sim.Separation_Min_Distance)
+			if dist_sqr < sep_min_dist_sqr {
+
+				// in percent, how close it is, 0 is same position
+				closeness := dist_sqr / sep_min_dist_sqr
 
 				// limit the min distance.
-				if dist_sqr < 0.00001 {
-					dist_sqr = 0.00001
-				}
+				closeness = max(closeness, 0.00001)
 				// the closer the stronger
-				d := 1 / dist_sqr
+				force := 1 / closeness
 
-				sep.X += (this_boid.Position.X - near_pos.X) * d
-				sep.Y += (this_boid.Position.Y - near_pos.Y) * d
+				sep.X += (this_boid.Position.X - near_pos.X) * force
+				sep.Y += (this_boid.Position.Y - near_pos.Y) * force
 			}
 
 			// make the velocity's match.
@@ -230,7 +233,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	// ------------------------------------
 	//         Center draw forces
 	// ------------------------------------
-	if boid_sim.Center_Draw_Factor != 0 {
+	if boid_sim.Center_Draw_Factor != 0 && boid_sim.Center_Draw_Radius_Div != 0 {
 		for i := range len(boid_sim.Boids) {
 			this_boid := boid_sim.Boids[i]
 
@@ -238,9 +241,9 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 			center := Vector.Make_Vector2(boid_sim.Width/2, boid_sim.Height/2)
 
 			// if they in in this circle, don't be drawn into the center.
-			min_radius := min(boid_sim.Width, boid_sim.Height) / 5
+			min_radius := min(boid_sim.Width, boid_sim.Height) / boid_sim.Center_Draw_Radius_Div
 
-			if Vector.DistSqr(this_boid.Position, center) < min_radius*min_radius {
+			if Vector.DistSqr(this_boid.Position, center) < square(min_radius) {
 				continue
 			}
 
@@ -287,7 +290,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		a.Add(drag)
 
 		// p1 = (1/2)*a*t^2 + v0*t + p0
-		p1 := Vector.Add(Vector.Mult(a, 0.5*time*time), Vector.Mult(v0, time), p0)
+		p1 := Vector.Add(Vector.Mult(a, 0.5*square(time)), Vector.Mult(v0, time), p0)
 		// v1 = a*t + v0
 		v1 := Vector.Add(Vector.Mult(a, time), v0)
 
@@ -309,4 +312,8 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 // outputs a number from [0, b). ignore the float64. go math module is dumb.
 func proper_mod[T Vector.Float](a, b T) T {
 	return T(math.Mod(math.Mod(float64(a), float64(b))+float64(b), float64(b)))
+}
+
+func square[T Vector.Number](x T) T {
+	return x * x
 }

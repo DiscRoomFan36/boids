@@ -22,7 +22,7 @@ const BOID_BOUNDS_WIDTH = 16 * BOID_FACTOR
 const BOID_BOUNDS_HEIGHT = 9 * BOID_FACTOR
 const NUM_BOIDS = 100
 
-const BOID_SCALE = 0.25
+const BOID_SCALE = 0.5
 
 // Javascript function
 //

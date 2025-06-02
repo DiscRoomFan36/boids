@@ -48,6 +48,24 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 		}
 	}
 
+	// Draw visual radius.
+	visual_radius_color := Image.HSL_to_RGB(50, 0.7, 0.9)
+	for _, b := range boid_sim.Boids {
+		x := int(b.Position.X * scale_factor)
+		y := int(b.Position.Y * scale_factor)
+		r := int(boid_sim.Visual_Range * scale_factor)
+		Image.Draw_Circle(img, x, y, r, visual_radius_color)
+	}
+
+	// Draw visual radius.
+	minimum_radius_color := Image.HSL_to_RGB(270, 0.7, 0.7)
+	for _, b := range boid_sim.Boids {
+		x := int(b.Position.X * scale_factor)
+		y := int(b.Position.Y * scale_factor)
+		r := int(boid_sim.Separation_Min_Distance * scale_factor)
+		Image.Draw_Circle(img, x, y, r, minimum_radius_color)
+	}
+
 	// NOTE i would put this in a go routine, but wasm doesn't do multithreading, fuck
 	for _, b := range boid_sim.Boids {
 		// img.Draw_Circle(int(b.Position.X*scale_factor), int(b.Position.Y*scale_factor), BOID_DRAW_RADIUS, boid_color2)
