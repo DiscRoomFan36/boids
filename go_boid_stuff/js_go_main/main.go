@@ -17,12 +17,12 @@ var boid_sim boid.Boid_simulation
 
 var last_frame_time time.Time
 
-const BOID_FACTOR = 100
+const BOID_FACTOR = 50
 const BOID_BOUNDS_WIDTH = 16 * BOID_FACTOR
 const BOID_BOUNDS_HEIGHT = 9 * BOID_FACTOR
-const NUM_BOIDS = 25
+const NUM_BOIDS = 100
 
-const BOID_SCALE = 2
+const BOID_SCALE = 0.25
 
 // Javascript function
 //
@@ -119,7 +119,7 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	// Calculate the next frame of boids
 	// Times 60 because we want this to run at 60fps and dt=1 is supposed to be one time step
 	// TODO ^ this comment is dumb, just make it work. '1 time step' is a dumb unit, just use m/s
-	boid_sim.Update_boids(dt * 60)
+	boid_sim.Update_boids(dt)
 
 	// this might end up taking the most amount of time.
 	// TODO make a 'Draw a thing' file. (maybe in this module, stop boid from requiring Image...)

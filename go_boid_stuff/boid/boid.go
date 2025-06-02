@@ -1,6 +1,7 @@
 package boid
 
 import (
+	"fmt"
 	"math"
 	"math/rand"
 
@@ -10,7 +11,7 @@ import (
 
 // TODO put these into the boid_sim as well.
 const BOUNDING = true
-const WRAPPING = false
+const WRAPPING = true
 
 type Boid_Float float32
 
@@ -26,26 +27,30 @@ type Boid_simulation struct {
 
 	// Properties, in rough order of when their used
 
+	// 1 'Unit' is how far a boid can go in 1 second.
+
 	Visual_Range            Boid_Float `Property:"1;100" Default:"50"`
 	Separation_Min_Distance Boid_Float `Property:"0;50" Default:"20"`
+
+	// Forward_Boost_Factor Boid_Float `Property:"0;50" Default:"20"`
 
 	Separation_Factor Boid_Float `Property:"0;1" Default:"0.05"`
 	Alignment_Factor  Boid_Float `Property:"0;1" Default:"0.05"`
 	Cohesion_Factor   Boid_Float `Property:"0;1" Default:"0.005"`
 
-	Margin             Boid_Float `Property:"0;1000" Default:"100"`
-	Margin_Turn_Factor Boid_Float `Property:"0;1000" Default:"0.4"`
+	Margin             Boid_Float `Property:"0;1000" Default:"50"`
+	Margin_Turn_Factor Boid_Float `Property:"0;1000" Default:"4"`
 
-	Random_Draw_Factor Boid_Float `Property:"0;1" Default:"0.01"`
-	Center_Draw_Factor Boid_Float `Property:"0;1" Default:"0.1"`
+	Random_Draw_Factor Boid_Float `Property:"0;1" Default:"0.1"`
+	Center_Draw_Factor Boid_Float `Property:"0;10" Default:"1"`
 
-	Wind_X_Factor Boid_Float `Property:"-1;1" Default:"-0.05"`
-	Wind_Y_Factor Boid_Float `Property:"-1;1" Default:"-0.05"`
+	Wind_X_Factor Boid_Float `Property:"-10;10" Default:"0"`
+	Wind_Y_Factor Boid_Float `Property:"-10;10" Default:"0"`
 
-	Max_Speed Boid_Float `Property:"1;50" Default:"25"`
-	Min_Speed Boid_Float `Property:"0;25" Default:"5"`
+	Max_Speed Boid_Float `Property:"1;500" Default:"100"`
+	Min_Speed Boid_Float `Property:"1;50" Default:"10"`
 
-	Boid_Draw_Radius Boid_Float `Property:"0;50" Default:"50"`
+	Boid_Draw_Radius Boid_Float `Property:"0;50" Default:"2.5"`
 
 	// Working Areas
 	Accelerations []Vector.Vector2[Boid_Float]
@@ -85,6 +90,7 @@ func (boid_sim *Boid_simulation) adjust_speed(b *Boid) {
 	// func (b *Boid[T]) adjust_speed() {
 	speed := b.Velocity.Mag()
 	if speed > boid_sim.Max_Speed {
+		fmt.Printf("boid is faster than max\n")
 		b.Velocity.Mult(boid_sim.Max_Speed / speed)
 	} else if speed < boid_sim.Min_Speed {
 		b.Velocity.Mult(boid_sim.Min_Speed / speed)
@@ -129,7 +135,14 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	// TODO inline
 	boid_sim.Set_up_Spacial_Array()
 
-	// get the new velocities for all the boids
+	// Set the Accelerations to zero.
+	for i := range len(boid_sim.Accelerations) {
+		boid_sim.Accelerations[i] = Vector.Vector2[Boid_Float]{}
+	}
+
+	// ------------------------------------
+	//   Separation, Alignment, Cohesion
+	// ------------------------------------
 	for i := range len(boid_sim.Boids) {
 		this_boid := boid_sim.Boids[i]
 
@@ -145,8 +158,18 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 			num_close_boids += 1
 
 			// if the near guy is super close. move away
-			if Vector.DistSqr(this_boid.Position, near_pos) < boid_sim.Separation_Min_Distance*boid_sim.Separation_Min_Distance {
-				sep.Add(Vector.Sub(this_boid.Position, near_pos))
+			dist_sqr := Vector.DistSqr(this_boid.Position, near_pos)
+			if dist_sqr < boid_sim.Separation_Min_Distance*boid_sim.Separation_Min_Distance {
+
+				// limit the min distance.
+				if dist_sqr < 0.00001 {
+					dist_sqr = 0.00001
+				}
+				// the closer the stronger
+				d := 1 / dist_sqr
+
+				sep.X += (this_boid.Position.X - near_pos.X) * d
+				sep.Y += (this_boid.Position.Y - near_pos.Y) * d
 			}
 
 			// make the velocity's match.
@@ -157,36 +180,41 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 
 		// divide by number of close boids.
 		if num_close_boids > 0 {
+			align.SetMag(boid_sim.Max_Speed)
+			align.Sub(this_boid.Velocity)
 			align.Mult(1 / Boid_Float(num_close_boids))
 			align.Sub(this_boid.Velocity)
 
 			coh.Mult(1 / Boid_Float(num_close_boids))
 			coh.Sub(this_boid.Position)
+			// coh.SetMag(boid_sim.Max_Speed)
+			// coh.Sub(this_boid.Velocity)
 		}
 
 		sep.Mult(boid_sim.Separation_Factor)
 		align.Mult(boid_sim.Alignment_Factor)
 		coh.Mult(boid_sim.Cohesion_Factor)
 
-		// NOTE this assign clears the trash that was here before.
-		boid_sim.Accelerations[i] = Vector.Add(sep, align, coh)
+		boid_sim.Accelerations[i].Add(sep, align, coh)
+	}
 
-		if BOUNDING {
+	// ------------------------------------
+	//          Bounding forces
+	// ------------------------------------
+	if BOUNDING {
+		for i := range len(boid_sim.Boids) {
 			// TODO get rid of bounding force function, pull it in
 			bounding := Vector.Mult(boid_sim.bounding_force(i), boid_sim.Margin_Turn_Factor)
 			boid_sim.Accelerations[i].Add(bounding)
 		}
+	}
 
-		// TODO somehow put limiting speed around here?
-
-		// OTHER Additions
-
-		// TODO add noise instead
-		// const WOBBLE_FACTOR = 0.01
-		// wobble := Vector.Mult(Vector.Random_unit_vector[T](), WOBBLE_FACTOR)
-
-		// just move some of them in different directions, semi randomly
-		// const RANDOM_DRAW_FACTOR = 0.01
+	// ------------------------------------
+	//         Random draw forces
+	// ------------------------------------
+	for i := range len(boid_sim.Boids) {
+		// different boids have som random draw's given to them.
+		// TODO this is kinda dumb...
 		random_draw := Vector.Vector2[Boid_Float]{}
 		if i%3 == 0 {
 			random_draw.X += 1
@@ -194,34 +222,81 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 			random_draw.X -= 1
 			// draw.Y += 1
 		}
+
 		random_draw.Mult(boid_sim.Random_Draw_Factor)
 		boid_sim.Accelerations[i].Add(random_draw)
+	}
 
-		// const CENTER_DRAW_FACTOR = 0.1
-		center := Vector.Make_Vector2(boid_sim.Width/2, boid_sim.Height/2)
-		if Vector.Dist(this_boid.Position, center) > min(boid_sim.Width, boid_sim.Height)/5 {
+	// ------------------------------------
+	//         Center draw forces
+	// ------------------------------------
+	if boid_sim.Center_Draw_Factor != 0 {
+		for i := range len(boid_sim.Boids) {
+			this_boid := boid_sim.Boids[i]
+
+			// center of the simulation
+			center := Vector.Make_Vector2(boid_sim.Width/2, boid_sim.Height/2)
+
+			// if they in in this circle, don't be drawn into the center.
+			min_radius := min(boid_sim.Width, boid_sim.Height) / 5
+
+			if Vector.DistSqr(this_boid.Position, center) < min_radius*min_radius {
+				continue
+			}
+
+			// vector pointing towards the center.
 			center_pointer := Vector.Normalized(Vector.Sub(center, this_boid.Position))
-			center_draw := Vector.Mult(center_pointer, boid_sim.Center_Draw_Factor)
 
+			center_draw := Vector.Mult(center_pointer, boid_sim.Center_Draw_Factor)
 			boid_sim.Accelerations[i].Add(center_draw)
 		}
+	}
 
-		wind := Vector.Make_Vector2[Boid_Float](boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
+	// ------------------------------------
+	//                 Wind
+	// ------------------------------------
+	for i := range len(boid_sim.Boids) {
+		wind := Vector.Make_Vector2(boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
 		boid_sim.Accelerations[i].Add(wind)
 	}
 
-	// Now update boids
+	// ------------------------------------
+	//                 Other Ideas
+	// ------------------------------------
+	// TODO add noise instead
+	// const WOBBLE_FACTOR = 0.01
+	// wobble := Vector.Mult(Vector.Random_unit_vector[T](), WOBBLE_FACTOR)
+
+	// ------------------------------------
+	//   Update positions and velocities
+	// ------------------------------------
+	time := Boid_Float(dt)
 	for i := 0; i < len(boid_sim.Boids); i++ {
-		// this could be better
-		boid_sim.Boids[i].Velocity.Add(Vector.Mult(boid_sim.Accelerations[i], Boid_Float(dt)))
 
-		// TODO make this cleaner somehow, do we even have to limit speed?
+		// Handmade Hero Day 043 - The Equations of Motion: https://www.youtube.com/watch?v=LoTRzRFEk5I
+
+		p0 := boid_sim.Boids[i].Position
+		v0 := boid_sim.Boids[i].Velocity
+		a := boid_sim.Accelerations[i]
+
+		// TODO move this around.
+		// TODO also tweak these values.
+		a.Mult(5)
+		// just the negative velocity
+		drag := Vector.Mult(v0, -1)
+		a.Add(drag)
+
+		// p1 = (1/2)*a*t^2 + v0*t + p0
+		p1 := Vector.Add(Vector.Mult(a, 0.5*time*time), Vector.Mult(v0, time), p0)
+		// v1 = a*t + v0
+		v1 := Vector.Add(Vector.Mult(a, time), v0)
+
+		// adjust the velocity
+		// TODO do we even have to limit speed? drag dose that for us.
 		boid_sim.adjust_speed(&boid_sim.Boids[i])
-		// TODO add drag force, cant fo this until dt get set back to a reasonable number
-		// boid_sim.Boids[i].Velocity.Mult(0.9)
 
-		// add velocity * dt to position.
-		boid_sim.Boids[i].Position.Add(Vector.Mult(boid_sim.Boids[i].Velocity, Boid_Float(dt)))
+		boid_sim.Boids[i].Position = p1
+		boid_sim.Boids[i].Velocity = v1
 
 		// makes them wrap around the screen
 		if WRAPPING {

@@ -102,6 +102,29 @@ func (a Vector2[Number]) Mag() Number {
 	return Number(math.Sqrt(float64(a.Dot())))
 }
 
+func (a *Vector2[Number]) SetMag(new_mag Number) {
+	mag := a.Mag()
+	if mag == 0 {
+		mag = 1
+	}
+	a.Mult(new_mag / mag)
+}
+
+func (a *Vector2[Number]) ClampMag(mini, maxi Number) {
+	mag := a.Mag()
+	if mag == 0 {
+		// if the vector is zero, just set x to something. maybe a random vector?
+		a.X = mini
+		return
+	}
+
+	if mag < mini {
+		a.Mult(mini / mag)
+	} else if mag > maxi {
+		a.Mult(maxi / mag)
+	}
+}
+
 func (a *Vector2[Float]) Normalize() {
 	a.Mult(1 / a.Mag())
 }

@@ -5,11 +5,13 @@ DONE
 * put the slider in a drop down
 * why is the spacial array debug white? shouldn't it be blue? <- (clamp was backwards)
 * rendering of boids is broken, they are at the wrong angle
+* dt is being multiplied by 60 in the js_go_main, need to change all the math to fix that
 
 
 NEXT
 
-* dt is being multiplied by 60 in the js_go_main, need to change all the math to fix that
+* the separation factor isn't working i think. not strong enough.
+* TODO in Update boids position and velocities.
 
 * add a Boid number parameter, to the web side can change it.
 
