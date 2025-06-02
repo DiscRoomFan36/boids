@@ -12,6 +12,7 @@ import (
 const DEBUG_SPACIAL_ARRAY = false
 const DEBUG_BOUNDARY = true
 const DEBUG_HEADING = true
+const DEBUG_VISUAL_RANGES = false
 
 var boid_heading_color = Image.Color{R: 10, G: 240, B: 10, A: 255}
 var boid_boundary_color = Image.Color{R: 240, G: 240, B: 240, A: 255}
@@ -48,22 +49,24 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 		}
 	}
 
-	// Draw visual radius.
-	visual_radius_color := Image.HSL_to_RGB(50, 0.7, 0.9)
-	for _, b := range boid_sim.Boids {
-		x := int(b.Position.X * scale_factor)
-		y := int(b.Position.Y * scale_factor)
-		r := int(boid_sim.Visual_Range * scale_factor)
-		Image.Draw_Circle(img, x, y, r, visual_radius_color)
-	}
+	if DEBUG_VISUAL_RANGES {
+		// Draw visual radius.
+		visual_radius_color := Image.HSL_to_RGB(50, 0.7, 0.9)
+		for _, b := range boid_sim.Boids {
+			x := int(b.Position.X * scale_factor)
+			y := int(b.Position.Y * scale_factor)
+			r := int(boid_sim.Visual_Range * scale_factor)
+			Image.Draw_Circle(img, x, y, r, visual_radius_color)
+		}
 
-	// Draw visual radius.
-	minimum_radius_color := Image.HSL_to_RGB(270, 0.7, 0.7)
-	for _, b := range boid_sim.Boids {
-		x := int(b.Position.X * scale_factor)
-		y := int(b.Position.Y * scale_factor)
-		r := int(boid_sim.Separation_Min_Distance * scale_factor)
-		Image.Draw_Circle(img, x, y, r, minimum_radius_color)
+		// Draw minimum visual radius. (for separation.)
+		minimum_radius_color := Image.HSL_to_RGB(270, 0.7, 0.7)
+		for _, b := range boid_sim.Boids {
+			x := int(b.Position.X * scale_factor)
+			y := int(b.Position.Y * scale_factor)
+			r := int(boid_sim.Separation_Min_Distance * scale_factor)
+			Image.Draw_Circle(img, x, y, r, minimum_radius_color)
+		}
 	}
 
 	// NOTE i would put this in a go routine, but wasm doesn't do multithreading, fuck
