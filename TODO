@@ -16,6 +16,7 @@ NEXT
 * replace "random draw forces" in boid simulation.
 
 * add a Boid number parameter, to the web side can change it.
+* add toggles to the parameters as well.
 
 * for the slides that have a small range (like cohesion factor) make the value the square of the number.
 * move all the html and web stuff into a different folder, (but some files need to be in the base folder for the github pages thing to work...)
