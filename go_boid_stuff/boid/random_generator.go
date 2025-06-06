@@ -14,8 +14,12 @@ type Random_Generator struct {
 	// how far you are to next
 	t float32
 
+	// a toggle if you want wrapping behavior
+	wrapping bool
 	// Which direction the number turns, is random.
 	// True means increasing.
+	//
+	// only relevant when wrapping is true.
 	turning_direction bool
 }
 
@@ -23,12 +27,14 @@ type Random_Generator struct {
 //    User level functions
 // ---------------------------
 
-func New_Random_Generator() Random_Generator {
+func New_Random_Generator(wrapping bool) Random_Generator {
 	gen := Random_Generator{
-		curr:              random_32(),
-		next:              random_32(),
-		t:                 0,
-		turning_direction: random_32() < 0.5,
+		curr:     random_32(),
+		next:     random_32(),
+		t:        0,
+		wrapping: wrapping,
+		// only relevant when wrapping is true.
+		turning_direction: wrapping && (random_32() < 0.5),
 	}
 
 	return gen
@@ -54,12 +60,20 @@ func (gen *Random_Generator) Next(dt float32) float32 {
 		}
 
 		gen.next = random_32()
-		gen.turning_direction = random_32() < 0.5
+
+		if gen.wrapping {
+			// only relevant when wrapping is true.
+			gen.turning_direction = random_32() < 0.5
+		}
 	}
 
 	// smoothly go between the 2 values.
 	step := smoothstep(gen.t)
-	// fmt.Printf("    step: %v\n", step)
+
+	// skip the rest if not wrapping
+	if !gen.wrapping {
+		return lerp(gen.curr, gen.next, step)
+	}
 
 	if gen.turning_direction {
 		// t++, result++
@@ -87,14 +101,7 @@ func (gen *Random_Generator) Next(dt float32) float32 {
 			return mod1(ler)
 		}
 	}
-
-	// wrapping behavior
-	// return goto_wrap(gen.curr, gen.next, step)
 }
-
-// func Log_gen(gen Random_Generator) {
-// 	fmt.Printf("    Gen: c %+v\n", gen)
-// }
 
 // ---------------------------
 //      Helper Functions

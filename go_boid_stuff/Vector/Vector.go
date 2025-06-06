@@ -143,7 +143,7 @@ func DistSqr[T Number](a, b Vector2[T]) T {
 func Random_unit_vector[T Float]() Vector2[T] {
 	theta := rand.Float64() * 2 * math.Pi
 	sin, cos := math.Sincos(theta)
-	return Vector2[T]{T(sin), T(cos)}
+	return Make_Vector2(T(cos), T(sin))
 }
 
 // Really useful helper, would recommend
@@ -159,6 +159,8 @@ func GetTheta[T Float](a Vector2[T]) T {
 }
 
 // https://math.stackexchange.com/questions/2506306/rotation-of-a-vector-around-origin
+//
+// Note. this rotate function is correct. however, the image at the end is flipped. cool cool cool.
 func Rotate[T Float](a Vector2[T], theta T) Vector2[T] {
 	sin, cos := math.Sincos(float64(theta))
 
