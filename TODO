@@ -14,6 +14,7 @@ NEXT
 * TODO in Update boids position and velocities. factor out random numbers
 
 * replace "random draw forces" in boid simulation.
+* use random generator for the random draw forces.
 
 * add a Boid number parameter, to the web side can change it.
 * add toggles to the parameters as well.
