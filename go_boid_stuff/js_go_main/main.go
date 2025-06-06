@@ -116,9 +116,6 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	const REASONABLE_DT = 0.3
 	dt = min(dt, REASONABLE_DT)
 
-	// TODO remove
-	nocheckin_dt = dt
-
 	// Calculate the next frame of boids
 	// Times 60 because we want this to run at 60fps and dt=1 is supposed to be one time step
 	// TODO ^ this comment is dumb, just make it work. '1 time step' is a dumb unit, just use m/s

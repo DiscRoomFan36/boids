@@ -119,41 +119,7 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 			Image.Draw_Line(img, b.Position, where_boid_will_be, boid_heading_color)
 		}
 	}
-
-	{
-		// Test random generator.
-		new_random_number := nocheckin_generator.Next(float32(nocheckin_dt) * 0.25)
-
-		test_color := Image.HSL_to_RGB(180, 0.75, 0.6)
-
-		h := img.Height / 2
-		x := new_random_number * float32(img.Width)
-
-		Image.Draw_Rect(img, int(x-10), h, 20, 20, test_color)
-
-		unit_vector := Vector.Make_Vector2[float32](1, 0)
-
-		theta := new_random_number * 2 * math.Pi
-		rotated := Vector.Rotate(unit_vector, theta)
-
-		// give it some length
-		rotated.Mult(300)
-		// move to center
-		rotated.Add(Vector.Make_Vector2(float32(img.Width)/2, float32(img.Height)/2))
-
-		Image.Draw_Circle(img, int(rotated.X), int(rotated.Y), 10, test_color)
-
-		p1 := Vector.Make_Vector2(float32(img.Width/2), float32(img.Height/2))
-
-		Image.Draw_Line(img, p1, rotated, test_color)
-
-	}
 }
-
-// for testing.
-var nocheckin_generator = boid.New_Random_Generator(true)
-
-var nocheckin_dt = 0.0
 
 func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array spacialarray.Spacial_Array[T], scale T) {
 
@@ -251,19 +217,58 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array s
 		}
 	}
 
-	// { // Test Color interpolation
-	// 	const STEP = 10
-	// 	for i := 0; i < img.Width; i += STEP {
-	// 		const start_number = 230
-	// 		const end_number = 360
-
-	// 		percent := float32(i) / float32(img.Width)
-	// 		color := Image.HSL_to_RGB(lerp(start_number, end_number, percent), 0.9, 0.5)
-	// 		Image.Draw_Rect(img, i, 0, STEP, 25, color)
-	// 	}
-	// }
 }
 
 func lerp(a, b, t float32) float32 {
 	return (1-t)*a + t*b
 }
+
+// -----------------------------------------
+//   Code for testing Color interpolation.
+// -----------------------------------------
+
+// { // Test Color interpolation
+// 	const STEP = 10
+// 	for i := 0; i < img.Width; i += STEP {
+// 		const start_number = 230
+// 		const end_number = 360
+
+// 		percent := float32(i) / float32(img.Width)
+// 		color := Image.HSL_to_RGB(lerp(start_number, end_number, percent), 0.9, 0.5)
+// 		Image.Draw_Rect(img, i, 0, STEP, 25, color)
+// 	}
+// }
+
+// -----------------------------------------
+// Code for testing random number generator.
+// -----------------------------------------
+
+// {
+// 	test_color := Image.HSL_to_RGB(180, 0.75, 0.6)
+
+// 	// Test random generator.
+// 	new_random_number := nocheckin_generator.Next(float32(nocheckin_dt) * 0.25)
+
+// 	h := img.Height / 2
+// 	x := new_random_number * float32(img.Width)
+// 	Image.Draw_Rect(img, int(x-10), h, 20, 20, test_color)
+
+// 	unit_vector := Vector.Make_Vector2[float32](1, 0)
+// 	theta := new_random_number * 2 * math.Pi
+
+// 	rotated := Vector.Rotate(unit_vector, theta)
+// 	// give it some length
+// 	rotated.Mult(300)
+// 	// move to center
+// 	rotated.Add(Vector.Make_Vector2(float32(img.Width)/2, float32(img.Height)/2))
+
+// 	Image.Draw_Circle(img, int(rotated.X), int(rotated.Y), 10, test_color)
+
+// 	p1 := Vector.Make_Vector2(float32(img.Width/2), float32(img.Height/2))
+// 	Image.Draw_Line(img, p1, rotated, test_color)
+
+// // for testing. move these to global scope.
+// 	var nocheckin_generator = boid.New_Random_Generator(true)
+// 	var nocheckin_dt = 0.0
+
+// }
