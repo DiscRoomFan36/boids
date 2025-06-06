@@ -13,6 +13,8 @@ import (
 const BOUNDING = true
 const WRAPPING = true
 
+const NUM_RANDOM_GENERATORS = 32
+
 type Boid_Float float32
 
 type Boid struct {
@@ -25,9 +27,16 @@ type Boid_simulation struct {
 
 	Width, Height Boid_Float
 
-	// Properties, in rough order of when their used
+	// Working Area
+	Accelerations []Vector.Vector2[Boid_Float]
 
-	// 1 'Unit' is how far a boid can go in 1 second.
+	// for fast proximity detection.
+	Spacial_array spacialarray.Spacial_Array[Boid_Float]
+
+	// used for random draw forces
+	generators [NUM_RANDOM_GENERATORS]Random_Generator
+
+	// Properties, in rough order of when their used
 
 	Visual_Range            Boid_Float `Property:"1;25" Default:"15"`
 	Separation_Min_Distance Boid_Float `Property:"0;20" Default:"8.5"`
@@ -41,7 +50,9 @@ type Boid_simulation struct {
 	Margin             Boid_Float `Property:"0;1000" Default:"50"`
 	Margin_Turn_Factor Boid_Float `Property:"0;1000" Default:"4"`
 
-	Random_Draw_Factor     Boid_Float `Property:"0;1" Default:"0.1"`
+	Random_Draw_Factor        Boid_Float `Property:"0;10" Default:"2"`
+	Random_Draw_Time_Dilation Boid_Float `Property:"1;10" Default:"2"`
+
 	Center_Draw_Radius_Div Boid_Float `Property:"0;10" Default:"3"`
 	Center_Draw_Factor     Boid_Float `Property:"0;10" Default:"1"`
 
@@ -52,11 +63,6 @@ type Boid_simulation struct {
 	Min_Speed Boid_Float `Property:"1;50" Default:"10"`
 
 	Boid_Draw_Radius Boid_Float `Property:"0;10" Default:"2.5"`
-
-	// Working Areas
-	Accelerations []Vector.Vector2[Boid_Float]
-
-	Spacial_array spacialarray.Spacial_Array[Boid_Float]
 }
 
 const INITIAL_ARRAY_SIZE = 32
@@ -81,6 +87,13 @@ func New_boid_simulation(width, height Boid_Float, num_boids int) Boid_simulatio
 			Boid_Float(rand.Float32()*float32(boid_sim.Height)),
 		)
 		boid_sim.Boids[i].Velocity = Vector.Mult(Vector.Random_unit_vector[Boid_Float](), 10)
+	}
+
+	for i := range NUM_RANDOM_GENERATORS {
+		boid_sim.generators[i] = New_Random_Generator(true)
+		// offset the generators a bit.
+		// this doesn't have to be random. could just be 'i / NUM_RANDOM_GENERATORS'
+		boid_sim.generators[i].t = random_32()
 	}
 
 	return boid_sim
@@ -215,19 +228,31 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	// ------------------------------------
 	//         Random draw forces
 	// ------------------------------------
-	for i := range len(boid_sim.Boids) {
-		// different boids have som random draw's given to them.
-		// TODO this is kinda dumb...
-		random_draw := Vector.Vector2[Boid_Float]{}
-		if i%3 == 0 {
-			random_draw.X += 1
-		} else if i%3 == 1 {
-			random_draw.X -= 1
-			// draw.Y += 1
+	{
+		// use the generators to generate a random unit vector, smoothly
+
+		// how far to advance the random generator,
+		// ..._Time_Dilation == seconds to switch generator.
+		time_advance := dt / float64(boid_sim.Random_Draw_Time_Dilation)
+
+		var force_vectors [NUM_RANDOM_GENERATORS]Vector.Vector2[Boid_Float]
+		for i := range NUM_RANDOM_GENERATORS {
+			random_number := boid_sim.generators[i].Next(float32(time_advance))
+			theta := random_number * 2 * math.Pi
+
+			rotated_vector := Vector.Unit_Vector_With_Rotation(Boid_Float(theta))
+			rotated_vector.Mult(boid_sim.Random_Draw_Factor)
+
+			force_vectors[i] = rotated_vector
 		}
 
-		random_draw.Mult(boid_sim.Random_Draw_Factor)
-		boid_sim.Accelerations[i].Add(random_draw)
+		// apply forces to groups.
+		for i := range len(boid_sim.Boids) {
+			// for all intense and purposes, this is random to the viewer.
+			force := force_vectors[i%NUM_RANDOM_GENERATORS]
+			boid_sim.Accelerations[i].X += force.X
+			boid_sim.Accelerations[i].Y += force.Y
+		}
 	}
 
 	// ------------------------------------

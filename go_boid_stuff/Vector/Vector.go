@@ -169,3 +169,8 @@ func Rotate[T Float](a Vector2[T], theta T) Vector2[T] {
 
 	return Vector2[T]{T(x), T(y)}
 }
+
+func Unit_Vector_With_Rotation[T Float](theta T) Vector2[T] {
+	sin, cos := math.Sincos(float64(theta))
+	return Make_Vector2(T(cos), T(sin))
+}

@@ -7,14 +7,13 @@ DONE
 * rendering of boids is broken, they are at the wrong angle
 * dt is being multiplied by 60 in the js_go_main, need to change all the math to fix that
 * the separation factor isn't working i think. not strong enough.
+* replace "random draw forces" in boid simulation.
+* use random generator for the random draw forces.
 
 
 NEXT
 
 * TODO in Update boids position and velocities. factor out random numbers
-
-* replace "random draw forces" in boid simulation.
-* use random generator for the random draw forces.
 
 * add a Boid number parameter, to the web side can change it.
 * add toggles to the parameters as well.
@@ -27,6 +26,7 @@ AFTER THE CODE IS IN A GOOD PLACE
 
 * boids follow mouse on mouse down
 
+* boids bounce off walls
 * boids dodge obstacles, put a big rect in the middle of the screen.
 
 * make the rendering a camera like, so you can scroll and what not.
