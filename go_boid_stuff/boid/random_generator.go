@@ -1,0 +1,151 @@
+package boid
+
+import (
+	"math"
+	"math/rand"
+)
+
+// generates a smoothened random noise,
+// sometimes wraps around 0 and 1, but it should do that smoothly,
+type Random_Generator struct {
+	// random numbers from 0 to 1?
+	curr, next float32
+
+	// how far you are to next
+	t float32
+
+	// Which direction the number turns, is random.
+	// True means increasing.
+	turning_direction bool
+}
+
+// ---------------------------
+//    User level functions
+// ---------------------------
+
+func New_Random_Generator() Random_Generator {
+	gen := Random_Generator{
+		curr:              random_32(),
+		next:              random_32(),
+		t:                 0,
+		turning_direction: random_32() < 0.5,
+	}
+
+	return gen
+}
+
+// dt is how much you advance the generator,
+// every 1 total dt, the generator picks a new one.
+//
+// dt must be > 0, the generator dose not check this. would assert if could.
+func (gen *Random_Generator) Next(dt float32) float32 {
+	gen.t += dt
+
+	// need to advance the generator if '1 time' has passed
+	if gen.t >= 1 {
+		// if its just past the boundary, advance by one,
+		if gen.t < 2 {
+			gen.t -= 1
+			gen.curr = gen.next
+		} else {
+			// else just get a brand new set.
+			gen.t = mod1(gen.t)
+			gen.curr = random_32()
+		}
+
+		gen.next = random_32()
+		gen.turning_direction = random_32() < 0.5
+	}
+
+	// smoothly go between the 2 values.
+	step := smoothstep(gen.t)
+	// fmt.Printf("    step: %v\n", step)
+
+	if gen.turning_direction {
+		// t++, result++
+
+		if gen.curr <= gen.next {
+			// the normal case.
+			return lerp(gen.curr, gen.next, step)
+		} else {
+			// wrap around.
+			next := gen.next + 1
+			ler := lerp(gen.curr, next, step)
+			return mod1(ler)
+		}
+
+	} else {
+		// t++, result--
+
+		if gen.next <= gen.curr {
+			// the normal case.
+			return lerp(gen.curr, gen.next, step)
+		} else {
+			// wrap around.
+			next := gen.next - 1
+			ler := lerp(gen.curr, next, step)
+			return mod1(ler)
+		}
+	}
+
+	// wrapping behavior
+	// return goto_wrap(gen.curr, gen.next, step)
+}
+
+// func Log_gen(gen Random_Generator) {
+// 	fmt.Printf("    Gen: c %+v\n", gen)
+// }
+
+// ---------------------------
+//      Helper Functions
+// ---------------------------
+
+// https://en.wikipedia.org/wiki/Smoothstep
+//
+// smoothly transitions from 0 to 1, given x
+func smoothstep(x float32) float32 {
+	// clamp x to 0..1 range
+	x = clamp(0, 1, x)
+
+	return x * x * (3.0 - 2.0*x)
+}
+
+// liner interpolate between a and b.
+func lerp(a, b, t float32) float32 {
+	return (1-t)*a + t*b
+}
+
+// clamp x into range [low, high]
+func clamp(low, high, x float32) float32 {
+	if x < low {
+		return low
+	}
+	if x > high {
+		return high
+	}
+	return x
+}
+
+// ---------------------------
+//    Math library wrappers
+// ---------------------------
+
+// The random number generator function. [0, 1)
+func random_32() float32 {
+	return rand.Float32()
+}
+
+// floating point mod, always returns a number [0, 1)
+// Modf but better.
+func mod1(x float32) float32 {
+	_, a_64 := math.Modf(float64(x))
+
+	// assert(abs(a) < 1)
+	a := float32(a_64)
+	// if the sign was negative, make it positive,
+	if a < 0 {
+		return 1 + a
+	} else {
+		return a
+	}
+}

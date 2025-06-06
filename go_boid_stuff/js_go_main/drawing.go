@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"math"
+	"math/rand"
 
 	"boidstuff.com/Image"
 	spacialarray "boidstuff.com/Spacial_Array"
@@ -119,7 +121,54 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 			Image.Draw_Line(img, b.Position, where_boid_will_be, boid_heading_color)
 		}
 	}
+
+	{
+
+		rand_num := rand.Intn(2) == 0
+		rand_num2 := rand.Float32() < 0.5
+		if rand_num {
+			nocheckin_heads += 1
+		} else {
+			nocheckin_tails += 1
+		}
+		if rand_num2 {
+			nocheckin_heads2 += 1
+		} else {
+			nocheckin_tails2 += 1
+		}
+
+		fmt.Printf("heads:  %v, tails  %v, %v\n", nocheckin_heads, nocheckin_tails, float32(nocheckin_heads)/float32(nocheckin_tails+nocheckin_heads))
+		fmt.Printf("heads2: %v, tails2 %v, %v\n", nocheckin_heads2, nocheckin_tails2, float32(nocheckin_heads2)/float32(nocheckin_tails2+nocheckin_heads2))
+
+		// fmt.Printf("New Frame")
+
+		// Test random generator.
+		new_random_number := nocheckin_generator.Next(float32(nocheckin_dt) * 0.25)
+		// boid.Log_gen(nocheckin_generator)
+		// fmt.Printf("    dt: %v, random number: %v\n", nocheckin_dt, new_random_number)
+
+		test_color := Image.HSL_to_RGB(180, 0.75, 0.6)
+
+		h := img.Height / 2
+		x := new_random_number * float32(img.Width)
+
+		Image.Draw_Rect(img, int(x-10), h, 20, 20, test_color)
+
+		// p1 := Vector.Make_Vector2(boid_sim.Width/2, boid_sim.Height/2)
+
+	}
 }
+
+var nocheckin_heads = 0
+var nocheckin_tails = 0
+
+var nocheckin_heads2 = 0
+var nocheckin_tails2 = 0
+
+// for testing.
+var nocheckin_generator = boid.New_Random_Generator()
+
+var nocheckin_dt = 0.0
 
 func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array spacialarray.Spacial_Array[T], scale T) {
 
