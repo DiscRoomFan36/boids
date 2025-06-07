@@ -9,11 +9,10 @@ DONE
 * the separation factor isn't working i think. not strong enough.
 * replace "random draw forces" in boid simulation.
 * use random generator for the random draw forces.
+* in Update boids position and velocities. factor out random numbers
 
 
 NEXT
-
-* TODO in Update boids position and velocities. factor out random numbers
 
 * add a Boid number parameter, to the web side can change it.
 * add toggles to the parameters as well.

@@ -36,12 +36,12 @@ type Boid_simulation struct {
 	// used for random draw forces
 	generators [NUM_RANDOM_GENERATORS]Random_Generator
 
+	// ---------------------------------------------
 	// Properties, in rough order of when their used
+	// ---------------------------------------------
 
 	Visual_Range            Boid_Float `Property:"1;25" Default:"15"`
 	Separation_Min_Distance Boid_Float `Property:"0;20" Default:"8.5"`
-
-	// Forward_Boost_Factor Boid_Float `Property:"0;50" Default:"20"`
 
 	Separation_Factor Boid_Float `Property:"0;1" Default:"0.15"`
 	Alignment_Factor  Boid_Float `Property:"0;1" Default:"0.15"`
@@ -58,6 +58,9 @@ type Boid_simulation struct {
 
 	Wind_X_Factor Boid_Float `Property:"-10;10" Default:"0"`
 	Wind_Y_Factor Boid_Float `Property:"-10;10" Default:"0"`
+
+	Final_Acceleration_Boost Boid_Float `Property:"1;25" Default:"5"`
+	Final_Drag_Coefficient   Boid_Float `Property:"0;2" Default:"1"`
 
 	Max_Speed Boid_Float `Property:"1;500" Default:"100"`
 	Min_Speed Boid_Float `Property:"1;50" Default:"10"`
@@ -307,11 +310,10 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		v0 := boid_sim.Boids[i].Velocity
 		a := boid_sim.Accelerations[i]
 
-		// TODO move this around.
-		// TODO also tweak these values.
-		a.Mult(5)
-		// just the negative velocity
-		drag := Vector.Mult(v0, -1)
+		a.Mult(boid_sim.Final_Acceleration_Boost)
+		// just the negative velocity for drag, must be after the final acceleration boost.
+		// this stops things from getting to out of hand.
+		drag := Vector.Mult(v0, -boid_sim.Final_Drag_Coefficient)
 		a.Add(drag)
 
 		// p1 = (1/2)*a*t^2 + v0*t + p0
