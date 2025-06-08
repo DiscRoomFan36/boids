@@ -11,6 +11,9 @@
 		"slidecontainer",
 		"spacialarray"
 	],
+	"[go]": {
+		"editor.formatOnSave": false
+	},
 	"gopls": {
 		"build.env": {
 			"GOOS": "js",

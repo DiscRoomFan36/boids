@@ -40,32 +40,33 @@ type Boid_simulation struct {
 	// Properties, in rough order of when their used
 	// ---------------------------------------------
 
-	Visual_Range            Boid_Float `Property:"1;25" Default:"15"`
-	Separation_Min_Distance Boid_Float `Property:"0;20" Default:"8.5"`
+	Visual_Range            Boid_Float `Property:"float" Range:"1;25" Default:"15"`
+	Separation_Min_Distance Boid_Float `Property:"float" Range:"0;20" Default:"8.5"`
 
-	Separation_Factor Boid_Float `Property:"0;1" Default:"0.15"`
-	Alignment_Factor  Boid_Float `Property:"0;1" Default:"0.15"`
-	Cohesion_Factor   Boid_Float `Property:"0;1" Default:"0.015"`
+	Separation_Factor Boid_Float `Property:"float" Range:"0;1" Default:"0.15"`
+	Alignment_Factor  Boid_Float `Property:"float" Range:"0;1" Default:"0.15"`
+	Cohesion_Factor   Boid_Float `Property:"float" Range:"0;1" Default:"0.015"`
 
-	Margin             Boid_Float `Property:"0;1000" Default:"50"`
-	Margin_Turn_Factor Boid_Float `Property:"0;1000" Default:"4"`
+	Margin             Boid_Float `Property:"float" Range:"0;1000" Default:"50"`
+	Margin_Turn_Factor Boid_Float `Property:"float" Range:"0;1000" Default:"4"`
 
-	Random_Draw_Factor        Boid_Float `Property:"0;10" Default:"2"`
-	Random_Draw_Time_Dilation Boid_Float `Property:"1;10" Default:"2"`
+	Random_Draw_Factor        Boid_Float `Property:"float" Range:"0;10" Default:"2"`
+	Random_Draw_Time_Dilation Boid_Float `Property:"float" Range:"1;10" Default:"2"`
 
-	Center_Draw_Radius_Div Boid_Float `Property:"0;10" Default:"3"`
-	Center_Draw_Factor     Boid_Float `Property:"0;10" Default:"1"`
+	Center_Draw_Radius_Div Boid_Float `Property:"float" Range:"0;10" Default:"3"`
+	Center_Draw_Factor     Boid_Float `Property:"float" Range:"0;10" Default:"1"`
 
-	Wind_X_Factor Boid_Float `Property:"-10;10" Default:"0"`
-	Wind_Y_Factor Boid_Float `Property:"-10;10" Default:"0"`
+	Wind_X_Factor Boid_Float `Property:"float" Range:"-10;10" Default:"0"`
+	Wind_Y_Factor Boid_Float `Property:"float" Range:"-10;10" Default:"0"`
 
-	Final_Acceleration_Boost Boid_Float `Property:"1;25" Default:"5"`
-	Final_Drag_Coefficient   Boid_Float `Property:"0;2" Default:"1"`
+	Final_Acceleration_Boost Boid_Float `Property:"float" Range:"1;25" Default:"5"`
+	Final_Drag_Coefficient   Boid_Float `Property:"float" Range:"0;2" Default:"1"`
 
-	Max_Speed Boid_Float `Property:"1;500" Default:"100"`
-	Min_Speed Boid_Float `Property:"1;50" Default:"10"`
+	Max_Speed Boid_Float `Property:"float" Range:"1;500" Default:"100"`
+	Min_Speed Boid_Float `Property:"float" Range:"1;50" Default:"10"`
 
-	Boid_Draw_Radius Boid_Float `Property:"0;10" Default:"2.5"`
+	// This doesn't make sense to have here, but it is convenient.
+	Boid_Draw_Radius Boid_Float `Property:"float" Range:"0;10" Default:"2.5"`
 }
 
 const INITIAL_ARRAY_SIZE = 32
