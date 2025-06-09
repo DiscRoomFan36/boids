@@ -172,34 +172,86 @@ function setup_sliders(go: GoFunctions) {
     log(Log_Type.Debug_Sliders, "typescript got properties", properties)
 
     const slider_container = document.getElementById("slideContainer");
-    if (slider_container === null) {
-        return; // just dont display it. for now
-        // TODO
-        // throw new Error("Cannot Get slider container");
-    }
+    if (slider_container === null) { throw new Error("Cannot Get slider container"); }
 
     // TODO for the slides that have a small range (like cohesion factor) make the value the square of the number.
 
     const entries = Object.entries(properties)
     entries.sort()
 
-    for (const [key, value] of entries) {
+    for (const [name, tag] of entries) {
 
-        log(Log_Type.Debug_Sliders, `typescript: ${key}: ${value}`)
-        const [min_s, max_s, default_s] = (value as string).split(";");
+        log(Log_Type.Debug_Sliders, `typescript: ${name}: ${tag}`);
 
-        const [min, max, default_value] = [parseFloat(min_s), parseFloat(max_s), parseFloat(default_s)];
-        log(Log_Type.Debug_Sliders, `    min: ${min}, max: ${max}, default: ${default_value}`)
+        // TODO this function is growing to big, put it in a separate file.
 
-        const id = `slider_${key}`;
+        class Property_Struct {
+            property_type:   string = "";
+
+            float_range_min: number = 0;
+            float_range_max: number = 0;
+            float_default:   number = 0;
+        }
+
+        function tag_prop_to_parts(prop: string): [string, string] {
+            const [left, right_] = prop.split(":")
+            const right = right_.slice(1, right_.length-1)
+            return [left, right]
+        }
+
+        const tag_split = (tag as string).split(" ");
+
+        const [prop_property, prop_type] = tag_prop_to_parts(tag_split[0]);
+        if (prop_property != "Property") throw new Error(`First property is not property, tag was ${tag}`);
+
+        const property_struct = new Property_Struct();
+
+        switch (prop_type) {
+            case "float": property_struct.property_type = "float"; break;
+
+            default: throw new Error(`Unknown prop type ${prop_type}`);
+        }
+
+        tag_split.shift();
+
+
+        while (tag_split.length > 0) {
+            const [left, right] = tag_prop_to_parts(tag_split[0])
+            tag_split.shift()
+
+            switch (left) {
+                case "Range":
+                    const [min_s, max_s] = right.split(";");
+                    property_struct.float_range_min = parseFloat(min_s);
+                    property_struct.float_range_max = parseFloat(max_s);
+                    break;
+
+                case "Default":
+                    property_struct.float_default = parseFloat(right)
+                    break;
+
+                default: throw new Error(`Unknown property ${left}`);
+            }
+        }
+
+        // TODO some way to print an object.
+        // log(Log_Type.Debug_Sliders, `property struct ${property_struct}`);
+
+        if (property_struct.property_type != "float") throw new Error("TODO other types.");
+
+        const id = `slider_${name}`;
         const para_id = `${id}_paragraph`;
-        const paragraph_text = `${key.replace(/_/g, " ")}`
-        const initial_value = default_value
+        const paragraph_text = `${name.replace(/_/g, " ")}`
+        const initial_value = property_struct.float_default
 
         const map_range_to_slider_number = (x: number): number => {
+            const min = property_struct.float_range_min;
+            const max = property_struct.float_range_max;
             return (x-min)/(max-min)*(1000-0) + 0
         }
         const map_range_to_real_range = (x: number): number => {
+            const min = property_struct.float_range_min;
+            const max = property_struct.float_range_max;
             return (x-0)/(1000-0)*(max-min) + min
         }
 
@@ -235,7 +287,7 @@ function setup_sliders(go: GoFunctions) {
 
             // https://stackoverflow.com/questions/12710905/how-do-i-dynamically-assign-properties-to-an-object-in-typescript
             const obj: Record<string,number> = {};
-            obj[key] = map_range_to_real_range(slider_number);
+            obj[name] = map_range_to_real_range(slider_number);
 
             log(Log_Type.Debug_Sliders, obj)
 

@@ -70,29 +70,25 @@ func Get_property_structs() map[string]Property_Struct {
 		tag_split := strings.Split(string(tag), " ")
 
 		// property must always first.
-		_, property_property, prop_type := split_one(tag_split[0], ":")
+		property_property, prop_type := tag_property_to_parts(tag_split[0])
+
 		if property_property != "Property" { log.Panicf("field '%v' (witch has the property tag), dose not have the property tag first, was %v\n", name, tag) }
 
 		switch prop_type {
 		// TODO use an enum here.
 		case "float": { property_struct.Property_type = "float" }
 
-		default: { log.Panicf("%v: unknown property type %v\n", name, prop_type) }
+		default: { log.Panicf("%v: unknown property type '%v'\n", name, prop_type) }
 		}
 
 		property_struct.Property_type = prop_type
 		tag_split = tag_split[1:]
 
-		struct_field_flags := 0
+		struct_field_flags := Flag_None
 
 		for len(tag_split) > 0 {
-			prop := tag_split[0]
+			left, right := tag_property_to_parts(tag_split[0])
 			tag_split = tag_split[1:]
-
-			_, left, right := split_one(prop, ":")
-
-			if right[0] != '"' || right[len(right)-1] != '"' { log.Panicf("%v: malformed tag, was '%v'\n", name, tag) }
-			right = right[1 : len(right)-2] // Remove quotes.
 
 			switch left {
 			case "Range": {
@@ -158,31 +154,6 @@ func set_boid_defaults(boid_sim *Boid_simulation) {
 	}
 }
 
-// // returns in format.
-// //
-// // name: 'Property:"{float/int}" Range:"{min};{max}" Default:"{default}"'
-// //
-// // space separated key value pairs.
-// func Get_properties() map[string]string {
-// 	assert_all_properties_valid()
-
-// 	properties := make(map[string]string)
-
-// 	boid_sim := Boid_simulation{}
-// 	s := reflect.ValueOf(&boid_sim).Elem()
-// 	typeOfT := s.Type()
-
-// 	for i := range s.NumField() {
-// 		field := typeOfT.Field(i)
-
-// 		if !is_property(field.Tag) { continue }
-
-// 		properties[field.Name] = string(field.Tag)
-// 	}
-
-// 	return properties
-// }
-
 func (boid_sim *Boid_simulation) Set_Properties_with_map(the_map map[string]Boid_Float) {
 	property_structs := Get_property_structs()
 
@@ -226,4 +197,15 @@ func split_one(s string, sep string) (found bool, a string, b string) {
 func contains[T comparable, U any](m map[T]U, key T) bool {
 	_, ok := m[key]
 	return ok
+}
+
+func tag_property_to_parts(prop string) (string, string) {
+	ok, left, right := split_one(prop, ":")
+
+	if !ok { log.Panicf("malformed tag, was '%v'\n", prop) }
+
+	if right[0] != '"' || right[len(right)-1] != '"' { log.Panicf("malformed tag, was '%v'\n", prop) }
+	right = right[1:len(right)-1] // Remove quotes.
+
+	return left, right
 }
