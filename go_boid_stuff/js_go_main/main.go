@@ -32,12 +32,12 @@ func GetProperties(this js.Value, args []js.Value) any {
 		log.Panicf("GetProperties: don't pass anything to this function")
 	}
 
-	properties := boid.Get_properties()
+	property_structs := boid.Get_property_structs()
 
 	// We have to do this because js.FuncOf() expects this function to return a map to any. (aka a javascript object.)
 	properties_to_any := make(map[string]any)
-	for k, v := range properties {
-		properties_to_any[k] = v
+	for k, v := range property_structs {
+		properties_to_any[k] = v.Tag_as_string
 	}
 	return properties_to_any
 }
@@ -58,14 +58,14 @@ func SetProperties(this js.Value, args []js.Value) any {
 	}
 
 	the_map := make(map[string]boid.Boid_Float)
-	for _, name := range boid.Get_property_names() {
+	for name, _ := range boid.Get_property_structs() {
 		value := obj.Get(name)
 		if value.IsUndefined() {
 			continue
 		}
 
 		if value.Type().String() != "number" {
-			log.Panicf("SetProperties: property '%v' is not an string, it is a %v", name, value.Type().String())
+			log.Panicf("SetProperties: property '%v' is not an number, it is a %v\n", name, value.Type().String())
 		}
 
 		the_map[name] = boid.Boid_Float(value.Float())
