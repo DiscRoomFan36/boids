@@ -249,9 +249,9 @@ function setup_sliders(go) {
         const deltaTime = (timestamp - prevTimestamp);
         prevTimestamp = timestamp;
         // TODO Don't need delta time, boid thing dose it for us? change?
-        let startTime = performance.now();
+        const startTime = performance.now();
         renderBoids(display, go);
-        let endTime = performance.now();
+        const endTime = performance.now();
         // In ms
         const renderTime = endTime - startTime;
         if (DEBUG_DISPLAY)
