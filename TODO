@@ -11,6 +11,7 @@ DONE
 * use random generator for the random draw forces.
 * in Update boids position and velocities. factor out random numbers
 * upgrade the meta programming to accept different types.
+* move all the html and web stuff into a different folder, (but some files need to be in the base folder for the github pages thing to work...)
 
 
 NEXT
@@ -21,7 +22,6 @@ NEXT
 * check for invalid property tags.
 
 * for the slides that have a small range (like cohesion factor) make the value the square of the number.
-* move all the html and web stuff into a different folder, (but some files need to be in the base folder for the github pages thing to work...)
 
 
 AFTER THE CODE IS IN A GOOD PLACE
