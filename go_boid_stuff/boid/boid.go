@@ -40,6 +40,8 @@ type Boid_simulation struct {
 	// Properties, in rough order of when their used
 	// ---------------------------------------------
 
+	Num_Boids_todo          int `Property:"int" Range:"1;1000" Default:"10"`
+
 	Visual_Range            Boid_Float `Property:"float" Range:"1;25" Default:"15"`
 	Separation_Min_Distance Boid_Float `Property:"float" Range:"0;20" Default:"8.5"`
 

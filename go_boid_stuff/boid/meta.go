@@ -11,26 +11,39 @@ import (
 // Use reflection to get and set fields,
 
 
+type Property_Type int
+const (
+	None = iota
+	Property_Float
+	Property_Int
+)
+
 type Property_Struct struct {
 	Tag_as_string string
 
-	Property_type string
+	Property_type Property_Type
 
 	// Float properties
 	Float_range_min float64
 	Float_range_max float64
 	Float_default   float64
+
+	// Int properties
+	Int_range_min int
+	Int_range_max int
+	Int_default   int
 }
+
 
 type Property_Struct_Field_Flags int
 const (
 	Flag_None Property_Struct_Field_Flags = 0
 
-	// this is always set.
+	// this is always set. // TODO make it now always set?
 	// Flag_Property_type   = 1<<0
 
-	Flag_Float_range     = 1<<1
-	Flag_Float_default   = 1<<2
+	Flag_range     = 1<<1
+	Flag_default   = 1<<2
 )
 
 
@@ -76,12 +89,12 @@ func Get_property_structs() map[string]Property_Struct {
 
 		switch prop_type {
 		// TODO use an enum here.
-		case "float": { property_struct.Property_type = "float" }
+		case "float": { property_struct.Property_type = Property_Float }
+		case "int":   { property_struct.Property_type = Property_Int   }
 
 		default: { log.Panicf("%v: unknown property type '%v'\n", name, prop_type) }
 		}
 
-		property_struct.Property_type = prop_type
 		tag_split = tag_split[1:]
 
 		struct_field_flags := Flag_None
@@ -92,30 +105,63 @@ func Get_property_structs() map[string]Property_Struct {
 
 			switch left {
 			case "Range": {
-				if struct_field_flags & Flag_Float_range != 0 { log.Panicf("%v: Range property was set twice.", name) }
-				struct_field_flags |= Flag_Float_range
+				if struct_field_flags & Flag_range != 0 { log.Panicf("%v: Range property was set twice.", name) }
+				struct_field_flags |= Flag_range
 
 				ok, min_s, max_s := split_one(right, ";")
 				if !ok { log.Panicf("%v: right side of range property did not have a ';', was '%v'\n", name, right) }
 
-				min_f, ok1 := strconv.ParseFloat(min_s, 64)
-				max_f, ok2 := strconv.ParseFloat(max_s, 64)
+				switch property_struct.Property_type {
+				case Property_Float: {
+					min_f, ok1 := strconv.ParseFloat(min_s, 64)
+					max_f, ok2 := strconv.ParseFloat(max_s, 64)
 
-				if ok1 != nil || ok2 != nil { log.Panicf("%v: error parsing floats in range. was '%v'\n", name, right) }
+					if ok1 != nil || ok2 != nil { log.Panicf("%v: error parsing floats in range. was '%v'\n", name, right) }
 
-				property_struct.Float_range_min = min_f
-				property_struct.Float_range_max = max_f
+					property_struct.Float_range_min = min_f
+					property_struct.Float_range_max = max_f
+				}
+
+				case Property_Int: {
+					strconv.ParseInt(min_s, 0, 0)
+					min_i, ok1 := strconv.ParseInt(min_s, 10, 0)
+					max_i, ok2 := strconv.ParseInt(max_s, 10, 0)
+
+					if ok1 != nil || ok2 != nil { log.Panicf("%v: error parsing ints in range. was '%v'\n", name, right) }
+
+					property_struct.Int_range_min = int(min_i)
+					property_struct.Int_range_max = int(max_i)
+				}
+
+				default: { log.Panicf("%v: Unknown property in range switch", name) }
+				}
+
 			}
 
 			case "Default": {
-				if struct_field_flags & Flag_Float_default != 0 { log.Panicf("%v: Default property was set twice.\n", name) }
-				struct_field_flags |= Flag_Float_default
+				if struct_field_flags & Flag_default != 0 { log.Panicf("%v: Default property was set twice.\n", name) }
+				struct_field_flags |= Flag_default
 
-				def, ok := strconv.ParseFloat(right, 64)
+				switch property_struct.Property_type {
+				case Property_Float: {
+					def, ok := strconv.ParseFloat(right, 64)
 
-				if ok != nil { log.Panicf("%v: error in Default, could not parse float. was '%v'\n", name, right) }
+					if ok != nil { log.Panicf("%v: error in Default, could not parse float. was '%v'\n", name, right) }
 
-				property_struct.Float_default = def
+					property_struct.Float_default = def
+				}
+
+				case Property_Int: {
+					def, ok := strconv.ParseInt(right, 10, 0)
+
+					if ok != nil { log.Panicf("%v: error in Default, could not parse int. was '%v'\n", name, right) }
+
+					property_struct.Int_default = int(def)
+				}
+
+				default: { log.Panicf("%v: Unknown property in default switch", name) }
+				}
+
 			}
 
 			default: { log.Panicf("%v: Unknown property %v\n", name, left) }
@@ -123,10 +169,10 @@ func Get_property_structs() map[string]Property_Struct {
 		}
 
 		// check that all relevant property's fields where set with the flags
-		if struct_field_flags & Flag_Float_range == 0 {
+		if struct_field_flags & Flag_range == 0 {
 			log.Panicf("%v: range field was not set.\n", name)
 		}
-		if struct_field_flags & Flag_Float_default == 0 {
+		if struct_field_flags & Flag_default == 0 {
 			log.Panicf("%v: Default field was not set.\n", name)
 		}
 
@@ -146,10 +192,11 @@ func set_boid_defaults(boid_sim *Boid_simulation) {
 
 		settable_field := s.FieldByName(name)
 
-		if prop_struct.Property_type == "float" {
-			settable_field.SetFloat(prop_struct.Float_default)
-		} else {
-			panic("TODO other types in set boid defaults.")
+		switch prop_struct.Property_type {
+		case Property_Float: settable_field.SetFloat(prop_struct.Float_default)
+		case Property_Int:   settable_field.SetInt(int64(prop_struct.Int_default))
+
+		default: log.Panicf("%v: Unknown property in 'set_boid_defaults' switch", name)
 		}
 	}
 }
@@ -174,10 +221,11 @@ func (boid_sim *Boid_simulation) Set_Properties_with_map(the_map map[string]Boid
 
 		settable_field := reflect.ValueOf(boid_sim).Elem().FieldByName(name)
 
-		if prop_struct.Property_type == "float" {
-			settable_field.SetFloat(float64(value))
-		} else {
-			panic("TODO other field, also the_map should change...")
+		switch prop_struct.Property_type {
+		case Property_Float: settable_field.SetFloat(float64(value))
+		case Property_Int:   settable_field.SetInt(int64(value))
+
+		default: log.Panicf("%v: Unknown property in 'Set_Properties_with_map' switch", name)
 		}
 	}
 }

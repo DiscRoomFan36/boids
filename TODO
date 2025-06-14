@@ -17,6 +17,8 @@ DONE
 NEXT
 
 * add a Boid number parameter (int), to the web side can change it.
+* setup_sliders.ts: // TODO use step. might clean this up a bit.
+
 * add toggles to the parameters as well.
 
 * check for invalid property tags.
