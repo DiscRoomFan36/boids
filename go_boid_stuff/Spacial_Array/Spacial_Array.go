@@ -88,16 +88,6 @@ func (array *Spacial_Array[T]) Append_points(points []Vector.Vector2[T]) {
 	}
 }
 
-func (array Spacial_Array[T]) point_to_box_loc(point Vector.Vector2[T]) (int, int) {
-	x := map_and_clamp_range(point.X, array.Min_x, array.Max_x)
-	y := map_and_clamp_range(point.Y, array.Min_y, array.Max_y)
-
-	i_x := min(int(x*T(array.Boxes_wide)), array.Boxes_wide-1)
-	i_y := min(int(y*T(array.Boxes_high)), array.Boxes_high-1)
-
-	return i_x, i_y
-}
-
 func (array Spacial_Array[T]) Iter_Over_Near(point Vector.Vector2[T], radius T) iter.Seq2[BOX_ID_TYPE, Vector.Vector2[T]] {
 	return func(yield func(BOX_ID_TYPE, Vector.Vector2[T]) bool) {
 		// get all near points...
@@ -105,6 +95,10 @@ func (array Spacial_Array[T]) Iter_Over_Near(point Vector.Vector2[T], radius T) 
 
 		box_step_x := array.Max_x - array.Min_x
 		box_step_y := array.Max_y - array.Min_y
+
+		// protect against 0's
+		if box_step_x == 0 { box_step_x = 1; }
+		if box_step_y == 0 { box_step_y = 1; }
 
 		// get the coverage range.
 		// TODO is this right? or is it over correcting?
@@ -142,11 +136,19 @@ func (array *Spacial_Array[T]) Clear() {
 	}
 }
 
+func (array Spacial_Array[T]) point_to_box_loc(point Vector.Vector2[T]) (int, int) {
+	x := map_and_clamp_range(point.X, array.Min_x, array.Max_x)
+	y := map_and_clamp_range(point.Y, array.Min_y, array.Max_y)
+
+	i_x := min(int(x*T(array.Boxes_wide)), array.Boxes_wide-1)
+	i_y := min(int(y*T(array.Boxes_high)), array.Boxes_high-1)
+
+	return i_x, i_y
+}
+
 // returns min_x, min_y, max_x, max_y
 func find_mins_and_maxs[T Vector.Number](points []Vector.Vector2[T]) (T, T, T, T) {
-	if len(points) == 0 {
-		log.Fatalf("find_mins_and_maxs: No points in points array.\n")
-	}
+	if len(points) == 0 { return 0, 0, 0, 0 }
 
 	min_x := points[0].X
 	max_x := points[0].X
@@ -164,6 +166,8 @@ func find_mins_and_maxs[T Vector.Number](points []Vector.Vector2[T]) (T, T, T, T
 // returns a number from 0..1 inclusive
 // TODO can this be done better with ints? mult and div?
 func map_and_clamp_range[T Vector.Number](x, mini, maxi T) T {
-	y := (x - mini) / (maxi - mini)
+	diff := maxi - mini
+	if diff == 0 { return 0 }
+	y := (x - mini) / diff
 	return min(max(y, 0), 1)
 }

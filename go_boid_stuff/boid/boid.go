@@ -36,11 +36,18 @@ type Boid_simulation struct {
 	// used for random draw forces
 	generators [NUM_RANDOM_GENERATORS]Random_Generator
 
+	// used to calculate how long until the next boid is spawned / de-spawned
+	//
+	// should this be a float64 since its about time?
+	spawn_timer Boid_Float
+
 	// ---------------------------------------------
 	// Properties, in rough order of when their used
 	// ---------------------------------------------
 
-	Num_Boids_todo          int `Property:"int" Range:"1;1000" Default:"10"`
+	Max_Boids          int `Property:"int" Range:"0;5000" Default:"100"`
+	// how many spawn / de-spawn per second.
+	Boid_Spawn_Rate    Boid_Float `Property:"float" Range:"10;1000" Default:"100"`
 
 	Visual_Range            Boid_Float `Property:"float" Range:"1;25" Default:"15"`
 	Separation_Min_Distance Boid_Float `Property:"float" Range:"0;20" Default:"8.5"`
@@ -73,27 +80,21 @@ type Boid_simulation struct {
 
 const INITIAL_ARRAY_SIZE = 32
 
-func New_boid_simulation(width, height Boid_Float, num_boids int) Boid_simulation {
+func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 	boid_sim := Boid_simulation{
-		Boids: make([]Boid, num_boids),
+		Boids: make([]Boid, 0, 512),
 
 		Width:  width,
 		Height: height,
 
-		Accelerations: make([]Vector.Vector2[Boid_Float], num_boids),
+		Accelerations: make([]Vector.Vector2[Boid_Float], 0, 512),
 
 		Spacial_array: spacialarray.New_Spacial_Array[Boid_Float](),
+
+		spawn_timer: 0,
 	}
 
 	set_boid_defaults(&boid_sim)
-
-	for i := range boid_sim.Boids {
-		boid_sim.Boids[i].Position = Vector.Make_Vector2(
-			Boid_Float(rand.Float32()*float32(boid_sim.Width)),
-			Boid_Float(rand.Float32()*float32(boid_sim.Height)),
-		)
-		boid_sim.Boids[i].Velocity = Vector.Mult(Vector.Random_unit_vector[Boid_Float](), 10)
-	}
 
 	for i := range NUM_RANDOM_GENERATORS {
 		boid_sim.generators[i] = New_Random_Generator(true)
@@ -152,6 +153,47 @@ func (boid_sim *Boid_simulation) Set_up_Spacial_Array() {
 
 // NOTE dt is in seconds
 func (boid_sim *Boid_simulation) Update_boids(dt float64) {
+
+	{ // spawn / despawn boids.
+		boid_sim.spawn_timer += Boid_Float(dt)
+		time_to_spawn := 1 / boid_sim.Boid_Spawn_Rate
+
+		for boid_sim.spawn_timer >= time_to_spawn {
+			boid_sim.spawn_timer -= time_to_spawn
+
+			// check if we even need to add a new boid.
+			if len(boid_sim.Boids) == boid_sim.Max_Boids { continue; }
+
+			if len(boid_sim.Boids) < boid_sim.Max_Boids {
+				// add 1 boid.
+
+				new_boid := Boid{
+					Position: Vector.Make_Vector2(
+						Boid_Float(rand.Float32()*float32(boid_sim.Width)),
+						Boid_Float(rand.Float32()*float32(boid_sim.Height)),
+					),
+					Velocity: Vector.Mult(Vector.Random_unit_vector[Boid_Float](), (boid_sim.Min_Speed + boid_sim.Max_Speed) / 2),
+				}
+
+				boid_sim.Boids = append(boid_sim.Boids, new_boid)
+				boid_sim.Accelerations = append(boid_sim.Accelerations, Vector.Vector2[Boid_Float]{})
+			} else {
+				// remove 1 boid.
+				// do it randomly so its cooler.
+
+				random_index := rand.Intn(len(boid_sim.Boids))
+				last_index := len(boid_sim.Boids)-1
+
+				// a good old swap and remove, without the swap.
+				if random_index != last_index { boid_sim.Boids[random_index] = boid_sim.Boids[last_index] }
+
+				// remove the last element
+				boid_sim.Boids = boid_sim.Boids[:last_index]
+			}
+		}
+	}
+
+
 	// TODO inline
 	boid_sim.Set_up_Spacial_Array()
 

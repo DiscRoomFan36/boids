@@ -20,7 +20,6 @@ var last_frame_time time.Time
 const BOID_FACTOR = 50
 const BOID_BOUNDS_WIDTH = 16 * BOID_FACTOR
 const BOID_BOUNDS_HEIGHT = 9 * BOID_FACTOR
-const NUM_BOIDS = 100
 
 const BOID_SCALE = 0.5
 
@@ -136,7 +135,7 @@ func main() {
 
 	// set img to screen size, and shrink
 	img = Image.New_image(1920, 1080)
-	boid_sim = boid.New_boid_simulation(BOID_BOUNDS_WIDTH, BOID_BOUNDS_HEIGHT, NUM_BOIDS)
+	boid_sim = boid.New_boid_simulation(BOID_BOUNDS_WIDTH, BOID_BOUNDS_HEIGHT)
 
 	last_frame_time = time.Now()
 
