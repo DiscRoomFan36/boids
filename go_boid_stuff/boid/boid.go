@@ -138,19 +138,6 @@ func (boid_sim Boid_simulation) bounding_force(index int) Vector.Vector2[Boid_Fl
 	return vel
 }
 
-func (boid_sim *Boid_simulation) Set_up_Spacial_Array() {
-	// Clear out previous uses.
-	boid_sim.Spacial_array.Clear()
-
-	// TODO make this just how we store boid positions or something.
-	boid_positions := make([]Vector.Vector2[Boid_Float], 0, len(boid_sim.Boids))
-	for _, b := range boid_sim.Boids {
-		boid_positions = append(boid_positions, b.Position)
-	}
-
-	boid_sim.Spacial_array.Append_points(boid_positions)
-}
-
 // NOTE dt is in seconds
 func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 
@@ -194,8 +181,18 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	}
 
 
-	// TODO inline
-	boid_sim.Set_up_Spacial_Array()
+	{ // Setup the spacial array.
+		// Clear out previous uses.
+		boid_sim.Spacial_array.Clear()
+
+		// TODO make this just how we store boid positions or something.
+		boid_positions := make([]Vector.Vector2[Boid_Float], 0, len(boid_sim.Boids))
+		for _, b := range boid_sim.Boids {
+			boid_positions = append(boid_positions, b.Position)
+		}
+
+		boid_sim.Spacial_array.Append_points(boid_positions)
+	}
 
 	// Set the Accelerations to zero.
 	for i := range len(boid_sim.Accelerations) {

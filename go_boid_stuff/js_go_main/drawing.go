@@ -30,8 +30,6 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 	scale_factor := boid.Boid_Float(img.Width) / boid_sim.Width
 
 	if DEBUG_SPACIAL_ARRAY {
-		// // TODO this is giga slow... and do we even have to do it?
-		boid_sim.Set_up_Spacial_Array()
 		draw_spacial_array_into_image(img, boid_sim.Spacial_array, scale_factor)
 	}
 
