@@ -183,30 +183,15 @@ function make_float_slider(slider_container: HTMLElement, name: string, property
 function make_int_slider(slider_container: HTMLElement, name: string, property_struct: Property_Struct, set_property: (name:string, value:number) => void) {
     const id = `slider_${name}`;
     const para_id = `${id}_paragraph`;
-    const paragraph_text = `${name.replace(/_/g, " ")}`
-
-    const initial_value = property_struct.int_default;
-    const initial_value_for_text = initial_value;
-
-    const map_range_to_slider_number = (x: number): number => {
-        const min = property_struct.int_range_min;
-        const max = property_struct.int_range_max;
-        return (x-min)/(max-min)*(1000-0) + 0
-    }
-    const map_range_to_real_range = (x: number): number => {
-        const min = property_struct.int_range_min;
-        const max = property_struct.int_range_max;
-        // make it the proper value
-        return Math.floor((x-0)/(1000-0)*(max-min) + min)
-    }
+    const paragraph_text = `${name.replace(/_/g, " ")}`;
 
     // TODO a lot of numbers must be between 0-1, because sliders only use ints (look up if this is the case.) we will have to get creative
     // TODO use step. might clean this up a bit.
     const html_string = `
         <p class="sliderKey" id="${para_id}">
-            ${paragraph_text}: ${initial_value_for_text}
+            ${paragraph_text}: ${property_struct.int_default}
         </p>
-        <input type="range" min="0" max="1000" value="${map_range_to_slider_number(initial_value)}" class="slider" id="${id}">
+        <input type="range" min="${property_struct.int_range_min}" max="${property_struct.int_range_max}" value="${property_struct.int_default}" class="slider" id="${id}">
         `;
 
     const new_thing = document.createElement("div");
@@ -222,13 +207,13 @@ function make_int_slider(slider_container: HTMLElement, name: string, property_s
     slider.addEventListener("input", (event) => {
         const slider_value_string = (event.target as HTMLInputElement).value;
 
-        const slider_number = map_range_to_real_range(Number(slider_value_string));
+        const slider_number = Number(slider_value_string);
 
         const slider_text = document.getElementById(para_id) as HTMLParagraphElement | null;
         if (slider_text === null) throw new Error(`could not find slider_text ${para_id}`);
 
-        slider_text.textContent = `${paragraph_text}: ${slider_number}`
+        slider_text.textContent = `${paragraph_text}: ${slider_number}`;
 
-        set_property(name, slider_number)
+        set_property(name, slider_number);
     })
 }
