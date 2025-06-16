@@ -12,14 +12,13 @@ DONE
 * in Update boids position and velocities. factor out random numbers
 * upgrade the meta programming to accept different types.
 * move all the html and web stuff into a different folder, (but some files need to be in the base folder for the github pages thing to work...)
+* add a Boid number parameter (int), to the web side can change it.
 
 
 NEXT
 
-* add a Boid number parameter (int), to the web side can change it.
-* setup_sliders.ts: // TODO use step. might clean this up a bit.
-
 * add toggles to the parameters as well.
+* setup_sliders.ts: // TODO use step. might clean this up a bit.
 
 * check for invalid property tags.
 
