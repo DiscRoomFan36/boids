@@ -141,6 +141,7 @@ func (array Spacial_Array[T]) Iter_Over_Near(point Vector.Vector2[T], radius T) 
 
 				box := &array.Boxes[j*array.Boxes_wide+i]
 
+				// is this loop kinda ass? only needs to be real when box.count == BOX_SIZE
 				for box != nil {
 
 					for k := 0; k < box.Count; k++ {
