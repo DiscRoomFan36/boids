@@ -9,10 +9,6 @@ import (
 	"boidstuff.com/Vector"
 )
 
-// TODO put these into the boid_sim as well.
-const BOUNDING = true
-const WRAPPING = true
-
 const NUM_RANDOM_GENERATORS = 32
 
 type Boid_Float float32
@@ -74,11 +70,14 @@ type Boid_simulation struct {
 	Max_Speed Boid_Float `Property:"float" Range:"1;500" Default:"100"`
 	Min_Speed Boid_Float `Property:"float" Range:"1;50" Default:"10"`
 
+
+	Toggle_Wrapping bool `Property:"bool" Default:"true"`
+	Toggle_Bounding bool `Property:"bool" Default:"true"`
+
+
 	// This doesn't make sense to have here, but it is convenient.
 	Boid_Draw_Radius Boid_Float `Property:"float" Range:"0;10" Default:"2.5"`
 }
-
-const INITIAL_ARRAY_SIZE = 32
 
 func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 	boid_sim := Boid_simulation{
@@ -262,7 +261,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	// ------------------------------------
 	//          Bounding forces
 	// ------------------------------------
-	if BOUNDING {
+	if boid_sim.Toggle_Bounding {
 		for i := range len(boid_sim.Boids) {
 			// TODO get rid of bounding force function, pull it in
 			bounding := Vector.Mult(boid_sim.bounding_force(i), boid_sim.Margin_Turn_Factor)
@@ -371,7 +370,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		boid_sim.Boids[i].Velocity = v1
 
 		// makes them wrap around the screen
-		if WRAPPING {
+		if boid_sim.Toggle_Wrapping {
 			boid_sim.Boids[i].Position.X = proper_mod(boid_sim.Boids[i].Position.X, boid_sim.Width)
 			boid_sim.Boids[i].Position.Y = proper_mod(boid_sim.Boids[i].Position.Y, boid_sim.Height)
 		}

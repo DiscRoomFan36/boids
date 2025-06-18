@@ -56,18 +56,25 @@ func SetProperties(this js.Value, args []js.Value) any {
 		log.Panicf("SetProperties: arg is not an object, it is a %v", args[0].Type().String())
 	}
 
-	the_map := make(map[string]boid.Boid_Float)
-	for name, _ := range boid.Get_property_structs() {
+	the_map := make(map[string]boid.Union_Like)
+	for name, prop_struct := range boid.Get_property_structs() {
 		value := obj.Get(name)
 		if value.IsUndefined() {
 			continue
 		}
 
-		if value.Type().String() != "number" {
-			log.Panicf("SetProperties: property '%v' is not an number, it is a %v\n", name, value.Type().String())
+		union := boid.Union_Like{}
+
+		// the .Float() and others will panic is something is not right. Good behavior
+		switch prop_struct.Property_type {
+		case boid.Property_Float: union.As_float = value.Float()
+		case boid.Property_Int:   union.As_int   = value.Int()
+		case boid.Property_Bool:  union.As_bool  = value.Bool()
+
+		default: log.Panicf("%v: unknown property in 'SetProperty()'", name)
 		}
 
-		the_map[name] = boid.Boid_Float(value.Float())
+		the_map[name] = union
 	}
 
 	if len(the_map) == 0 {

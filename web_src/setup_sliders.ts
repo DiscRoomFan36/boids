@@ -1,10 +1,11 @@
 
-import { Log_Type, log, DEBUG_SLIDERS } from "./logger";
+import { Log_Type, log } from "./logger";
 
 enum Property_Type {
     None,
     Property_Float,
     Property_Int,
+    Property_Bool,
 }
 
 class Property_Struct {
@@ -19,6 +20,8 @@ class Property_Struct {
     int_range_min:   number = 0;
     int_range_max:   number = 0;
     int_default:     number = 0;
+
+    bool_default:    boolean = false;
 }
 
 function tag_prop_to_parts(prop: string): [string, string] {
@@ -27,9 +30,27 @@ function tag_prop_to_parts(prop: string): [string, string] {
     return [left, right]
 }
 
+function parseBool(s: string): boolean {
+    // 1, t, T, TRUE, true, True,
+    // 0, f, F, FALSE, false, False
+    switch (s) {
+    case "1":
+    case "t": case "T":
+    case "TRUE": case "true": case "True":
+        return true
+
+    case "0":
+    case "f": case "F":
+    case "FALSE": case "false": case "False":
+        return false
+
+    default: throw new Error(`Unknown string in parseBool, was ${s}`);
+    }
+}
+
 
 // puts some sliders up to control some parameters
-export function setup_sliders(properties: [string, string][], set_property: (name:string, value:number) => void) {
+export function setup_sliders(properties: [string, string][], set_property: (name:string, value:number|boolean) => void) {
 
     const slider_container = document.getElementById("slideContainer");
     if (slider_container === null) { throw new Error("Cannot Get slider container"); }
@@ -53,7 +74,8 @@ export function setup_sliders(properties: [string, string][], set_property: (nam
 
         switch (prop_type) {
         case "float": property_struct.property_type = Property_Type.Property_Float; break;
-        case "int":   property_struct.property_type = Property_Type.Property_Int; break;
+        case "int":   property_struct.property_type = Property_Type.Property_Int;   break;
+        case "bool":  property_struct.property_type = Property_Type.Property_Bool;  break;
 
         default: throw new Error(`Unknown prop type ${prop_type}`);
         }
@@ -67,18 +89,24 @@ export function setup_sliders(properties: [string, string][], set_property: (nam
 
             switch (left) {
             case "Range":
-                const [min_s, max_s] = right.split(";");
-
                 switch (property_struct.property_type) {
-                case Property_Type.Property_Float:
+                case Property_Type.Property_Float: {
+                    const [min_s, max_s] = right.split(";");
                     property_struct.float_range_min = parseFloat(min_s);
                     property_struct.float_range_max = parseFloat(max_s);
                     break;
+                }
 
-                case Property_Type.Property_Int:
+                case Property_Type.Property_Int: {
+                    const [min_s, max_s] = right.split(";");
                     property_struct.int_range_min = parseInt(min_s);
                     property_struct.int_range_max = parseInt(max_s);
                     break;
+                }
+
+                case Property_Type.Property_Bool: {
+                    throw new Error("Boolean dose not have a range!");
+                }
 
                 default: throw new Error(`Unknown type in ${name}`);
                 }
@@ -89,6 +117,7 @@ export function setup_sliders(properties: [string, string][], set_property: (nam
                 switch (property_struct.property_type) {
                 case Property_Type.Property_Float: property_struct.float_default = parseFloat(right); break;
                 case Property_Type.Property_Int  : property_struct.int_default   = parseInt  (right); break;
+                case Property_Type.Property_Bool : property_struct.bool_default  = parseBool (right); break;
 
                 default: throw new Error(`Unknown type in ${name}`);
                 }
@@ -111,6 +140,10 @@ export function setup_sliders(properties: [string, string][], set_property: (nam
             make_int_slider(slider_container, name, property_struct, set_property)
             break;
 
+        case Property_Type.Property_Bool:
+            make_bool_slider(slider_container, name, property_struct, set_property)
+            break;
+
         default: throw new Error(`Unknown property type ${property_struct.property_type}`);
         }
     }
@@ -121,7 +154,7 @@ export function setup_sliders(properties: [string, string][], set_property: (nam
 //         Make a slider for an float
 ///////////////////////////////////////////////
 
-function make_float_slider(slider_container: HTMLElement, name: string, property_struct: Property_Struct, set_property: (name:string, value:number) => void) {
+function make_float_slider(slider_container: HTMLElement, name: string, property_struct: Property_Struct, set_property: (name:string, value:number|boolean) => void) {
     const id = `slider_${name}`;
     const para_id = `${id}_paragraph`;
     const paragraph_text = `${name.replace(/_/g, " ")}`;
@@ -180,13 +213,11 @@ function make_float_slider(slider_container: HTMLElement, name: string, property
 //          Make a slider for an int
 ///////////////////////////////////////////////
 
-function make_int_slider(slider_container: HTMLElement, name: string, property_struct: Property_Struct, set_property: (name:string, value:number) => void) {
+function make_int_slider(slider_container: HTMLElement, name: string, property_struct: Property_Struct, set_property: (name:string, value:number|boolean) => void) {
     const id = `slider_${name}`;
     const para_id = `${id}_paragraph`;
     const paragraph_text = `${name.replace(/_/g, " ")}`;
 
-    // TODO a lot of numbers must be between 0-1, because sliders only use ints (look up if this is the case.) we will have to get creative
-    // TODO use step. might clean this up a bit.
     const html_string = `
         <p class="sliderKey" id="${para_id}">
             ${paragraph_text}: ${property_struct.int_default}
@@ -215,5 +246,34 @@ function make_int_slider(slider_container: HTMLElement, name: string, property_s
         slider_text.textContent = `${paragraph_text}: ${slider_number}`;
 
         set_property(name, slider_number);
+    });
+}
+
+
+///////////////////////////////////////////////
+//     Make a slider for an boolean toggle
+///////////////////////////////////////////////
+
+function make_bool_slider(slider_container: HTMLElement, name: string, property_struct: Property_Struct, set_property: (name:string, value:number|boolean) => void) {
+    const id = `slider_${name}`;
+    const paragraph_text = `${name.replace(/_/g, " ")}`;
+
+    const html_string = `
+        <input type="checkbox" ${property_struct.bool_default ? "checked" : ""} class="checkbox_toggle" id="${id}">
+        <label for="${id}" class="checkbox_toggle_label">${paragraph_text}</label>
+        `;
+
+    const new_thing = document.createElement("div");
+    new_thing.className = "rangeHolder";
+    new_thing.innerHTML = html_string;
+
+    slider_container.appendChild(new_thing);
+
+    const slider = document.getElementById(id) as HTMLInputElement | null;
+    if (slider === null) throw new Error("Could not find the slider");
+
+    slider.addEventListener("input", (event) => {
+        const checked = (event.target as HTMLInputElement).checked;
+        set_property(name, checked);
     });
 }

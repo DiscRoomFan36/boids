@@ -16,6 +16,7 @@ const (
 	None = iota
 	Property_Float
 	Property_Int
+	Property_Bool
 )
 
 type Property_Struct struct {
@@ -32,6 +33,9 @@ type Property_Struct struct {
 	Int_range_min int
 	Int_range_max int
 	Int_default   int
+
+	// Bool properties
+	Bool_default bool
 }
 
 
@@ -39,7 +43,7 @@ type Property_Struct_Field_Flags int
 const (
 	Flag_None Property_Struct_Field_Flags = 0
 
-	// this is always set. // TODO make it now always set?
+	// this is always set. // TODO make it not always set?
 	// Flag_Property_type   = 1<<0
 
 	Flag_range     = 1<<1
@@ -52,11 +56,78 @@ const (
 // do not get from here, call Get_property_structs() to get this.
 var hidden_property_structs map[string]Property_Struct = nil
 
-// will panic if there is something funny, call to get the property map.
+// Will panic if there is something funny in the formatting, Call to get the property map.
 func Get_property_structs() map[string]Property_Struct {
-	// use property Structs as a flag.
-	if hidden_property_structs != nil { return hidden_property_structs }
-	hidden_property_structs = make(map[string]Property_Struct, 0)
+	// use property Structs as a flag, to know when inited.
+	if hidden_property_structs == nil {
+		hidden_property_structs = create_property_structs()
+	}
+	return hidden_property_structs
+}
+
+
+func set_boid_defaults(boid_sim *Boid_simulation) {
+	property_structs := Get_property_structs()
+
+	s := reflect.ValueOf(boid_sim).Elem()
+
+	for name, prop_struct := range property_structs {
+
+		settable_field := s.FieldByName(name)
+
+		switch prop_struct.Property_type {
+		case Property_Float: settable_field.SetFloat(prop_struct.Float_default)
+		case Property_Int:   settable_field.SetInt(int64(prop_struct.Int_default))
+		case Property_Bool:  settable_field.SetBool(prop_struct.Bool_default)
+
+		default: log.Panicf("%v: Unknown property in 'set_boid_defaults' switch", name)
+		}
+	}
+}
+
+type Union_Like struct {
+	As_int   int
+	As_float float64
+	As_bool  bool
+}
+
+func (boid_sim *Boid_simulation) Set_Properties_with_map(the_map map[string]Union_Like) {
+	property_structs := Get_property_structs()
+
+	// check if the name is in the property names.
+	bad_name := false
+	for name, _ := range the_map {
+		if !contains(property_structs, name) {
+			fmt.Printf("ERROR: '%v' is not in property structs\n", name)
+			bad_name = true
+		}
+	}
+
+	if bad_name { log.Fatalf("ERROR: There was a bad name.\n") }
+
+	for name, union := range the_map {
+
+		prop_struct := property_structs[name]
+
+		settable_field := reflect.ValueOf(boid_sim).Elem().FieldByName(name)
+
+		switch prop_struct.Property_type {
+		case Property_Float: settable_field.SetFloat(union.As_float)
+		case Property_Int:   settable_field.SetInt(int64(union.As_int))
+		case Property_Bool:  settable_field.SetBool(union.As_bool)
+
+		default: log.Panicf("%v: Unknown property in 'Set_Properties_with_map' switch", name)
+		}
+	}
+}
+
+
+
+// Creates the property structs, panics on error in formatting, (witch is what we want.)
+//
+// you can use the returned property structs with no fear, (but you should call 'Get_property_structs()' because it cashes the return value of this function)
+func create_property_structs() map[string]Property_Struct {
+	property_structs := make(map[string]Property_Struct, 0)
 
 	boid_sim := Boid_simulation{}
 	s := reflect.ValueOf(&boid_sim).Elem()
@@ -91,6 +162,7 @@ func Get_property_structs() map[string]Property_Struct {
 		// TODO use an enum here.
 		case "float": { property_struct.Property_type = Property_Float }
 		case "int":   { property_struct.Property_type = Property_Int   }
+		case "bool":  { property_struct.Property_type = Property_Bool  }
 
 		default: { log.Panicf("%v: unknown property type '%v'\n", name, prop_type) }
 		}
@@ -98,6 +170,8 @@ func Get_property_structs() map[string]Property_Struct {
 		tag_split = tag_split[1:]
 
 		struct_field_flags := Flag_None
+
+		// TODO maybe split the parseing into different functions?
 
 		for len(tag_split) > 0 {
 			left, right := tag_property_to_parts(tag_split[0])
@@ -108,11 +182,12 @@ func Get_property_structs() map[string]Property_Struct {
 				if struct_field_flags & Flag_range != 0 { log.Panicf("%v: Range property was set twice.", name) }
 				struct_field_flags |= Flag_range
 
-				ok, min_s, max_s := split_one(right, ";")
-				if !ok { log.Panicf("%v: right side of range property did not have a ';', was '%v'\n", name, right) }
-
+				
 				switch property_struct.Property_type {
 				case Property_Float: {
+					ok, min_s, max_s := split_one(right, ";")
+					if !ok { log.Panicf("%v: right side of range property did not have a ';', was '%v'\n", name, right) }
+
 					min_f, ok1 := strconv.ParseFloat(min_s, 64)
 					max_f, ok2 := strconv.ParseFloat(max_s, 64)
 
@@ -123,6 +198,9 @@ func Get_property_structs() map[string]Property_Struct {
 				}
 
 				case Property_Int: {
+					ok, min_s, max_s := split_one(right, ";")
+					if !ok { log.Panicf("%v: right side of range property did not have a ';', was '%v'\n", name, right) }
+
 					strconv.ParseInt(min_s, 0, 0)
 					min_i, ok1 := strconv.ParseInt(min_s, 10, 0)
 					max_i, ok2 := strconv.ParseInt(max_s, 10, 0)
@@ -131,6 +209,11 @@ func Get_property_structs() map[string]Property_Struct {
 
 					property_struct.Int_range_min = int(min_i)
 					property_struct.Int_range_max = int(max_i)
+				}
+
+				case Property_Bool: {
+					// TODO this is dumb break up
+					log.Panicf("%v: Bool dose not use Range", name)
 				}
 
 				default: { log.Panicf("%v: Unknown property in range switch", name) }
@@ -159,6 +242,14 @@ func Get_property_structs() map[string]Property_Struct {
 					property_struct.Int_default = int(def)
 				}
 
+				case Property_Bool: {
+					def, ok := strconv.ParseBool(right)
+
+					if ok != nil { log.Panicf("%v: error in Default, could not parse bool. was '%v'\n", name, right) }
+
+					property_struct.Bool_default = def
+				}
+
 				default: { log.Panicf("%v: Unknown property in default switch", name) }
 				}
 
@@ -170,66 +261,25 @@ func Get_property_structs() map[string]Property_Struct {
 
 		// check that all relevant property's fields where set with the flags
 		if struct_field_flags & Flag_range == 0 {
-			log.Panicf("%v: range field was not set.\n", name)
+			// bool's don't have a range.
+			if property_struct.Property_type != Property_Bool {
+				log.Panicf("%v: range field was not set.\n", name)
+			}
 		}
 		if struct_field_flags & Flag_default == 0 {
 			log.Panicf("%v: Default field was not set.\n", name)
 		}
 
-		hidden_property_structs[name] = property_struct
+		property_structs[name] = property_struct
 	}
 
-	return hidden_property_structs
+	return property_structs
 }
 
 
-func set_boid_defaults(boid_sim *Boid_simulation) {
-	property_structs := Get_property_structs()
-
-	s := reflect.ValueOf(boid_sim).Elem()
-
-	for name, prop_struct := range property_structs {
-
-		settable_field := s.FieldByName(name)
-
-		switch prop_struct.Property_type {
-		case Property_Float: settable_field.SetFloat(prop_struct.Float_default)
-		case Property_Int:   settable_field.SetInt(int64(prop_struct.Int_default))
-
-		default: log.Panicf("%v: Unknown property in 'set_boid_defaults' switch", name)
-		}
-	}
-}
-
-func (boid_sim *Boid_simulation) Set_Properties_with_map(the_map map[string]Boid_Float) {
-	property_structs := Get_property_structs()
-
-	// check if the name is in the property names.
-	bad_name := false
-	for name, _ := range the_map {
-		if !contains(property_structs, name) {
-			fmt.Printf("ERROR: '%v' is not in property structs\n", name)
-			bad_name = true
-		}
-	}
-
-	if bad_name { log.Fatalf("ERROR: There was a bad name.\n") }
-
-	for name, value := range the_map {
-
-		prop_struct := property_structs[name]
-
-		settable_field := reflect.ValueOf(boid_sim).Elem().FieldByName(name)
-
-		switch prop_struct.Property_type {
-		case Property_Float: settable_field.SetFloat(float64(value))
-		case Property_Int:   settable_field.SetInt(int64(value))
-
-		default: log.Panicf("%v: Unknown property in 'Set_Properties_with_map' switch", name)
-		}
-	}
-}
-
+// ////////////////
+// Helper Functions
+// ////////////////
 
 func split_one(s string, sep string) (found bool, a string, b string) {
 	if s == "" && sep == "" { return false, "", "" }

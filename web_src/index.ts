@@ -133,9 +133,9 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
     { // Handle slider stuff
         const properties = Object.entries(go.GetProperties())
 
-        function set_property(name: string, value: number) {
+        function set_property(name: string, value: number|boolean) {
             // https://stackoverflow.com/questions/12710905/how-do-i-dynamically-assign-properties-to-an-object-in-typescript
-            const obj: Record<string,number> = {};
+            const obj: Record<string,number|boolean> = {};
             obj[name] = value;
 
             go.SetProperties(obj);
