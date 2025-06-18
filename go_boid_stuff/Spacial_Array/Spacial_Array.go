@@ -17,6 +17,9 @@ type box[T Vector.Number] struct {
 	// how many slots are filled.
 	Count int
 
+	// The next box in the linked list
+	Next *box[T]
+
 	Points [BOX_SIZE]Vector.Vector2[T]
 	// TODO put these somewhere else?
 	// Indexes of the point that gave the corresponding point.
@@ -36,6 +39,10 @@ type Spacial_Array[T Vector.Number] struct {
 	Max_y T
 
 	Boxes []box[T]
+
+	// where the extra boxes are stored if there are to many to fit into one box.
+	backup_boxes []box[T]
+	backup_boxes_in_use int
 }
 
 func New_Spacial_Array[T Vector.Number]() Spacial_Array[T] {
@@ -50,6 +57,10 @@ func New_Spacial_Array[T Vector.Number]() Spacial_Array[T] {
 		Min_y: 0,
 		Max_x: 0,
 		Max_y: 0,
+
+		// maybe give this thing some initial space?
+		backup_boxes: make([]box[T], 0),
+		backup_boxes_in_use: 0,
 	}
 	result.Boxes = make([]box[T], result.Boxes_wide*result.Boxes_high)
 
@@ -78,8 +89,24 @@ func (array *Spacial_Array[T]) Append_points(points []Vector.Vector2[T]) {
 		box_x, box_y := array.point_to_box_loc(point)
 		the_box := &array.Boxes[box_y*array.Boxes_wide+box_x]
 
-		if the_box.Count == BOX_SIZE {
-			panic("To many points in a box!!!, fix this if this ever occurs")
+		for the_box.Count == BOX_SIZE {
+			// get a new box into the linked list if next is nil.
+			if the_box.Next == nil {
+
+				// make a new box if there are no spares.
+				if array.backup_boxes_in_use == len(array.backup_boxes) {
+					array.backup_boxes = append(array.backup_boxes, box[T]{})
+				}
+
+				// get the next box
+				the_box.Next = &array.backup_boxes[array.backup_boxes_in_use]
+				array.backup_boxes_in_use += 1
+
+				// reset the important fields.
+				the_box.Next.Count = 0
+				the_box.Next.Next = nil
+			}
+			the_box = the_box.Next
 		}
 
 		the_box.Points[the_box.Count] = point
@@ -112,15 +139,21 @@ func (array Spacial_Array[T]) Iter_Over_Near(point Vector.Vector2[T], radius T) 
 		for j := min_y; j < max_y; j++ {
 			for i := min_x; i < max_x; i++ {
 
-				box := array.Boxes[j*array.Boxes_wide+i]
-				for k := 0; k < box.Count; k++ {
-					checking_point := box.Points[k]
-					if Vector.DistSqr(point, checking_point) < radius*radius {
-						point_index := box.Indexes[k]
-						if !yield(point_index, checking_point) {
-							return
+				box := &array.Boxes[j*array.Boxes_wide+i]
+
+				for box != nil {
+
+					for k := 0; k < box.Count; k++ {
+						checking_point := box.Points[k]
+						if Vector.DistSqr(point, checking_point) < radius*radius {
+							point_index := box.Indexes[k]
+							if !yield(point_index, checking_point) {
+								return
+							}
 						}
 					}
+
+					box = box.Next
 				}
 
 			}
@@ -133,7 +166,10 @@ func (array *Spacial_Array[T]) Clear() {
 
 	for i := 0; i < array.Boxes_wide*array.Boxes_high; i++ {
 		array.Boxes[i].Count = 0
+		array.Boxes[i].Next = nil
 	}
+
+	array.backup_boxes_in_use = 0
 }
 
 func (array Spacial_Array[T]) point_to_box_loc(point Vector.Vector2[T]) (int, int) {

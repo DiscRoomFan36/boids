@@ -1,5 +1,5 @@
 
-export const DEBUG_DISPLAY = false;
+export const DEBUG_DISPLAY = true;
 export const DEBUG_SLIDERS = false;
 
 export enum Log_Type {
