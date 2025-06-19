@@ -14,16 +14,13 @@ DONE
 * move all the html and web stuff into a different folder, (but some files need to be in the base folder for the github pages thing to work...)
 * add a Boid number parameter (int), to the web side can change it.
 * add toggles to the parameters as well.
+* check for invalid property tags.
 
 
 NEXT
 
 * make the toggles look good.
 * setup_sliders.ts: // TODO use step. might clean this up a bit.
-
-* check for invalid property tags.
-
-* for the slides that have a small range (like cohesion factor) make the value the square of the number.
 
 
 AFTER THE CODE IS IN A GOOD PLACE
