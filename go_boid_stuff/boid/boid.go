@@ -16,15 +16,13 @@ type Boid_Float float32
 type Boid struct {
 	Position Vector.Vector2[Boid_Float]
 	Velocity Vector.Vector2[Boid_Float]
+	Acceleration Vector.Vector2[Boid_Float]
 }
 
 type Boid_simulation struct {
 	Boids []Boid
 
 	Width, Height Boid_Float
-
-	// Working Area
-	Accelerations []Vector.Vector2[Boid_Float]
 
 	// for fast proximity detection.
 	Spacial_array spacialarray.Spacial_Array[Boid_Float]
@@ -85,8 +83,6 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 
 		Width:  width,
 		Height: height,
-
-		Accelerations: make([]Vector.Vector2[Boid_Float], 0, 512),
 
 		Spacial_array: spacialarray.New_Spacial_Array[Boid_Float](),
 
@@ -162,7 +158,6 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 				}
 
 				boid_sim.Boids = append(boid_sim.Boids, new_boid)
-				boid_sim.Accelerations = append(boid_sim.Accelerations, Vector.Vector2[Boid_Float]{})
 			} else {
 				// remove 1 boid.
 				// do it randomly so its cooler.
@@ -194,8 +189,8 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	}
 
 	// Set the Accelerations to zero.
-	for i := range len(boid_sim.Accelerations) {
-		boid_sim.Accelerations[i] = Vector.Vector2[Boid_Float]{}
+	for i := range len(boid_sim.Boids) {
+		boid_sim.Boids[i].Acceleration = Vector.Vector2[Boid_Float]{}
 	}
 
 	// ------------------------------------
@@ -255,7 +250,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		align.Mult(boid_sim.Alignment_Factor)
 		coh.Mult(boid_sim.Cohesion_Factor)
 
-		boid_sim.Accelerations[i].Add(sep, align, coh)
+		boid_sim.Boids[i].Acceleration.Add(sep, align, coh)
 	}
 
 	// ------------------------------------
@@ -265,7 +260,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		for i := range len(boid_sim.Boids) {
 			// TODO get rid of bounding force function, pull it in
 			bounding := Vector.Mult(boid_sim.bounding_force(i), boid_sim.Margin_Turn_Factor)
-			boid_sim.Accelerations[i].Add(bounding)
+			boid_sim.Boids[i].Acceleration.Add(bounding)
 		}
 	}
 
@@ -294,8 +289,8 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		for i := range len(boid_sim.Boids) {
 			// for all intense and purposes, this is random to the viewer.
 			force := force_vectors[i%NUM_RANDOM_GENERATORS]
-			boid_sim.Accelerations[i].X += force.X
-			boid_sim.Accelerations[i].Y += force.Y
+			boid_sim.Boids[i].Acceleration.X += force.X
+			boid_sim.Boids[i].Acceleration.Y += force.Y
 		}
 	}
 
@@ -320,7 +315,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 			center_pointer := Vector.Normalized(Vector.Sub(center, this_boid.Position))
 
 			center_draw := Vector.Mult(center_pointer, boid_sim.Center_Draw_Factor)
-			boid_sim.Accelerations[i].Add(center_draw)
+			boid_sim.Boids[i].Acceleration.Add(center_draw)
 		}
 	}
 
@@ -329,7 +324,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	// ------------------------------------
 	for i := range len(boid_sim.Boids) {
 		wind := Vector.Make_Vector2(boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
-		boid_sim.Accelerations[i].Add(wind)
+		boid_sim.Boids[i].Acceleration.Add(wind)
 	}
 
 	// ------------------------------------
@@ -349,7 +344,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 
 		p0 := boid_sim.Boids[i].Position
 		v0 := boid_sim.Boids[i].Velocity
-		a := boid_sim.Accelerations[i]
+		a := boid_sim.Boids[i].Acceleration
 
 		a.Mult(boid_sim.Final_Acceleration_Boost)
 		// just the negative velocity for drag, must be after the final acceleration boost.
