@@ -16,14 +16,10 @@ DONE
 * add toggles to the parameters as well.
 * check for invalid property tags.
 * setup_sliders.ts: // TODO use step. might clean this up a bit.
-
-
-NEXT
-
 * make the toggles look good.
 
 
-AFTER THE CODE IS IN A GOOD PLACE
+NEXT
 
 * make the sim feel gooder.
 

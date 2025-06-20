@@ -50,8 +50,8 @@ type Boid_simulation struct {
 	Alignment_Factor  Boid_Float `Property:"float" Range:"0;1" Default:"0.15"`
 	Cohesion_Factor   Boid_Float `Property:"float" Range:"0;1" Default:"0.015"`
 
-	Margin             Boid_Float `Property:"float" Range:"0;1000" Default:"50"`
-	Margin_Turn_Factor Boid_Float `Property:"float" Range:"0;1000" Default:"4"`
+	Margin             Boid_Float `Property:"float" Range:"0;100" Default:"50"`
+	Margin_Turn_Factor Boid_Float `Property:"float" Range:"0;20" Default:"4"`
 
 	Random_Draw_Factor        Boid_Float `Property:"float" Range:"0;10" Default:"2"`
 	Random_Draw_Time_Dilation Boid_Float `Property:"float" Range:"1;10" Default:"2"`
