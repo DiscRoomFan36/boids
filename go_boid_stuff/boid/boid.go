@@ -235,6 +235,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 
 		// divide by number of close boids.
 		if num_close_boids > 0 {
+			// TODO ? what was i doing here?
 			align.SetMag(boid_sim.Max_Speed)
 			align.Sub(this_boid.Velocity)
 			align.Mult(1 / Boid_Float(num_close_boids))
