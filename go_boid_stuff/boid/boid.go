@@ -352,7 +352,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	boid_radius := boid_sim.Boid_Draw_Radius
 
 	time := Boid_Float(dt)
-	for i := 0; i < len(boid_sim.Boids); i++ {
+	for i := range len(boid_sim.Boids) {
 
 		// Handmade Hero Day 043 - The Equations of Motion: https://www.youtube.com/watch?v=LoTRzRFEk5I
 

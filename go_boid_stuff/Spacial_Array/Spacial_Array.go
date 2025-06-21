@@ -144,7 +144,7 @@ func (array Spacial_Array[T]) Iter_Over_Near(point Vector.Vector2[T], radius T) 
 				// is this loop kinda ass? only needs to be real when box.count == BOX_SIZE
 				for box != nil {
 
-					for k := 0; k < box.Count; k++ {
+					for k := range box.Count {
 						checking_point := box.Points[k]
 						if Vector.DistSqr(point, checking_point) < radius*radius {
 							point_index := box.Indexes[k]
@@ -165,7 +165,7 @@ func (array Spacial_Array[T]) Iter_Over_Near(point Vector.Vector2[T], radius T) 
 func (array *Spacial_Array[T]) Clear() {
 	array.inited = false
 
-	for i := 0; i < array.Boxes_wide*array.Boxes_high; i++ {
+	for i := range array.Boxes_wide*array.Boxes_high {
 		array.Boxes[i].Count = 0
 		array.Boxes[i].Next = nil
 	}
