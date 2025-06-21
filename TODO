@@ -26,6 +26,8 @@ NEXT
 
 * make the sim feel gooder.
 
+* fix boid vortex of death (when a bunch of boids get stuck in the corner)
+
 * boids follow mouse on mouse down
 
 * make the rendering a camera like, so you can scroll and what not.
