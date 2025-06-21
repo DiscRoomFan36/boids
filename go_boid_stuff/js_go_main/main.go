@@ -4,10 +4,12 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"syscall/js"
 	"time"
 
 	"boidstuff.com/Image"
+	"boidstuff.com/Vector"
 	"boidstuff.com/boid"
 )
 
@@ -132,13 +134,116 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	Draw_boids_into_image(&img, &boid_sim)
 	// boid_sim.Draw_Into_Image(&img)
 
+	{ // test ball stuff
+		const PAD = 100
+
+		bounds_xy := Vector.Vector2[Boid_Float]{X: PAD, Y: PAD}
+		bounds_wh := Vector.Vector2[Boid_Float]{X: (boid_sim.Width - PAD) / BOID_SCALE, Y: (boid_sim.Height - PAD) / BOID_SCALE}
+
+		bounds_x := bounds_xy.X
+		bounds_y := bounds_xy.Y
+		bounds_w := bounds_wh.X
+		bounds_h := bounds_wh.Y
+
+		ball_r := boid_sim.Boid_Draw_Radius * 5
+
+		// update ball pos
+		for i := range NUM_TEST_BALLS {
+			ball_pos := &test_balls_pos[i]
+			ball_vel := &test_balls_vel[i]
+
+			ball_x := &ball_pos.X
+			ball_y := &ball_pos.Y
+
+			ball_vx := &ball_vel.X
+			ball_vy := &ball_vel.Y
+
+			ball_vx_dt := *ball_vx * Boid_Float(dt)
+			ball_vy_dt := *ball_vy * Boid_Float(dt)
+
+			new_x := *ball_x + ball_vx_dt
+			new_y := *ball_y + ball_vy_dt
+
+			// assume previous ball was in bounds
+			if new_x - ball_r <= bounds_x {
+				if *ball_vx < 0 {
+					// flip around the bounce point.
+					new_x = bounce_1d(*ball_x, ball_r, ball_vx_dt, bounds_x)
+
+					*ball_vx *= -1
+				}
+			} else if new_x + ball_r >= bounds_x + bounds_w {
+				if *ball_vx > 0 {
+					new_x = bounce_1d(*ball_x, ball_r, ball_vx_dt, bounds_x + bounds_w)
+
+					*ball_vx *= -1
+				}
+			}
+
+			if new_y - ball_r <= bounds_y {
+				if *ball_vy < 0 {
+					// flip around the bounce point.
+					new_y = bounce_1d(*ball_y, ball_r, ball_vy_dt, bounds_y)
+
+					*ball_vy *= -1
+				}
+			} else if new_y + ball_r >= bounds_y + bounds_h {
+				if *ball_vy > 0 {
+					new_y = bounce_1d(*ball_y, ball_r, ball_vy_dt, bounds_y + bounds_h)
+
+					*ball_vy *= -1
+				}
+			}
+
+
+			test_balls_pos[i].X = new_x
+			test_balls_pos[i].Y = new_y
+		}
+
+		Image.Draw_Rect(&img, 0, 0, PAD, img.Height, Image.New_Color(0, 0, 255, 255))
+		Image.Draw_Rect(&img, 0, 0, img.Width, PAD, Image.New_Color(0, 255, 0, 255))
+
+		Image.Draw_Rect(&img, img.Width-PAD, 0, PAD, img.Height, Image.New_Color(0, 0, 255, 255))
+		Image.Draw_Rect(&img, 0, img.Height-PAD, img.Width, PAD, Image.New_Color(0, 255, 0, 255))
+
+		ball_color := Image.New_Color(255, 0, 0, 255)
+		for i := range NUM_TEST_BALLS {
+			ball := test_balls_pos[i]
+			Image.Draw_Circle(&img, int(ball.X), int(ball.Y), int(ball_r), ball_color)
+		}
+	}
+
 	// copy the pixels
 	copied_bytes := js.CopyBytesToJS(array, img.Buffer[:width*height*Image.NUM_COLOR_COMPONENTS])
 	return copied_bytes
 }
 
+// takes a position, radius, velocity, and a wall position.
+func bounce_1d[T Vector.Number](x, r, v, w T) T {
+	if v == 0 { return x } // no movement base case.
+
+	// take into account which side the radius applies.
+	if v < 0 {
+		return 2*w - (x - r + v) + r
+	} else {
+		return 2*w - (x + r + v) - r
+	}
+}
+
+const NUM_TEST_BALLS = 25
+var test_balls_pos [NUM_TEST_BALLS]Vector.Vector2[Boid_Float]
+var test_balls_vel [NUM_TEST_BALLS]Vector.Vector2[Boid_Float]
+
 func main() {
 	println("Hello From Boid.go")
+
+	for i := range NUM_TEST_BALLS {
+		new_pos := Vector.Make_Vector2(rand.Float32() * BOID_BOUNDS_WIDTH, rand.Float32() * BOID_BOUNDS_HEIGHT)
+
+		test_balls_pos[i] = Vector.Transform[float32, Boid_Float](new_pos)
+
+		test_balls_vel[i] = Vector.Mult(Vector.Random_unit_vector[Boid_Float](), 100)
+	}
 
 	// set img to screen size, and shrink
 	img = Image.New_image(1920, 1080)

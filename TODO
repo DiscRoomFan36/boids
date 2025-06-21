@@ -21,12 +21,12 @@ DONE
 
 NEXT
 
+* boids bounce off walls
+* boids dodge obstacles, put a big rect in the middle of the screen.
+
 * make the sim feel gooder.
 
 * boids follow mouse on mouse down
-
-* boids bounce off walls
-* boids dodge obstacles, put a big rect in the middle of the screen.
 
 * make the rendering a camera like, so you can scroll and what not.
 
