@@ -19,6 +19,8 @@ type Color struct {
 	A uint8
 }
 
+func New_Color(r, g, b, a uint8) Color { return Color{R: r, G: g, B: b, A: a} }
+
 func (c Color) Splat() (uint8, uint8, uint8, uint8) {
 	return c.R, c.G, c.B, c.A
 }
