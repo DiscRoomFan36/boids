@@ -134,88 +134,88 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	Draw_boids_into_image(&img, &boid_sim)
 	// boid_sim.Draw_Into_Image(&img)
 
-	{ // test ball stuff
-		const PAD = 100
+	// {
+	// 	const PAD = 100
 
-		bounds_xy := Vector.Vector2[Boid_Float]{X: PAD, Y: PAD}
-		bounds_wh := Vector.Vector2[Boid_Float]{X: (boid_sim.Width - PAD) / BOID_SCALE, Y: (boid_sim.Height - PAD) / BOID_SCALE}
+	// 	bounds_xy := Vector.Make_Vector2[Boid_Float](PAD, PAD)
+	// 	bounds_wh := Vector.Make_Vector2(
+	// 		(boid_sim.Width  - PAD) / BOID_SCALE,
+	// 		(boid_sim.Height - PAD) / BOID_SCALE,
+	// 	)
 
-		bounds_x := bounds_xy.X
-		bounds_y := bounds_xy.Y
-		bounds_w := bounds_wh.X
-		bounds_h := bounds_wh.Y
+	// 	bounds_x := bounds_xy.X
+	// 	bounds_y := bounds_xy.Y
+	// 	bounds_w := bounds_wh.X
+	// 	bounds_h := bounds_wh.Y
 
-		ball_r := boid_sim.Boid_Draw_Radius * 5
+	// 	ball_r := boid_sim.Boid_Draw_Radius / BOID_SCALE
 
-		// update ball pos
-		for i := range NUM_TEST_BALLS {
-			ball_pos := &test_balls_pos[i]
-			ball_vel := &test_balls_vel[i]
+	// 	// update ball pos
+	// 	for i := range NUM_TEST_BALLS {
+	// 		ball_x := test_balls_pos[i].X
+	// 		ball_y := test_balls_pos[i].Y
 
-			ball_x := &ball_pos.X
-			ball_y := &ball_pos.Y
+	// 		ball_vx := test_balls_vel[i].X
+	// 		ball_vy := test_balls_vel[i].Y
 
-			ball_vx := &ball_vel.X
-			ball_vy := &ball_vel.Y
+	// 		new_x, new_vx := bounce_point_between_two_walls(ball_x, ball_r, ball_vx, bounds_x, bounds_x + bounds_w, dt)
+	// 		new_y, new_vy := bounce_point_between_two_walls(ball_y, ball_r, ball_vy, bounds_y, bounds_y + bounds_h, dt)
 
-			ball_vx_dt := *ball_vx * Boid_Float(dt)
-			ball_vy_dt := *ball_vy * Boid_Float(dt)
+	// 		test_balls_pos[i].X = new_x
+	// 		test_balls_pos[i].Y = new_y
 
-			new_x := *ball_x + ball_vx_dt
-			new_y := *ball_y + ball_vy_dt
+	// 		test_balls_vel[i].X = new_vx
+	// 		test_balls_vel[i].Y = new_vy
+	// 	}
 
-			// assume previous ball was in bounds
-			if new_x - ball_r <= bounds_x {
-				if *ball_vx < 0 {
-					// flip around the bounce point.
-					new_x = bounce_1d(*ball_x, ball_r, ball_vx_dt, bounds_x)
+	// 	Image.Draw_Rect(&img, 0, 0, PAD, img.Height, Image.New_Color(0, 0, 255, 255))
+	// 	Image.Draw_Rect(&img, 0, 0, img.Width, PAD, Image.New_Color(0, 255, 0, 255))
 
-					*ball_vx *= -1
-				}
-			} else if new_x + ball_r >= bounds_x + bounds_w {
-				if *ball_vx > 0 {
-					new_x = bounce_1d(*ball_x, ball_r, ball_vx_dt, bounds_x + bounds_w)
+	// 	Image.Draw_Rect(&img, img.Width-PAD, 0, PAD, img.Height, Image.New_Color(0, 0, 255, 255))
+	// 	Image.Draw_Rect(&img, 0, img.Height-PAD, img.Width, PAD, Image.New_Color(0, 255, 0, 255))
 
-					*ball_vx *= -1
-				}
-			}
-
-			if new_y - ball_r <= bounds_y {
-				if *ball_vy < 0 {
-					// flip around the bounce point.
-					new_y = bounce_1d(*ball_y, ball_r, ball_vy_dt, bounds_y)
-
-					*ball_vy *= -1
-				}
-			} else if new_y + ball_r >= bounds_y + bounds_h {
-				if *ball_vy > 0 {
-					new_y = bounce_1d(*ball_y, ball_r, ball_vy_dt, bounds_y + bounds_h)
-
-					*ball_vy *= -1
-				}
-			}
-
-
-			test_balls_pos[i].X = new_x
-			test_balls_pos[i].Y = new_y
-		}
-
-		Image.Draw_Rect(&img, 0, 0, PAD, img.Height, Image.New_Color(0, 0, 255, 255))
-		Image.Draw_Rect(&img, 0, 0, img.Width, PAD, Image.New_Color(0, 255, 0, 255))
-
-		Image.Draw_Rect(&img, img.Width-PAD, 0, PAD, img.Height, Image.New_Color(0, 0, 255, 255))
-		Image.Draw_Rect(&img, 0, img.Height-PAD, img.Width, PAD, Image.New_Color(0, 255, 0, 255))
-
-		ball_color := Image.New_Color(255, 0, 0, 255)
-		for i := range NUM_TEST_BALLS {
-			ball := test_balls_pos[i]
-			Image.Draw_Circle(&img, int(ball.X), int(ball.Y), int(ball_r), ball_color)
-		}
-	}
+	// 	ball_color := Image.New_Color(255, 0, 0, 255)
+	// 	for i := range NUM_TEST_BALLS {
+	// 		ball := test_balls_pos[i]
+	// 		Image.Draw_Circle(&img, int(ball.X), int(ball.Y), int(ball_r), ball_color)
+	// 	}
+	// }
 
 	// copy the pixels
 	copied_bytes := js.CopyBytesToJS(array, img.Buffer[:width*height*Image.NUM_COLOR_COMPONENTS])
 	return copied_bytes
+}
+
+func bounce_point_between_two_walls[T Vector.Number](x, r, v, w1, w2 T, dt float64) (T, T){
+	// TODO handle?
+	if w2 < w1 { panic("w2 is less than w1") }
+
+	v_dt := v * T(dt)
+
+	new_x := x + v_dt
+
+	if new_x - r <= w1 {
+		if v < 0 {
+			// if it wasn't out of bounds in the previous frame.
+			if !(x - r <= w1) {
+				// flip around the bounce point.
+				new_x = bounce_1d(x, r, v_dt, w1)
+			}
+
+			return new_x, -v
+		}
+	} else if new_x + r >= w2 {
+		if v > 0 {
+			// if it wasn't out of bounds in the previous frame.
+			if !(x + r >= w2) {
+				new_x = bounce_1d(x, r, v_dt, w2)
+			}
+
+			return new_x, -v
+		}
+	}
+
+	return new_x, v
 }
 
 // takes a position, radius, velocity, and a wall position.

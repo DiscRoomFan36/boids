@@ -1,7 +1,6 @@
 package boid
 
 import (
-	"fmt"
 	"math"
 	"math/rand"
 
@@ -102,15 +101,17 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 }
 
 // TODO: make this return a Vector, so it can also be affected by dt
-func (boid_sim *Boid_simulation) adjust_speed(b *Boid) {
-	// func (b *Boid[T]) adjust_speed() {
-	speed := b.Velocity.Mag()
+func (boid_sim *Boid_simulation) adjust_speed(vel Vector.Vector2[Boid_Float]) Vector.Vector2[Boid_Float] {
+	speed := vel.Mag()
 	if speed > boid_sim.Max_Speed {
-		fmt.Printf("boid is faster than max\n")
-		b.Velocity.Mult(boid_sim.Max_Speed / speed)
+		// we don't really need this now that we have drag
+		// fmt.Printf("boid is faster than max\n")
+		// vel.Mult(boid_sim.Max_Speed / speed)
 	} else if speed < boid_sim.Min_Speed {
-		b.Velocity.Mult(boid_sim.Min_Speed / speed)
+		vel.Mult(boid_sim.Min_Speed / speed)
 	}
+
+	return vel
 }
 
 func (boid_sim Boid_simulation) bounding_force(index int) Vector.Vector2[Boid_Float] {
@@ -335,9 +336,21 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	// const WOBBLE_FACTOR = 0.01
 	// wobble := Vector.Mult(Vector.Random_unit_vector[T](), WOBBLE_FACTOR)
 
+
+
 	// ------------------------------------
 	//   Update positions and velocities
 	// ------------------------------------
+
+	// make a bounding box. (for collision things)
+	bounds_x1 := boid_sim.Margin
+	bounds_x2 := boid_sim.Width  - boid_sim.Margin
+
+	bounds_y1 := boid_sim.Margin
+	bounds_y2 := boid_sim.Height - boid_sim.Margin
+
+	boid_radius := boid_sim.Boid_Draw_Radius
+
 	time := Boid_Float(dt)
 	for i := 0; i < len(boid_sim.Boids); i++ {
 
@@ -347,31 +360,106 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		v0 := boid_sim.Boids[i].Velocity
 		a := boid_sim.Boids[i].Acceleration
 
+		// -----------------
+		//    Drag stuff
+		// -----------------
 		a.Mult(boid_sim.Final_Acceleration_Boost)
 		// just the negative velocity for drag, must be after the final acceleration boost.
 		// this stops things from getting to out of hand.
 		drag := Vector.Mult(v0, -boid_sim.Final_Drag_Coefficient)
 		a.Add(drag)
 
-		// p1 = (1/2)*a*t^2 + v0*t + p0
-		p1 := Vector.Add(Vector.Mult(a, 0.5*square(time)), Vector.Mult(v0, time), p0)
+
 		// v1 = a*t + v0
 		v1 := Vector.Add(Vector.Mult(a, time), v0)
 
 		// adjust the velocity
 		// TODO do we even have to limit speed? drag dose that for us.
-		boid_sim.adjust_speed(&boid_sim.Boids[i])
+		v1 = boid_sim.adjust_speed(v1)
 
-		boid_sim.Boids[i].Position = p1
+		// set this immediately, might be flipped if it hits a wall.
 		boid_sim.Boids[i].Velocity = v1
 
-		// makes them wrap around the screen
-		if boid_sim.Toggle_Wrapping {
-			boid_sim.Boids[i].Position.X = proper_mod(boid_sim.Boids[i].Position.X, boid_sim.Width)
-			boid_sim.Boids[i].Position.Y = proper_mod(boid_sim.Boids[i].Position.Y, boid_sim.Height)
-		}
+		// a very nice way to calculate displacement.
+		// v_avg = (v0 + v1) / 2
+		v_avg_x := (v0.X + v1.X) / 2
+		v_avg_y := (v0.Y + v1.Y) / 2
+
+
+		// -------------------------------
+		//          Collisions
+		// -------------------------------
+
+		new_x, flip_vx := bounce_point_between_two_walls(p0.X, boid_radius, v_avg_x, bounds_x1, bounds_x2, dt)
+		new_y, flip_vy := bounce_point_between_two_walls(p0.Y, boid_radius, v_avg_y, bounds_y1, bounds_y2, dt)
+
+		boid_sim.Boids[i].Position.X = new_x
+		boid_sim.Boids[i].Position.Y = new_y
+
+		if flip_vx { boid_sim.Boids[i].Velocity.X *= -1 }
+		if flip_vy { boid_sim.Boids[i].Velocity.Y *= -1 }
+
+
+		// TODO is this needed?
+		// // makes them wrap around the screen
+		// if boid_sim.Toggle_Wrapping {
+		// 	boid_sim.Boids[i].Position.X = proper_mod(boid_sim.Boids[i].Position.X, boid_sim.Width)
+		// 	boid_sim.Boids[i].Position.Y = proper_mod(boid_sim.Boids[i].Position.Y, boid_sim.Height)
+		// }
 	}
 }
+
+
+// takes a initial position, radius, velocity, two walls, and a time value
+//
+// returns the new position, and whether or not to flip the velocity.
+func bounce_point_between_two_walls[T Vector.Number](x, r, v, w1, w2 T, dt float64) (T, bool){
+	if w2 < w1 {
+		// swap them, this case might happen when resizing the window.
+		tmp := w1
+		w1 = w2
+		w2 = tmp
+	}
+
+	v_dt := v * T(dt)
+
+	new_x := x + v_dt
+
+	if new_x - r <= w1 {
+		if v < 0 {
+			// if it wasn't out of bounds in the previous frame.
+			if !(x - r <= w1) {
+				// flip around the bounce point.
+				new_x = bounce_1d(x, r, v_dt, w1)
+			}
+
+			return new_x, true
+		}
+	} else if new_x + r >= w2 {
+		if v > 0 {
+			// if it wasn't out of bounds in the previous frame.
+			if !(x + r >= w2) {
+				new_x = bounce_1d(x, r, v_dt, w2)
+			}
+
+			return new_x, true
+		}
+	}
+
+	return new_x, false
+}
+
+// takes a position, radius, velocity, and a wall position.
+func bounce_1d[T Vector.Number](x, r, v, w T) T {
+	if v == 0 { return x } // no movement base case.
+
+	// this takes into account which direction your moving,
+	// to figure out where the r should be supplied.
+	if v < 0 { r = -r }
+
+	return 2*w - (x + r + v) - r
+}
+
 
 // outputs a number from [0, b). ignore the float64. go math module is dumb.
 func proper_mod[T Vector.Float](a, b T) T {
