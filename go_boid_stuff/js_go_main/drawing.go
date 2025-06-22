@@ -90,7 +90,7 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 			// someone who knows math explain this
 			boid_shape[i] = Vector.Rotate(boid_shape[i], theta)
 
-			boid_shape[i].Mult(boid_sim.Boid_Draw_Radius * scale_factor)
+			boid_shape[i].Mult(boid_sim.Boid_Radius * scale_factor)
 			boid_shape[i].Add(b.Position)
 		}
 

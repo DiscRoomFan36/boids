@@ -73,7 +73,7 @@ type Boid_simulation struct {
 
 
 	// This doesn't make sense to have here, but it is convenient.
-	Boid_Draw_Radius Boid_Float `Property:"float" Range:"0;10" Default:"2.5"`
+	Boid_Radius Boid_Float `Property:"float" Range:"0;10" Default:"2.5"`
 }
 
 func New_boid_simulation(width, height Boid_Float) Boid_simulation {
@@ -349,7 +349,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	bounds_y1 := boid_sim.Margin
 	bounds_y2 := boid_sim.Height - boid_sim.Margin
 
-	boid_radius := boid_sim.Boid_Draw_Radius
+	boid_radius := boid_sim.Boid_Radius
 
 	time := Boid_Float(dt)
 	for i := range len(boid_sim.Boids) {
