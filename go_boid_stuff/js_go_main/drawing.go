@@ -67,25 +67,27 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 		}
 	}
 
-	{ // draw the wall
-		x, y, w, h := boid_sim.Wall.Splat()
-		boundary_points := [4]Vector.Vector2[Boid_Float]{
-			{X: x,     Y: y    },
-			{X: x + w, Y: y    },
-			{X: x + w, Y: y + h},
-			{X: x,     Y: y + h},
-		}
+	{ // draw the walls
+		for _, wall := range boid_sim.Walls {
+			x, y, w, h := wall.Splat()
+			boundary_points := [4]Vector.Vector2[Boid_Float]{
+				{X: x,     Y: y    },
+				{X: x + w, Y: y    },
+				{X: x + w, Y: y + h},
+				{X: x,     Y: y + h},
+			}
 
-		// scale the points
-		for i := range len(boundary_points) {
-			boundary_points[i].X *= scale_factor
-			boundary_points[i].Y *= scale_factor
-		}
+			// scale the points
+			for i := range len(boundary_points) {
+				boundary_points[i].X *= scale_factor
+				boundary_points[i].Y *= scale_factor
+			}
 
-		color := Image.New_Color(255, 0, 0, 255)
+			color := Image.New_Color(255, 0, 0, 255)
 
-		for i := range len(boundary_points) {
-			Image.Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], color)
+			for i := range len(boundary_points) {
+				Image.Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], color)
+			}
 		}
 	}
 

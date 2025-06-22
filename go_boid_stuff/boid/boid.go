@@ -42,7 +42,7 @@ type Boid_simulation struct {
 	generators [NUM_RANDOM_GENERATORS]Random_Generator
 
 	// Thing a boid can hit, maybe they can see it as well?
-	Wall Rectangle
+	Walls []Rectangle
 
 	// used to calculate how long until the next boid is spawned / de-spawned
 	//
@@ -101,7 +101,7 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 		Spacial_array: spacialarray.New_Spacial_Array[Boid_Float](),
 
 		// just make a temp thing in the middle of the field.
-		Wall: make_rectangle(width/2-50, height/2-50, 100, 100),
+		Walls: make([]Rectangle, 1),
 
 		spawn_timer: 0,
 	}
@@ -114,6 +114,8 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 		// this doesn't have to be random. could just be 'i / NUM_RANDOM_GENERATORS'
 		boid_sim.generators[i].t = random_32()
 	}
+
+	boid_sim.Walls[0] = make_rectangle(width/2-50, height/2-50, 100, 100)
 
 	return boid_sim
 }
@@ -156,7 +158,7 @@ func (boid_sim Boid_simulation) bounding_force(index int) Vector.Vector2[Boid_Fl
 func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 
 	// put the wall in the center
-	boid_sim.Wall = make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)
+	boid_sim.Walls[0] = make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)
 
 
 	{ // spawn / despawn boids.
@@ -421,8 +423,7 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 		vx := v_avg_x * time
 		vy := v_avg_y * time
 
-		boid_x := p0.X
-		boid_y := p0.Y
+		boid_x, boid_y := p0.Splat()
 
 		// make it so a boid can only hit one thing.
 		// TODO be smarter?
@@ -431,8 +432,7 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 		new_x := boid_x + vx
 		new_y := boid_y + vy
 
-		new_vx := v1.X
-		new_vy := v1.Y
+		new_vx, new_vy := v1.Splat()
 
 		// --------------------------------------
 		//     Margin bounding box collision
@@ -457,80 +457,85 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 		// --------------------------------------
 		//           wall collisions
 		// --------------------------------------
-		if !hit_something {
-			// collide with boid_sim.wall
 
-			wall := boid_sim.Wall
+		// loop over all walls,
+		// TODO maybe use spacial array for speed?
+		for _, wall := range boid_sim.Walls {
 
-			// circle rectangle collision
-			hit, px, py := circle_rectangle_collision(new_x, new_y, boid_radius, wall)
+			if !hit_something {
+				// collide with boid_sim.wall
 
-			if hit {
-				hit_something = true
+				// circle rectangle collision
+				hit, px, py := circle_rectangle_collision(new_x, new_y, boid_radius, wall)
 
-				// check if we are already in the rectangle
-				prev_frame_hit, _, _ := circle_rectangle_collision(boid_x, boid_y, boid_radius, wall)
+				if hit {
+					hit_something = true
 
-				if prev_frame_hit {
-					// just pass?
-					// panic("TODO move the boid out of the box... maybe just teleport?")
+					// check if we are already in the rectangle
+					prev_frame_hit, _, _ := circle_rectangle_collision(boid_x, boid_y, boid_radius, wall)
 
-				} else {
-
-
-					// bounce the boid off the box
-
-					// if the px == boid_x, you hit a wall, just flip a sign.
-					if sloppy_equal(new_x, px) {
-						new_y = bounce_1d(boid_y, boid_radius, vy, py)
-						new_vy *= -1 // flip the y velocity
-
-					} else if sloppy_equal(new_y, py) {
-						new_x = bounce_1d(boid_x, boid_radius, vx, px)
-						new_vx *= -1 // flip the x velocity
+					if prev_frame_hit {
+						// just pass?
+						// panic("TODO move the boid out of the box... maybe just teleport?")
 
 					} else {
-						// oh no, we hit a corner. fuck.
 
-						// https://math.stackexchange.com/questions/428546/collision-between-a-circle-and-a-rectangle
 
-						// TODO calculate position at moment of collision
-						// for now the boids just get a fun little speed boost
-						cx := boid_x
-						cy := boid_y
+						// bounce the boid off the box
 
-						q := -(2 * (vx*(cx - px) + vy*(cy - py))) / square(boid_radius)
+						// if the px == boid_x, you hit a wall, just flip a sign.
+						if sloppy_equal(new_x, px) {
+							new_y = bounce_1d(boid_y, boid_radius, vy, py)
+							new_vy *= -1 // flip the y velocity
 
-						// velocity after collision with corner.
-						vx_after := vx + q*(cx - px)
-						vy_after := vy + q*(cy - py)
+						} else if sloppy_equal(new_y, py) {
+							new_x = bounce_1d(boid_x, boid_radius, vx, px)
+							new_vx *= -1 // flip the x velocity
 
-						// two questions:
+						} else {
+							// oh no, we hit a corner. fuck.
 
-						// - where are we now
+							// https://math.stackexchange.com/questions/428546/collision-between-a-circle-and-a-rectangle
 
-						// it actually doesn't really matter where we end up,
-						// I cant figure out the math right now, so im going to cheat.
-						//
-						// this assumes it bounce perfectly diagonally,
-						// but its good enough for our purposes/
-						new_x = bounce_1d(boid_x, boid_radius, vx, px)
-						new_y = bounce_1d(boid_y, boid_radius, vy, py)
+							// TODO calculate position at moment of collision
+							// for now the boids just get a fun little speed boost
+							cx := boid_x
+							cy := boid_y
 
-						// - whats the boids velocity now?
-						//
-						// solve for v1
-						// vx = ((v0.X + v1.X) / 2) * time
-						// (vx / time) = (v0.X + v1.X) / 2
-						// (vx / time) * 2 = v0.X + v1.X
-						// (vx / time) * 2 - v0.X = v1.X
-						// v1.X = (vx / time) * 2 - v0.X
+							q := -(2 * (vx*(cx - px) + vy*(cy - py))) / square(boid_radius)
 
-						new_vx = vx_after / time * 2 - v0.X
-						new_vy = vy_after / time * 2 - v0.Y
+							// velocity after collision with corner.
+							vx_after := vx + q*(cx - px)
+							vy_after := vy + q*(cy - py)
+
+							// two questions:
+
+							// - where are we now
+
+							// it actually doesn't really matter where we end up,
+							// I cant figure out the math right now, so im going to cheat.
+							//
+							// this assumes it bounce perfectly diagonally,
+							// but its good enough for our purposes/
+							new_x = bounce_1d(boid_x, boid_radius, vx, px)
+							new_y = bounce_1d(boid_y, boid_radius, vy, py)
+
+							// - whats the boids velocity now?
+							//
+							// solve for v1
+							// vx = ((v0.X + v1.X) / 2) * time
+							// (vx / time) = (v0.X + v1.X) / 2
+							// (vx / time) * 2 = v0.X + v1.X
+							// (vx / time) * 2 - v0.X = v1.X
+							// v1.X = (vx / time) * 2 - v0.X
+
+							new_vx = vx_after / time * 2 - v0.X
+							new_vy = vy_after / time * 2 - v0.Y
+						}
+
 					}
-
 				}
+
 			}
 
 		}
