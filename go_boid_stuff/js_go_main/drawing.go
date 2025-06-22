@@ -42,7 +42,7 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 			{X: margin, Y: img.Height - margin},
 		}
 
-		for i := 0; i < len(boundary_points); i++ {
+		for i := range len(boundary_points) {
 			Image.Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], boid_boundary_color)
 		}
 	}
@@ -67,6 +67,28 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 		}
 	}
 
+	{ // draw the wall
+		x, y, w, h := boid_sim.Wall.Splat()
+		boundary_points := [4]Vector.Vector2[Boid_Float]{
+			{X: x,     Y: y    },
+			{X: x + w, Y: y    },
+			{X: x + w, Y: y + h},
+			{X: x,     Y: y + h},
+		}
+
+		// scale the points
+		for i := range len(boundary_points) {
+			boundary_points[i].X *= scale_factor
+			boundary_points[i].Y *= scale_factor
+		}
+
+		color := Image.New_Color(255, 0, 0, 255)
+
+		for i := range len(boundary_points) {
+			Image.Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], color)
+		}
+	}
+
 	// NOTE i would put this in a go routine, but wasm doesn't do multithreading, fuck
 	for _, b := range boid_sim.Boids {
 		// img.Draw_Circle(int(b.Position.X*scale_factor), int(b.Position.Y*scale_factor), BOID_DRAW_RADIUS, boid_color2)
@@ -86,7 +108,7 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 		// Rotate to face them in the right direction
 		theta := Vector.GetTheta(b.Velocity) - math.Pi/2
 		// TODO i also think this is slowing us down, put in own function
-		for i := 0; i < len(boid_shape); i++ {
+		for i := range len(boid_shape) {
 			// someone who knows math explain this
 			boid_shape[i] = Vector.Rotate(boid_shape[i], theta)
 

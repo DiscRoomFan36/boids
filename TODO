@@ -18,17 +18,23 @@ DONE
 * setup_sliders.ts: // TODO use step. might clean this up a bit.
 * make the toggles look good.
 * boids bounce off walls
-
+* boids hit obstacles, put a big rect in the middle of the screen.
 
 NEXT
 
 * boids dodge obstacles, put a big rect in the middle of the screen.
+
+* have typescript control the walls, make more walls.
+
+* make boids see in front of them. (with rays?)
 
 * make the sim feel gooder.
 
 * fix boid vortex of death (when a bunch of boids get stuck in the corner)
 
 * boids follow mouse on mouse down
+
+* boid.go: // TODO calculate position at moment of collision
 
 * make the rendering a camera like, so you can scroll and what not.
 

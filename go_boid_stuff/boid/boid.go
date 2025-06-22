@@ -12,6 +12,18 @@ const NUM_RANDOM_GENERATORS = 32
 
 type Boid_Float float32
 
+type Rectangle struct {
+	x, y, w, h Boid_Float
+}
+
+func make_rectangle(x, y, w, h Boid_Float) Rectangle {
+	return Rectangle{x: x, y: y, w: w, h: h}
+}
+
+func (rect Rectangle) Splat() (Boid_Float, Boid_Float, Boid_Float, Boid_Float) {
+	return rect.x, rect.y, rect.w, rect.h
+}
+
 type Boid struct {
 	Position Vector.Vector2[Boid_Float]
 	Velocity Vector.Vector2[Boid_Float]
@@ -28,6 +40,9 @@ type Boid_simulation struct {
 
 	// used for random draw forces
 	generators [NUM_RANDOM_GENERATORS]Random_Generator
+
+	// Thing a boid can hit, maybe they can see it as well?
+	Wall Rectangle
 
 	// used to calculate how long until the next boid is spawned / de-spawned
 	//
@@ -85,6 +100,9 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 
 		Spacial_array: spacialarray.New_Spacial_Array[Boid_Float](),
 
+		// just make a temp thing in the middle of the field.
+		Wall: make_rectangle(width/2-50, height/2-50, 100, 100),
+
 		spawn_timer: 0,
 	}
 
@@ -136,6 +154,10 @@ func (boid_sim Boid_simulation) bounding_force(index int) Vector.Vector2[Boid_Fl
 
 // NOTE dt is in seconds
 func (boid_sim *Boid_simulation) Update_boids(dt float64) {
+
+	// put the wall in the center
+	boid_sim.Wall = make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)
+
 
 	{ // spawn / despawn boids.
 		boid_sim.spawn_timer += Boid_Float(dt)
@@ -330,19 +352,37 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	}
 
 	// ------------------------------------
-	//                 Other Ideas
+	//              Other Ideas
 	// ------------------------------------
 	// TODO add noise instead
 	// const WOBBLE_FACTOR = 0.01
 	// wobble := Vector.Mult(Vector.Random_unit_vector[T](), WOBBLE_FACTOR)
 
 
+	// ----------------------------
+	//       And Finally Drag
+	// ----------------------------
+	for i := range len(boid_sim.Boids) {
+		v0 := boid_sim.Boids[i].Velocity
+		a := boid_sim.Boids[i].Acceleration
+
+		a.Mult(boid_sim.Final_Acceleration_Boost)
+		// just the negative velocity for drag, must be after the final acceleration boost.
+		// this stops things from getting to out of hand.
+		drag := Vector.Mult(v0, -boid_sim.Final_Drag_Coefficient)
+		a.Add(drag)
+
+		boid_sim.Boids[i].Acceleration = a
+	}
 
 	// ------------------------------------
 	//   Update positions and velocities
 	// ------------------------------------
+	boid_sim.finally_move_and_collide(dt)
+}
 
-	// make a bounding box. (for collision things)
+func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
+	// make a bounding box.
 	bounds_x1 := boid_sim.Margin
 	bounds_x2 := boid_sim.Width  - boid_sim.Margin
 
@@ -353,22 +393,13 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 
 	time := Boid_Float(dt)
 	for i := range len(boid_sim.Boids) {
+		boid := &boid_sim.Boids[i]
 
 		// Handmade Hero Day 043 - The Equations of Motion: https://www.youtube.com/watch?v=LoTRzRFEk5I
 
-		p0 := boid_sim.Boids[i].Position
-		v0 := boid_sim.Boids[i].Velocity
-		a := boid_sim.Boids[i].Acceleration
-
-		// -----------------
-		//    Drag stuff
-		// -----------------
-		a.Mult(boid_sim.Final_Acceleration_Boost)
-		// just the negative velocity for drag, must be after the final acceleration boost.
-		// this stops things from getting to out of hand.
-		drag := Vector.Mult(v0, -boid_sim.Final_Drag_Coefficient)
-		a.Add(drag)
-
+		p0 := boid.Position
+		v0 := boid.Velocity
+		a := boid.Acceleration
 
 		// v1 = a*t + v0
 		v1 := Vector.Add(Vector.Mult(a, time), v0)
@@ -376,9 +407,6 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		// adjust the velocity
 		// TODO do we even have to limit speed? drag dose that for us.
 		v1 = boid_sim.adjust_speed(v1)
-
-		// set this immediately, might be flipped if it hits a wall.
-		boid_sim.Boids[i].Velocity = v1
 
 		// a very nice way to calculate displacement.
 		// v_avg = (v0 + v1) / 2
@@ -390,15 +418,128 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		//          Collisions
 		// -------------------------------
 
-		new_x, flip_vx := bounce_point_between_two_walls(p0.X, boid_radius, v_avg_x, bounds_x1, bounds_x2, dt)
-		new_y, flip_vy := bounce_point_between_two_walls(p0.Y, boid_radius, v_avg_y, bounds_y1, bounds_y2, dt)
+		vx := v_avg_x * time
+		vy := v_avg_y * time
 
-		boid_sim.Boids[i].Position.X = new_x
-		boid_sim.Boids[i].Position.Y = new_y
+		boid_x := p0.X
+		boid_y := p0.Y
 
-		if flip_vx { boid_sim.Boids[i].Velocity.X *= -1 }
-		if flip_vy { boid_sim.Boids[i].Velocity.Y *= -1 }
+		// make it so a boid can only hit one thing.
+		// TODO be smarter?
+		hit_something := false
 
+		new_x := boid_x + vx
+		new_y := boid_y + vy
+
+		new_vx := v1.X
+		new_vy := v1.Y
+
+		// --------------------------------------
+		//     Margin bounding box collision
+		// --------------------------------------
+		if !hit_something {
+			// collide with outer wall
+			hit_in_x, maybe_new_x := bounce_point_between_two_walls(boid_x, boid_radius, vx, bounds_x1, bounds_x2)
+			hit_in_y, maybe_new_y := bounce_point_between_two_walls(boid_y, boid_radius, vy, bounds_y1, bounds_y2)
+
+			if hit_in_x { new_vx *= -1 }
+			if hit_in_y { new_vy *= -1 }
+
+			hit_something = hit_in_x || hit_in_y
+
+			if hit_something {
+				new_x = maybe_new_x
+				new_y = maybe_new_y
+			}
+		}
+
+
+		// --------------------------------------
+		//           wall collisions
+		// --------------------------------------
+		if !hit_something {
+			// collide with boid_sim.wall
+
+			wall := boid_sim.Wall
+
+			// circle rectangle collision
+			hit, px, py := circle_rectangle_collision(new_x, new_y, boid_radius, wall)
+
+			if hit {
+				hit_something = true
+
+				// check if we are already in the rectangle
+				prev_frame_hit, _, _ := circle_rectangle_collision(boid_x, boid_y, boid_radius, wall)
+
+				if prev_frame_hit {
+					// just pass?
+					// panic("TODO move the boid out of the box... maybe just teleport?")
+
+				} else {
+
+
+					// bounce the boid off the box
+
+					// if the px == boid_x, you hit a wall, just flip a sign.
+					if sloppy_equal(new_x, px) {
+						new_y = bounce_1d(boid_y, boid_radius, vy, py)
+						new_vy *= -1 // flip the y velocity
+
+					} else if sloppy_equal(new_y, py) {
+						new_x = bounce_1d(boid_x, boid_radius, vx, px)
+						new_vx *= -1 // flip the x velocity
+
+					} else {
+						// oh no, we hit a corner. fuck.
+
+						// https://math.stackexchange.com/questions/428546/collision-between-a-circle-and-a-rectangle
+
+						// TODO calculate position at moment of collision
+						// for now the boids just get a fun little speed boost
+						cx := boid_x
+						cy := boid_y
+
+						q := -(2 * (vx*(cx - px) + vy*(cy - py))) / square(boid_radius)
+
+						// velocity after collision with corner.
+						vx_after := vx + q*(cx - px)
+						vy_after := vy + q*(cy - py)
+
+						// two questions:
+
+						// - where are we now
+
+						// it actually doesn't really matter where we end up,
+						// I cant figure out the math right now, so im going to cheat.
+						//
+						// this assumes it bounce perfectly diagonally,
+						// but its good enough for our purposes/
+						new_x = bounce_1d(boid_x, boid_radius, vx, px)
+						new_y = bounce_1d(boid_y, boid_radius, vy, py)
+
+						// - whats the boids velocity now?
+						//
+						// solve for v1
+						// vx = ((v0.X + v1.X) / 2) * time
+						// (vx / time) = (v0.X + v1.X) / 2
+						// (vx / time) * 2 = v0.X + v1.X
+						// (vx / time) * 2 - v0.X = v1.X
+						// v1.X = (vx / time) * 2 - v0.X
+
+						new_vx = vx_after / time * 2 - v0.X
+						new_vy = vy_after / time * 2 - v0.Y
+					}
+
+				}
+			}
+
+		}
+
+		boid.Position.X = new_x
+		boid.Position.Y = new_y
+
+		boid.Velocity.X = new_vx
+		boid.Velocity.Y = new_vy
 
 		// TODO is this needed?
 		// // makes them wrap around the screen
@@ -409,11 +550,32 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	}
 }
 
+func sloppy_equal[T Vector.Float](a, b T) bool {
+	// some small number
+	const EPSILON = 0.000000001
+	return abs(a - b) < EPSILON
+}
+
+// returns if there was a collision, and the closest point on the rectangle.
+func circle_rectangle_collision(x, y, r Boid_Float, rect Rectangle) (bool, Boid_Float, Boid_Float) {
+	px := x
+	py := y
+	px = max(px, rect.x)
+	px = min(px, rect.x + rect.w)
+	py = max(py, rect.y)
+	py = min(py, rect.y + rect.h)
+
+	// check for collision
+	collision := square(x - px) + square(y - py) < square(r)
+
+	return collision, px, py
+}
+
 
 // takes a initial position, radius, velocity, two walls, and a time value
 //
-// returns the new position, and whether or not to flip the velocity.
-func bounce_point_between_two_walls[T Vector.Number](x, r, v, w1, w2 T, dt float64) (T, bool){
+// returns weather you hit something, and the new position.
+func bounce_point_between_two_walls[T Vector.Number](x, r, v, w1, w2 T) (bool, T){
 	if w2 < w1 {
 		// swap them, this case might happen when resizing the window.
 		tmp := w1
@@ -421,32 +583,30 @@ func bounce_point_between_two_walls[T Vector.Number](x, r, v, w1, w2 T, dt float
 		w2 = tmp
 	}
 
-	v_dt := v * T(dt)
-
-	new_x := x + v_dt
+	new_x := x + v
 
 	if new_x - r <= w1 {
 		if v < 0 {
 			// if it wasn't out of bounds in the previous frame.
 			if !(x - r <= w1) {
 				// flip around the bounce point.
-				new_x = bounce_1d(x, r, v_dt, w1)
+				new_x = bounce_1d(x, r, v, w1)
 			}
 
-			return new_x, true
+			return true, new_x
 		}
 	} else if new_x + r >= w2 {
 		if v > 0 {
 			// if it wasn't out of bounds in the previous frame.
 			if !(x + r >= w2) {
-				new_x = bounce_1d(x, r, v_dt, w2)
+				new_x = bounce_1d(x, r, v, w2)
 			}
 
-			return new_x, true
+			return true, new_x
 		}
 	}
 
-	return new_x, false
+	return false, new_x
 }
 
 // takes a position, radius, velocity, and a wall position.
@@ -468,4 +628,13 @@ func proper_mod[T Vector.Float](a, b T) T {
 
 func square[T Vector.Number](x T) T {
 	return x * x
+}
+
+func abs[T Vector.Float](x T) T {
+	if x < 0 { return -x }
+	return x
+}
+
+func sqrt[T Vector.Float](x T) T {
+	return T(math.Sqrt(float64(x)))
 }
