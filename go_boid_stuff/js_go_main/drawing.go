@@ -4,7 +4,6 @@ import (
 	"math"
 
 	"boidstuff.com/Image"
-	spacialarray "boidstuff.com/Spacial_Array"
 	"boidstuff.com/Vector"
 	"boidstuff.com/boid"
 )
@@ -143,7 +142,7 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 	}
 }
 
-func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array spacialarray.Spacial_Array[T], scale T) {
+func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array boid.Spacial_Array[T], scale T) {
 
 	min_x, min_y := sp_array.Min_x, sp_array.Min_y
 	max_x, max_y := sp_array.Max_x, sp_array.Max_y
@@ -226,7 +225,7 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array s
 				const start_number = 230
 				const end_number = 360
 
-				fill_amount := float32(box.Count) / spacialarray.BOX_SIZE
+				fill_amount := float32(box.Count) / boid.BOX_SIZE
 				fill_amount = min(fill_amount, 1)
 
 				blended := lerp(start_number, end_number, fill_amount)

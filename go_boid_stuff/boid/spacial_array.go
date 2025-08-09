@@ -1,6 +1,5 @@
-package spacialarray
+package boid
 
-// TODO grid spacial array
 import (
 	"iter"
 	"log"
@@ -8,6 +7,7 @@ import (
 
 	"boidstuff.com/Vector"
 )
+
 
 const BOX_SIZE = 64
 
@@ -208,3 +208,4 @@ func map_and_clamp_range[T Vector.Number](x, mini, maxi T) T {
 	y := (x - mini) / diff
 	return min(max(y, 0), 1)
 }
+

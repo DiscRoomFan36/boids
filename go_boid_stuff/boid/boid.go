@@ -4,7 +4,6 @@ import (
 	"math"
 	"math/rand"
 
-	spacialarray "boidstuff.com/Spacial_Array"
 	"boidstuff.com/Vector"
 )
 
@@ -36,7 +35,7 @@ type Boid_simulation struct {
 	Width, Height Boid_Float
 
 	// for fast proximity detection.
-	Spacial_array spacialarray.Spacial_Array[Boid_Float]
+	Spacial_array Spacial_Array[Boid_Float]
 
 	// used for random draw forces
 	generators [NUM_RANDOM_GENERATORS]Random_Generator
@@ -98,7 +97,7 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 		Width:  width,
 		Height: height,
 
-		Spacial_array: spacialarray.New_Spacial_Array[Boid_Float](),
+		Spacial_array: New_Spacial_Array[Boid_Float](),
 
 		// just make a temp thing in the middle of the field.
 		Walls: make([]Rectangle, 1),
