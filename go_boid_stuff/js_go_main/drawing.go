@@ -3,7 +3,6 @@ package main
 import (
 	"math"
 
-	"boidstuff.com/Image"
 	"boidstuff.com/boid"
 )
 
@@ -12,17 +11,17 @@ const DEBUG_BOUNDARY = true
 const DEBUG_HEADING = true
 const DEBUG_VISUAL_RANGES = false
 
-var boid_heading_color = Image.Color{R: 10, G: 240, B: 10, A: 255}
-var boid_boundary_color = Image.Color{R: 240, G: 240, B: 240, A: 255}
+var boid_heading_color = Color{R: 10, G: 240, B: 10, A: 255}
+var boid_boundary_color = Color{R: 240, G: 240, B: 240, A: 255}
 
 type Boid_Float = boid.Boid_Float
 
 // TODO have some sort of view mode here, so we can 'move' the 'camera'
 //
 // go incorrectly reports this function as unused if it is not public...
-func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
+func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 
-	img.Clear_background(Image.Color{R: 24, G: 24, B: 24, A: 255})
+	img.Clear_background(Color{R: 24, G: 24, B: 24, A: 255})
 
 	// we map the world-space to match the image space
 	scale_factor := boid.Boid_Float(img.Width) / boid_sim.Width
@@ -41,27 +40,27 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 		}
 
 		for i := range len(boundary_points) {
-			Image.Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], boid_boundary_color)
+			Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], boid_boundary_color)
 		}
 	}
 
 	if DEBUG_VISUAL_RANGES {
 		// Draw visual radius.
-		visual_radius_color := Image.HSL_to_RGB(50, 0.7, 0.9)
+		visual_radius_color := HSL_to_RGB(50, 0.7, 0.9)
 		for _, b := range boid_sim.Boids {
 			x := int(b.Position.X * scale_factor)
 			y := int(b.Position.Y * scale_factor)
 			r := int(boid_sim.Visual_Range * scale_factor)
-			Image.Draw_Circle(img, x, y, r, visual_radius_color)
+			Draw_Circle(img, x, y, r, visual_radius_color)
 		}
 
 		// Draw minimum visual radius. (for separation.)
-		minimum_radius_color := Image.HSL_to_RGB(270, 0.7, 0.7)
+		minimum_radius_color := HSL_to_RGB(270, 0.7, 0.7)
 		for _, b := range boid_sim.Boids {
 			x := int(b.Position.X * scale_factor)
 			y := int(b.Position.Y * scale_factor)
 			r := int(boid_sim.Separation_Min_Distance * scale_factor)
-			Image.Draw_Circle(img, x, y, r, minimum_radius_color)
+			Draw_Circle(img, x, y, r, minimum_radius_color)
 		}
 	}
 
@@ -81,10 +80,10 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 				boundary_points[i].Y *= scale_factor
 			}
 
-			color := Image.New_Color(255, 0, 0, 255)
+			color := New_Color(255, 0, 0, 255)
 
 			for i := range len(boundary_points) {
-				Image.Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], color)
+				Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], color)
 			}
 		}
 	}
@@ -127,21 +126,21 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 		const SHIFT_FACTOR = 2
 		H := math.Mod(float64(clamp(speed, 0, 1)*360)*SHIFT_FACTOR, 360)
 
-		boid_color := Image.HSL_to_RGB(H, 0.75, 0.6)
+		boid_color := HSL_to_RGB(H, 0.75, 0.6)
 
 		// Draw both sides
-		Image.Draw_Triangle(img, boid_shape[0], boid_shape[1], boid_shape[2], boid_color)
-		Image.Draw_Triangle(img, boid_shape[0], boid_shape[1], boid_shape[3], boid_color)
+		Draw_Triangle(img, boid_shape[0], boid_shape[1], boid_shape[2], boid_color)
+		Draw_Triangle(img, boid_shape[0], boid_shape[1], boid_shape[3], boid_color)
 
 		if DEBUG_HEADING {
 			// Draw heading line
 			where_boid_will_be := boid.Add(b.Position, b.Velocity)
-			Image.Draw_Line(img, b.Position, where_boid_will_be, boid_heading_color)
+			Draw_Line(img, b.Position, where_boid_will_be, boid_heading_color)
 		}
 	}
 }
 
-func draw_spacial_array_into_image[T boid.Number](img *Image.Image, sp_array boid.Spacial_Array[T], scale T) {
+func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spacial_Array[T], scale T) {
 
 	min_x, min_y := sp_array.Min_x, sp_array.Min_y
 	max_x, max_y := sp_array.Max_x, sp_array.Max_y
@@ -154,7 +153,7 @@ func draw_spacial_array_into_image[T boid.Number](img *Image.Image, sp_array boi
 
 	{
 		// draw the outsides.
-		var outer_color = Image.Color{R: 255, G: 255, B: 255, A: 255} // WHITE.
+		var outer_color = Color{R: 255, G: 255, B: 255, A: 255} // WHITE.
 
 		bounding_box := [4]boid.Vector2[T]{
 			{X: min_x, Y: min_y},
@@ -167,7 +166,7 @@ func draw_spacial_array_into_image[T boid.Number](img *Image.Image, sp_array boi
 		}
 
 		for i := 0; i < len(bounding_box); i++ {
-			Image.Draw_Line(
+			Draw_Line(
 				img,
 				bounding_box[i],
 				bounding_box[(i+1)%len(bounding_box)],
@@ -177,7 +176,7 @@ func draw_spacial_array_into_image[T boid.Number](img *Image.Image, sp_array boi
 	}
 
 	{ // now draw the inner lines.
-		var inner_color = Image.Color{R: 255, G: 0, B: 0, A: 255}
+		var inner_color = Color{R: 255, G: 0, B: 0, A: 255}
 
 		// Vertical
 		for i := 1; i < sp_array.Boxes_wide; i++ {
@@ -189,7 +188,7 @@ func draw_spacial_array_into_image[T boid.Number](img *Image.Image, sp_array boi
 			p1.Mult(scale)
 			p2.Mult(scale)
 
-			Image.Draw_Line(img, p1, p2, inner_color)
+			Draw_Line(img, p1, p2, inner_color)
 		}
 
 		// Horizontal
@@ -202,7 +201,7 @@ func draw_spacial_array_into_image[T boid.Number](img *Image.Image, sp_array boi
 			p1.Mult(scale)
 			p2.Mult(scale)
 
-			Image.Draw_Line(img, p1, p2, inner_color)
+			Draw_Line(img, p1, p2, inner_color)
 		}
 	}
 
@@ -230,9 +229,9 @@ func draw_spacial_array_into_image[T boid.Number](img *Image.Image, sp_array boi
 				blended := lerp(start_number, end_number, fill_amount)
 
 				// fade alpha based on how many points are in it.
-				faded_color := Image.HSL_to_RGB(blended, 0.9, 0.5)
+				faded_color := HSL_to_RGB(blended, 0.9, 0.5)
 
-				Image.Draw_Rect(img, int(x*scale), int(y*scale), int(step_x*scale), int(step_y*scale), faded_color)
+				Draw_Rect(img, int(x*scale), int(y*scale), int(step_x*scale), int(step_y*scale), faded_color)
 			}
 		}
 	}
@@ -254,8 +253,8 @@ func lerp(a, b, t float32) float32 {
 // 		const end_number = 360
 
 // 		percent := float32(i) / float32(img.Width)
-// 		color := Image.HSL_to_RGB(lerp(start_number, end_number, percent), 0.9, 0.5)
-// 		Image.Draw_Rect(img, i, 0, STEP, 25, color)
+// 		color := HSL_to_RGB(lerp(start_number, end_number, percent), 0.9, 0.5)
+// 		Draw_Rect(img, i, 0, STEP, 25, color)
 // 	}
 // }
 
@@ -264,14 +263,14 @@ func lerp(a, b, t float32) float32 {
 // -----------------------------------------
 
 // {
-// 	test_color := Image.HSL_to_RGB(180, 0.75, 0.6)
+// 	test_color := HSL_to_RGB(180, 0.75, 0.6)
 
 // 	// Test random generator.
 // 	new_random_number := nocheckin_generator.Next(float32(nocheckin_dt) * 0.25)
 
 // 	h := img.Height / 2
 // 	x := new_random_number * float32(img.Width)
-// 	Image.Draw_Rect(img, int(x-10), h, 20, 20, test_color)
+// 	Draw_Rect(img, int(x-10), h, 20, 20, test_color)
 
 // 	unit_vector := boid.Make_Vector2[float32](1, 0)
 // 	theta := new_random_number * 2 * math.Pi
@@ -282,10 +281,10 @@ func lerp(a, b, t float32) float32 {
 // 	// move to center
 // 	rotated.Add(boid.Make_Vector2(float32(img.Width)/2, float32(img.Height)/2))
 
-// 	Image.Draw_Circle(img, int(rotated.X), int(rotated.Y), 10, test_color)
+// 	Draw_Circle(img, int(rotated.X), int(rotated.Y), 10, test_color)
 
 // 	p1 := boid.Make_Vector2(float32(img.Width/2), float32(img.Height/2))
-// 	Image.Draw_Line(img, p1, rotated, test_color)
+// 	Draw_Line(img, p1, rotated, test_color)
 
 // // for testing. move these to global scope.
 // 	var nocheckin_generator = boid.New_Random_Generator(true)

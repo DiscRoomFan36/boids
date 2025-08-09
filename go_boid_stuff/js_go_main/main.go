@@ -7,11 +7,10 @@ import (
 	"syscall/js"
 	"time"
 
-	"boidstuff.com/Image"
 	"boidstuff.com/boid"
 )
 
-var img Image.Image
+var img Image
 
 var boid_sim boid.Boid_simulation
 
@@ -100,8 +99,8 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	array := args[2]
 
 	// saves space
-	if len(img.Buffer) < width*height*Image.NUM_COLOR_COMPONENTS {
-		img.Buffer = make([]byte, width*height*Image.NUM_COLOR_COMPONENTS)
+	if len(img.Buffer) < width*height*NUM_COLOR_COMPONENTS {
+		img.Buffer = make([]byte, width*height*NUM_COLOR_COMPONENTS)
 	}
 	img.Width = width
 	img.Height = height
@@ -133,7 +132,7 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	// boid_sim.Draw_Into_Image(&img)
 
 	// copy the pixels
-	copied_bytes := js.CopyBytesToJS(array, img.Buffer[:width*height*Image.NUM_COLOR_COMPONENTS])
+	copied_bytes := js.CopyBytesToJS(array, img.Buffer[:width*height*NUM_COLOR_COMPONENTS])
 	return copied_bytes
 }
 
@@ -141,7 +140,7 @@ func main() {
 	println("Hello From Boid.go")
 
 	// set img to screen size, and shrink
-	img = Image.New_image(1920, 1080)
+	img = New_image(1920, 1080)
 	boid_sim = boid.New_boid_simulation(BOID_BOUNDS_WIDTH, BOID_BOUNDS_HEIGHT)
 
 	last_frame_time = time.Now()
