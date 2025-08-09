@@ -6,7 +6,7 @@ import (
 	"math"
 	"os"
 
-	"boidstuff.com/Vector"
+	Vector "boidstuff.com/boid"
 )
 
 // DO NOT CHANGE UNLESS YOU WANNA DO A MASSIVE REFACTOR (AGAIN)

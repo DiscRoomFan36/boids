@@ -4,8 +4,6 @@ import (
 	"iter"
 	"log"
 	"math"
-
-	"boidstuff.com/Vector"
 )
 
 
@@ -13,20 +11,20 @@ const BOX_SIZE = 64
 
 type BOX_ID_TYPE uint32
 
-type box[T Vector.Number] struct {
+type box[T Number] struct {
 	// how many slots are filled.
 	Count int
 
 	// The next box in the linked list
 	Next *box[T]
 
-	Points [BOX_SIZE]Vector.Vector2[T]
+	Points [BOX_SIZE]Vector2[T]
 	// TODO put these somewhere else?
 	// Indexes of the point that gave the corresponding point.
 	Indexes [BOX_SIZE]BOX_ID_TYPE
 }
 
-type Spacial_Array[T Vector.Number] struct {
+type Spacial_Array[T Number] struct {
 	// this is weather or not we have been given points
 	inited bool
 
@@ -45,7 +43,7 @@ type Spacial_Array[T Vector.Number] struct {
 	backup_boxes_in_use int
 }
 
-func New_Spacial_Array[T Vector.Number]() Spacial_Array[T] {
+func New_Spacial_Array[T Number]() Spacial_Array[T] {
 	result := Spacial_Array[T]{
 		inited: false,
 
@@ -67,7 +65,7 @@ func New_Spacial_Array[T Vector.Number]() Spacial_Array[T] {
 	return result
 }
 
-func (array *Spacial_Array[T]) Append_points(points []Vector.Vector2[T]) {
+func (array *Spacial_Array[T]) Append_points(points []Vector2[T]) {
 	if array.inited {
 		panic("cannot append 2 sets of points, sorry")
 	}
@@ -115,8 +113,8 @@ func (array *Spacial_Array[T]) Append_points(points []Vector.Vector2[T]) {
 	}
 }
 
-func (array Spacial_Array[T]) Iter_Over_Near(point Vector.Vector2[T], radius T) iter.Seq2[BOX_ID_TYPE, Vector.Vector2[T]] {
-	return func(yield func(BOX_ID_TYPE, Vector.Vector2[T]) bool) {
+func (array Spacial_Array[T]) Iter_Over_Near(point Vector2[T], radius T) iter.Seq2[BOX_ID_TYPE, Vector2[T]] {
+	return func(yield func(BOX_ID_TYPE, Vector2[T]) bool) {
 		// get all near points...
 		box_x, box_y := array.point_to_box_loc(point)
 
@@ -146,7 +144,7 @@ func (array Spacial_Array[T]) Iter_Over_Near(point Vector.Vector2[T], radius T) 
 
 					for k := range box.Count {
 						checking_point := box.Points[k]
-						if Vector.DistSqr(point, checking_point) < radius*radius {
+						if DistSqr(point, checking_point) < radius*radius {
 							point_index := box.Indexes[k]
 							if !yield(point_index, checking_point) {
 								return
@@ -173,7 +171,7 @@ func (array *Spacial_Array[T]) Clear() {
 	array.backup_boxes_in_use = 0
 }
 
-func (array Spacial_Array[T]) point_to_box_loc(point Vector.Vector2[T]) (int, int) {
+func (array Spacial_Array[T]) point_to_box_loc(point Vector2[T]) (int, int) {
 	x := map_and_clamp_range(point.X, array.Min_x, array.Max_x)
 	y := map_and_clamp_range(point.Y, array.Min_y, array.Max_y)
 
@@ -184,7 +182,7 @@ func (array Spacial_Array[T]) point_to_box_loc(point Vector.Vector2[T]) (int, in
 }
 
 // returns min_x, min_y, max_x, max_y
-func find_mins_and_maxs[T Vector.Number](points []Vector.Vector2[T]) (T, T, T, T) {
+func find_mins_and_maxs[T Number](points []Vector2[T]) (T, T, T, T) {
 	if len(points) == 0 { return 0, 0, 0, 0 }
 
 	min_x := points[0].X
@@ -202,7 +200,7 @@ func find_mins_and_maxs[T Vector.Number](points []Vector.Vector2[T]) (T, T, T, T
 
 // returns a number from 0..1 inclusive
 // TODO can this be done better with ints? mult and div?
-func map_and_clamp_range[T Vector.Number](x, mini, maxi T) T {
+func map_and_clamp_range[T Number](x, mini, maxi T) T {
 	diff := maxi - mini
 	if diff == 0 { return 0 }
 	y := (x - mini) / diff

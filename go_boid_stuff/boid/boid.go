@@ -3,8 +3,6 @@ package boid
 import (
 	"math"
 	"math/rand"
-
-	"boidstuff.com/Vector"
 )
 
 const NUM_RANDOM_GENERATORS = 32
@@ -24,9 +22,9 @@ func (rect Rectangle) Splat() (Boid_Float, Boid_Float, Boid_Float, Boid_Float) {
 }
 
 type Boid struct {
-	Position Vector.Vector2[Boid_Float]
-	Velocity Vector.Vector2[Boid_Float]
-	Acceleration Vector.Vector2[Boid_Float]
+	Position Vector2[Boid_Float]
+	Velocity Vector2[Boid_Float]
+	Acceleration Vector2[Boid_Float]
 }
 
 type Boid_simulation struct {
@@ -120,7 +118,7 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 }
 
 // TODO: make this return a Vector, so it can also be affected by dt
-func (boid_sim *Boid_simulation) adjust_speed(vel Vector.Vector2[Boid_Float]) Vector.Vector2[Boid_Float] {
+func (boid_sim *Boid_simulation) adjust_speed(vel Vector2[Boid_Float]) Vector2[Boid_Float] {
 	speed := vel.Mag()
 	if speed > boid_sim.Max_Speed {
 		// we don't really need this now that we have drag
@@ -133,8 +131,8 @@ func (boid_sim *Boid_simulation) adjust_speed(vel Vector.Vector2[Boid_Float]) Ve
 	return vel
 }
 
-func (boid_sim Boid_simulation) bounding_force(index int) Vector.Vector2[Boid_Float] {
-	vel := Vector.Vector2[Boid_Float]{}
+func (boid_sim Boid_simulation) bounding_force(index int) Vector2[Boid_Float] {
+	vel := Vector2[Boid_Float]{}
 
 	if boid_sim.Boids[index].Position.X < boid_sim.Margin {
 		vel.X += 1
@@ -174,11 +172,11 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 				// add 1 boid.
 
 				new_boid := Boid{
-					Position: Vector.Make_Vector2(
+					Position: Make_Vector2(
 						Boid_Float(rand.Float32()*float32(boid_sim.Width)),
 						Boid_Float(rand.Float32()*float32(boid_sim.Height)),
 					),
-					Velocity: Vector.Mult(Vector.Random_unit_vector[Boid_Float](), (boid_sim.Min_Speed + boid_sim.Max_Speed) / 2),
+					Velocity: Mult(Random_unit_vector[Boid_Float](), (boid_sim.Min_Speed + boid_sim.Max_Speed) / 2),
 				}
 
 				boid_sim.Boids = append(boid_sim.Boids, new_boid)
@@ -204,7 +202,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		boid_sim.Spacial_array.Clear()
 
 		// TODO make this just how we store boid positions or something.
-		boid_positions := make([]Vector.Vector2[Boid_Float], 0, len(boid_sim.Boids))
+		boid_positions := make([]Vector2[Boid_Float], 0, len(boid_sim.Boids))
 		for _, b := range boid_sim.Boids {
 			boid_positions = append(boid_positions, b.Position)
 		}
@@ -214,7 +212,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 
 	// Set the Accelerations to zero.
 	for i := range len(boid_sim.Boids) {
-		boid_sim.Boids[i].Acceleration = Vector.Vector2[Boid_Float]{}
+		boid_sim.Boids[i].Acceleration = Vector2[Boid_Float]{}
 	}
 
 	// ------------------------------------
@@ -224,18 +222,18 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		this_boid := boid_sim.Boids[i]
 
 		// Separation
-		sep := Vector.Vector2[Boid_Float]{}
+		sep := Vector2[Boid_Float]{}
 		// Alignment
-		align := Vector.Vector2[Boid_Float]{}
+		align := Vector2[Boid_Float]{}
 		// Cohesion
-		coh := Vector.Vector2[Boid_Float]{}
+		coh := Vector2[Boid_Float]{}
 
 		num_close_boids := 0
 		for j, near_pos := range boid_sim.Spacial_array.Iter_Over_Near(this_boid.Position, boid_sim.Visual_Range) {
 			num_close_boids += 1
 
 			// if the near guy is super close. move away
-			dist_sqr := Vector.DistSqr(this_boid.Position, near_pos)
+			dist_sqr := DistSqr(this_boid.Position, near_pos)
 			sep_min_dist_sqr := square(boid_sim.Separation_Min_Distance)
 			if dist_sqr < sep_min_dist_sqr {
 
@@ -284,7 +282,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	if boid_sim.Toggle_Bounding {
 		for i := range len(boid_sim.Boids) {
 			// TODO get rid of bounding force function, pull it in
-			bounding := Vector.Mult(boid_sim.bounding_force(i), boid_sim.Margin_Turn_Factor)
+			bounding := Mult(boid_sim.bounding_force(i), boid_sim.Margin_Turn_Factor)
 			boid_sim.Boids[i].Acceleration.Add(bounding)
 		}
 	}
@@ -299,12 +297,12 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		// ..._Time_Dilation == seconds to switch generator.
 		time_advance := dt / float64(boid_sim.Random_Draw_Time_Dilation)
 
-		var force_vectors [NUM_RANDOM_GENERATORS]Vector.Vector2[Boid_Float]
+		var force_vectors [NUM_RANDOM_GENERATORS]Vector2[Boid_Float]
 		for i := range NUM_RANDOM_GENERATORS {
 			random_number := boid_sim.generators[i].Next(float32(time_advance))
 			theta := random_number * 2 * math.Pi
 
-			rotated_vector := Vector.Unit_Vector_With_Rotation(Boid_Float(theta))
+			rotated_vector := Unit_Vector_With_Rotation(Boid_Float(theta))
 			rotated_vector.Mult(boid_sim.Random_Draw_Factor)
 
 			force_vectors[i] = rotated_vector
@@ -327,19 +325,19 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 			this_boid := boid_sim.Boids[i]
 
 			// center of the simulation
-			center := Vector.Make_Vector2(boid_sim.Width/2, boid_sim.Height/2)
+			center := Make_Vector2(boid_sim.Width/2, boid_sim.Height/2)
 
 			// if they in in this circle, don't be drawn into the center.
 			min_radius := min(boid_sim.Width, boid_sim.Height) / boid_sim.Center_Draw_Radius_Div
 
-			if Vector.DistSqr(this_boid.Position, center) < square(min_radius) {
+			if DistSqr(this_boid.Position, center) < square(min_radius) {
 				continue
 			}
 
 			// vector pointing towards the center.
-			center_pointer := Vector.Normalized(Vector.Sub(center, this_boid.Position))
+			center_pointer := Normalized(Sub(center, this_boid.Position))
 
-			center_draw := Vector.Mult(center_pointer, boid_sim.Center_Draw_Factor)
+			center_draw := Mult(center_pointer, boid_sim.Center_Draw_Factor)
 			boid_sim.Boids[i].Acceleration.Add(center_draw)
 		}
 	}
@@ -348,7 +346,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	//                 Wind
 	// ------------------------------------
 	for i := range len(boid_sim.Boids) {
-		wind := Vector.Make_Vector2(boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
+		wind := Make_Vector2(boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
 		boid_sim.Boids[i].Acceleration.Add(wind)
 	}
 
@@ -357,7 +355,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 	// ------------------------------------
 	// TODO add noise instead
 	// const WOBBLE_FACTOR = 0.01
-	// wobble := Vector.Mult(Vector.Random_unit_vector[T](), WOBBLE_FACTOR)
+	// wobble := Mult(Random_unit_vector[T](), WOBBLE_FACTOR)
 
 
 	// ----------------------------
@@ -370,7 +368,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		a.Mult(boid_sim.Final_Acceleration_Boost)
 		// just the negative velocity for drag, must be after the final acceleration boost.
 		// this stops things from getting to out of hand.
-		drag := Vector.Mult(v0, -boid_sim.Final_Drag_Coefficient)
+		drag := Mult(v0, -boid_sim.Final_Drag_Coefficient)
 		a.Add(drag)
 
 		boid_sim.Boids[i].Acceleration = a
@@ -403,7 +401,7 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 		a := boid.Acceleration
 
 		// v1 = a*t + v0
-		v1 := Vector.Add(Vector.Mult(a, time), v0)
+		v1 := Add(Mult(a, time), v0)
 
 		// adjust the velocity
 		// TODO do we even have to limit speed? drag dose that for us.
@@ -554,7 +552,7 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 	}
 }
 
-func sloppy_equal[T Vector.Float](a, b T) bool {
+func sloppy_equal[T Float](a, b T) bool {
 	// some small number
 	const EPSILON = 0.000000001
 	return abs(a - b) < EPSILON
@@ -579,7 +577,7 @@ func circle_rectangle_collision(x, y, r Boid_Float, rect Rectangle) (bool, Boid_
 // takes a initial position, radius, velocity, two walls, and a time value
 //
 // returns weather you hit something, and the new position.
-func bounce_point_between_two_walls[T Vector.Number](x, r, v, w1, w2 T) (bool, T){
+func bounce_point_between_two_walls[T Number](x, r, v, w1, w2 T) (bool, T){
 	if w2 < w1 {
 		// swap them, this case might happen when resizing the window.
 		tmp := w1
@@ -614,7 +612,7 @@ func bounce_point_between_two_walls[T Vector.Number](x, r, v, w1, w2 T) (bool, T
 }
 
 // takes a position, radius, velocity, and a wall position.
-func bounce_1d[T Vector.Number](x, r, v, w T) T {
+func bounce_1d[T Number](x, r, v, w T) T {
 	if v == 0 { return x } // no movement base case.
 
 	// this takes into account which direction your moving,
@@ -626,19 +624,19 @@ func bounce_1d[T Vector.Number](x, r, v, w T) T {
 
 
 // outputs a number from [0, b). ignore the float64. go math module is dumb.
-func proper_mod[T Vector.Float](a, b T) T {
+func proper_mod[T Float](a, b T) T {
 	return T(math.Mod(math.Mod(float64(a), float64(b))+float64(b), float64(b)))
 }
 
-func square[T Vector.Number](x T) T {
+func square[T Number](x T) T {
 	return x * x
 }
 
-func abs[T Vector.Float](x T) T {
+func abs[T Float](x T) T {
 	if x < 0 { return -x }
 	return x
 }
 
-func sqrt[T Vector.Float](x T) T {
+func sqrt[T Float](x T) T {
 	return T(math.Sqrt(float64(x)))
 }

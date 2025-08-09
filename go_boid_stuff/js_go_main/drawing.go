@@ -4,8 +4,10 @@ import (
 	"math"
 
 	"boidstuff.com/Image"
-	"boidstuff.com/Vector"
 	"boidstuff.com/boid"
+
+	// funny joke.
+	Vector "boidstuff.com/boid"
 )
 
 const DEBUG_SPACIAL_ARRAY = false
