@@ -19,10 +19,9 @@ DONE
 * make the toggles look good.
 * boids bounce off walls
 * boids hit obstacles, put a big rect in the middle of the screen.
+* Put most of everything into one package.
 
 NEXT
-
-* Put most of everything into one package.
 
 * boids dodge obstacles, put a big rect in the middle of the screen.
 
