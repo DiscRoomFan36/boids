@@ -5,9 +5,6 @@ import (
 
 	"boidstuff.com/Image"
 	"boidstuff.com/boid"
-
-	// funny joke.
-	Vector "boidstuff.com/boid"
 )
 
 const DEBUG_SPACIAL_ARRAY = false
@@ -36,7 +33,7 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 
 	if DEBUG_BOUNDARY {
 		margin := int(boid_sim.Margin * scale_factor)
-		boundary_points := [4]Vector.Vector2[int]{
+		boundary_points := [4]boid.Vector2[int]{
 			{X: margin, Y: margin},
 			{X: img.Width - margin, Y: margin},
 			{X: img.Width - margin, Y: img.Height - margin},
@@ -71,7 +68,7 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 	{ // draw the walls
 		for _, wall := range boid_sim.Walls {
 			x, y, w, h := wall.Splat()
-			boundary_points := [4]Vector.Vector2[Boid_Float]{
+			boundary_points := [4]boid.Vector2[Boid_Float]{
 				{X: x,     Y: y    },
 				{X: x + w, Y: y    },
 				{X: x + w, Y: y + h},
@@ -101,7 +98,7 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 
 		// Draw boid body
 		// TODO maybe some LOD shit, where its just a triangle? 2x speed?
-		boid_shape := [4]Vector.Vector2[Boid_Float]{
+		boid_shape := [4]boid.Vector2[Boid_Float]{
 			{X: 0, Y: 1},      // tip
 			{X: 0, Y: -0.5},   // back
 			{X: 1, Y: -0.75},  // wing1
@@ -109,11 +106,11 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 		}
 
 		// Rotate to face them in the right direction
-		theta := Vector.GetTheta(b.Velocity) - math.Pi/2
+		theta := boid.GetTheta(b.Velocity) - math.Pi/2
 		// TODO i also think this is slowing us down, put in own function
 		for i := range len(boid_shape) {
 			// someone who knows math explain this
-			boid_shape[i] = Vector.Rotate(boid_shape[i], theta)
+			boid_shape[i] = boid.Rotate(boid_shape[i], theta)
 
 			boid_shape[i].Mult(boid_sim.Boid_Radius * scale_factor)
 			boid_shape[i].Add(b.Position)
@@ -138,13 +135,13 @@ func Draw_boids_into_image(img *Image.Image, boid_sim *boid.Boid_simulation) {
 
 		if DEBUG_HEADING {
 			// Draw heading line
-			where_boid_will_be := Vector.Add(b.Position, b.Velocity)
+			where_boid_will_be := boid.Add(b.Position, b.Velocity)
 			Image.Draw_Line(img, b.Position, where_boid_will_be, boid_heading_color)
 		}
 	}
 }
 
-func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array boid.Spacial_Array[T], scale T) {
+func draw_spacial_array_into_image[T boid.Number](img *Image.Image, sp_array boid.Spacial_Array[T], scale T) {
 
 	min_x, min_y := sp_array.Min_x, sp_array.Min_y
 	max_x, max_y := sp_array.Max_x, sp_array.Max_y
@@ -159,7 +156,7 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array b
 		// draw the outsides.
 		var outer_color = Image.Color{R: 255, G: 255, B: 255, A: 255} // WHITE.
 
-		bounding_box := [4]Vector.Vector2[T]{
+		bounding_box := [4]boid.Vector2[T]{
 			{X: min_x, Y: min_y},
 			{X: max_x, Y: min_y},
 			{X: max_x, Y: max_y},
@@ -186,8 +183,8 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array b
 		for i := 1; i < sp_array.Boxes_wide; i++ {
 			x := sp_array.Min_x + step_x*T(i)
 
-			p1 := Vector.Vector2[T]{X: x, Y: sp_array.Min_y}
-			p2 := Vector.Vector2[T]{X: x, Y: sp_array.Max_y}
+			p1 := boid.Vector2[T]{X: x, Y: sp_array.Min_y}
+			p2 := boid.Vector2[T]{X: x, Y: sp_array.Max_y}
 
 			p1.Mult(scale)
 			p2.Mult(scale)
@@ -199,8 +196,8 @@ func draw_spacial_array_into_image[T Vector.Number](img *Image.Image, sp_array b
 		for j := 1; j < sp_array.Boxes_high; j++ {
 			y := sp_array.Min_y + step_y*T(j)
 
-			p1 := Vector.Vector2[T]{X: sp_array.Min_x, Y: y}
-			p2 := Vector.Vector2[T]{X: sp_array.Max_x, Y: y}
+			p1 := boid.Vector2[T]{X: sp_array.Min_x, Y: y}
+			p2 := boid.Vector2[T]{X: sp_array.Max_x, Y: y}
 
 			p1.Mult(scale)
 			p2.Mult(scale)
@@ -276,18 +273,18 @@ func lerp(a, b, t float32) float32 {
 // 	x := new_random_number * float32(img.Width)
 // 	Image.Draw_Rect(img, int(x-10), h, 20, 20, test_color)
 
-// 	unit_vector := Vector.Make_Vector2[float32](1, 0)
+// 	unit_vector := boid.Make_Vector2[float32](1, 0)
 // 	theta := new_random_number * 2 * math.Pi
 
-// 	rotated := Vector.Rotate(unit_vector, theta)
+// 	rotated := boid.Rotate(unit_vector, theta)
 // 	// give it some length
 // 	rotated.Mult(300)
 // 	// move to center
-// 	rotated.Add(Vector.Make_Vector2(float32(img.Width)/2, float32(img.Height)/2))
+// 	rotated.Add(boid.Make_Vector2(float32(img.Width)/2, float32(img.Height)/2))
 
 // 	Image.Draw_Circle(img, int(rotated.X), int(rotated.Y), 10, test_color)
 
-// 	p1 := Vector.Make_Vector2(float32(img.Width/2), float32(img.Height/2))
+// 	p1 := boid.Make_Vector2(float32(img.Width/2), float32(img.Height/2))
 // 	Image.Draw_Line(img, p1, rotated, test_color)
 
 // // for testing. move these to global scope.
