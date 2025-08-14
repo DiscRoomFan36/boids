@@ -84,19 +84,37 @@ func SetProperties(this js.Value, args []js.Value) any {
 	return len(the_map)
 }
 
+
+// I feel like go is guilt tripping me with this syntax
+var mouse_pos   boid.Vector2[Boid_Float]
+var mouse_state boid.Mouse_State
+
 // Javascript function
-//
-// USAGE: {Width} {Height} {array}
 //
 // Will pass back a bunch of pixels, (though array), in [RGBA] format
 func GetNextFrame(this js.Value, args []js.Value) any {
-	if len(args) != 3 {
-		log.Panicf("GetNextFrame: dumb-ass, you gotta pass in specific stuff. check the description of this function")
+	width := args[0].Get("width").Int()
+	height := args[0].Get("height").Int()
+	array := args[0].Get("buffer")
+
+	mouse_x := args[0].Get("mouse_x").Int()
+	mouse_y := args[0].Get("mouse_y").Int()
+	mouse_left_down := args[0].Get("mouse_left_down").Bool()
+
+	mouse_state = boid.Left_up;
+	if mouse_left_down { mouse_state = boid.Left_down }
+
+	mouse_pos_int := boid.Vector2[int]{X: mouse_x, Y: mouse_y};
+	// this position is slightly wrong. is correct at (0, 0), but drifts to the right
+	mouse_pos = boid.Transform[int, Boid_Float](mouse_pos_int)
+	mouse_pos.X *= BOID_SCALE
+	mouse_pos.Y *= BOID_SCALE
+
+	boid_args := boid.Update_Boid_Arguments{
+		Mouse_pos: mouse_pos,
+		Mouse_state: mouse_state,
 	}
 
-	width := args[0].Int()
-	height := args[1].Int()
-	array := args[2]
 
 	// saves space
 	if len(img.Buffer) < width*height*NUM_COLOR_COMPONENTS {
@@ -124,7 +142,7 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	// Calculate the next frame of boids
 	// Times 60 because we want this to run at 60fps and dt=1 is supposed to be one time step
 	// TODO ^ this comment is dumb, just make it work. '1 time step' is a dumb unit, just use m/s
-	boid_sim.Update_boids(dt)
+	boid_sim.Update_boids(dt, boid_args)
 
 	// this might end up taking the most amount of time.
 	// TODO make a 'Draw a thing' file. (maybe in this module, stop boid from requiring Image...)

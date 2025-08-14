@@ -3,11 +3,21 @@
 import { Log_Type, log, DEBUG_DISPLAY } from "./logger";
 import { setup_sliders } from "./setup_sliders";
 
+interface Arguments {
+    width:  number,
+    height: number,
+    buffer: Uint8ClampedArray,
+
+    mouse_x: number,
+    mouse_y: number,
+    mouse_left_down: boolean,
+}
+
 interface GoFunctions {
     SetProperties: (obj:Object) => number,
     GetProperties: () => Object,
 
-    GetNextFrame: (width:number, height:number, buffer:Uint8ClampedArray) => number,
+    GetNextFrame: (args: Arguments) => number,
 }
 
 // NOTE we keep the @ts-ignore's in here
@@ -46,6 +56,12 @@ const NUM_COLOR_COMPONENTS = 4
 
 const SQUISH_FACTOR = 1
 
+const mouse = {
+    pos:       [0, 0],
+    left_down: false,
+};
+
+
 function renderBoids(display: Display, go: GoFunctions) {
     const width  = Math.floor(display.ctx.canvas.width  / SQUISH_FACTOR);
     const height = Math.floor(display.ctx.canvas.height / SQUISH_FACTOR);
@@ -73,12 +89,23 @@ function renderBoids(display: Display, go: GoFunctions) {
         display.backImageHeight = height
     }
 
-    const buffer = display.backBufferArray.subarray(0, buffer_size)
+    const buffer = display.backBufferArray.subarray(0, buffer_size);
 
-    const numFilled = go.GetNextFrame(width, height, buffer);
+    const args: Arguments = {
+        width: width,
+        height: height,
+        buffer: buffer,
+
+        mouse_x: mouse.pos[0],
+        mouse_y: mouse.pos[1],
+        mouse_left_down: mouse.left_down,
+    };
+
+    const numFilled = go.GetNextFrame(args);
 
     if (numFilled !== buffer_size) throw new Error(`GetNextFrame got ${numFilled}`);
 
+    // @ts-ignore // why dose this line make an error in my editor
     const imageData = new ImageData(buffer, width, height);
 
     // is this cool?
@@ -147,6 +174,24 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
 
     const boidCanvas = document.getElementById("boid_canvas") as HTMLCanvasElement | null
     if (boidCanvas === null) throw new Error("No canvas with id `boid_canvas` is found")
+
+    // why doesn't typescript have an enum for this?
+    enum mouse_buttons {
+        MOUSE_LEFT      = 0,
+        MOUSE_MIDDLE    = 1,
+        MOUSE_RIGHT     = 2,
+    }
+
+    // NOTE should this be on the canvas or on the root?
+    boidCanvas.addEventListener('mousemove', (ev) => { mouse.pos = [ev.x, ev.y] })
+    // this will break if the user slides there mouse outside of the screen while clicking, but this is the web, people expect it to suck.
+    boidCanvas.addEventListener('mousedown', (ev) => {
+        if (ev.button == mouse_buttons.MOUSE_LEFT) mouse.left_down = true;
+    });
+    boidCanvas.addEventListener('mouseup',   (ev) => {
+        if (ev.button == mouse_buttons.MOUSE_LEFT) mouse.left_down = false;
+    });
+
 
     const ctx = boidCanvas.getContext("2d")
     if (ctx === null) throw new Error("2D context is not supported")

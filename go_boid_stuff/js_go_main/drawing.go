@@ -7,8 +7,8 @@ import (
 )
 
 const DEBUG_SPACIAL_ARRAY = false
-const DEBUG_BOUNDARY = true
-const DEBUG_HEADING = true
+const DEBUG_BOUNDARY      = true
+const DEBUG_HEADING       = true
 const DEBUG_VISUAL_RANGES = false
 
 var boid_heading_color = Color{R: 10, G: 240, B: 10, A: 255}
@@ -80,10 +80,8 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 				boundary_points[i].Y *= scale_factor
 			}
 
-			color := New_Color(255, 0, 0, 255)
-
 			for i := range len(boundary_points) {
-				Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], color)
+				Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], Color_Red())
 			}
 		}
 	}
@@ -138,6 +136,18 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 			Draw_Line(img, b.Position, where_boid_will_be, boid_heading_color)
 		}
 	}
+
+
+	// { // debug mouse pos
+	// 	color := Color_Yellow()
+	// 	if mouse_state == boid.Left_down { color = Color_Red() }
+
+	// 	Draw_Rect(
+	// 		img,
+	// 		int(mouse_pos.X), int(mouse_pos.Y), 10, 10,
+	// 		color,
+	// 	)
+	// }
 }
 
 func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spacial_Array[T], scale T) {

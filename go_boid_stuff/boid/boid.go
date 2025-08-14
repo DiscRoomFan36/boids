@@ -73,6 +73,8 @@ type Boid_simulation struct {
 	Wind_X_Factor Boid_Float `Property:"float" Range:"-10;10" Default:"0"`
 	Wind_Y_Factor Boid_Float `Property:"float" Range:"-10;10" Default:"0"`
 
+	Mouse_Draw_Factor Boid_Float `Property:"float" Range:"1;100" Default:"10"`
+
 	Final_Acceleration_Boost Boid_Float `Property:"float" Range:"1;25" Default:"5"`
 	Final_Drag_Coefficient   Boid_Float `Property:"float" Range:"0;2" Default:"1"`
 
@@ -117,7 +119,6 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 	return boid_sim
 }
 
-// TODO: make this return a Vector, so it can also be affected by dt
 func (boid_sim *Boid_simulation) adjust_speed(vel Vector2[Boid_Float]) Vector2[Boid_Float] {
 	speed := vel.Mag()
 	if speed > boid_sim.Max_Speed {
@@ -151,14 +152,22 @@ func (boid_sim Boid_simulation) bounding_force(index int) Vector2[Boid_Float] {
 	return vel
 }
 
+
+// because go cannot have named arguments.
+type Update_Boid_Arguments struct {
+	Mouse_pos Vector2[Boid_Float]
+	Mouse_state Mouse_State
+}
+
 // NOTE dt is in seconds
-func (boid_sim *Boid_simulation) Update_boids(dt float64) {
+func (boid_sim *Boid_simulation) Update_boids(dt float64, args Update_Boid_Arguments) {
 
 	// put the wall in the center
 	boid_sim.Walls[0] = make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)
 
 
 	{ // spawn / despawn boids.
+		// TODO this could maybe do a ramp up / down?
 		boid_sim.spawn_timer += Boid_Float(dt)
 		time_to_spawn := 1 / boid_sim.Boid_Spawn_Rate
 
@@ -349,6 +358,20 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64) {
 		wind := Make_Vector2(boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
 		boid_sim.Boids[i].Acceleration.Add(wind)
 	}
+
+
+	// ------------------------------------
+	//            Mouse stuff
+	// ------------------------------------
+	// on mouse down, move all boids towards mouse.
+	if args.Mouse_state == Left_down {
+		for i := range len(boid_sim.Boids) {
+			toward_mouse := Sub(args.Mouse_pos, boid_sim.Boids[i].Position)
+			force := Mult(Normalized(toward_mouse), boid_sim.Mouse_Draw_Factor)
+			boid_sim.Boids[i].Acceleration.Add(force)
+		}
+	}
+
 
 	// ------------------------------------
 	//              Other Ideas

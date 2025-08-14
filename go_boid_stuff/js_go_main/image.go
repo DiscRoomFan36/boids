@@ -19,6 +19,13 @@ type Color struct {
 	A uint8
 }
 
+func Color_Black()      Color { return Color{  0,   0,   0, 255} }
+func Color_White()      Color { return Color{255, 255, 255, 255} }
+func Color_Red()        Color { return Color{255,   0,   0, 255} }
+func Color_Green()      Color { return Color{  0, 255,   0, 255} }
+func Color_Blue()       Color { return Color{  0,   0, 255, 255} }
+func Color_Yellow()     Color { return Color{255, 255,   0, 255} }
+
 func New_Color(r, g, b, a uint8) Color {
 	return Color{R: r, G: g, B: b, A: a}
 }
