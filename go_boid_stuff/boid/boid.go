@@ -156,11 +156,16 @@ func (boid_sim Boid_simulation) bounding_force(index int) Vector2[Boid_Float] {
 // because go cannot have named arguments.
 type Update_Boid_Arguments struct {
 	Mouse_pos Vector2[Boid_Float]
-	Mouse_state Mouse_State
+	Mouse_status Mouse_Status
 }
 
 // NOTE dt is in seconds
 func (boid_sim *Boid_simulation) Update_boids(dt float64, args Update_Boid_Arguments) {
+	mouse_state := args.Mouse_status.state
+
+	// if Has_Flag(mouse_state, Left_clicked) {
+	// 	fmt.Printf("Clicked\n")
+	// }
 
 	// put the wall in the center
 	boid_sim.Walls[0] = make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)
@@ -364,7 +369,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, args Update_Boid_Argum
 	//            Mouse stuff
 	// ------------------------------------
 	// on mouse down, move all boids towards mouse.
-	if args.Mouse_state == Left_down {
+	if HasFlag(mouse_state, Left_down) {
 		for i := range len(boid_sim.Boids) {
 			toward_mouse := Sub(args.Mouse_pos, boid_sim.Boids[i].Position)
 			force := Mult(Normalized(toward_mouse), boid_sim.Mouse_Draw_Factor)

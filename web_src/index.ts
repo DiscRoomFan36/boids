@@ -8,9 +8,7 @@ interface Arguments {
     height: number,
     buffer: Uint8ClampedArray,
 
-    mouse_x: number,
-    mouse_y: number,
-    mouse_left_down: boolean,
+    mouse: Mouse,
 }
 
 interface GoFunctions {
@@ -56,10 +54,27 @@ const NUM_COLOR_COMPONENTS = 4
 
 const SQUISH_FACTOR = 1
 
-const mouse = {
-    pos:       [0, 0],
-    left_down: false,
+
+
+interface Vec2 {
+    x: number,
+    y: number,
 };
+
+interface Mouse {
+    pos:            Vec2,
+    left_down:      boolean,
+    middle_down:    boolean,
+    right_down:     boolean,
+};
+
+const mouse: Mouse = {
+    pos:            {x: 0, y: 0},
+    left_down:      false,
+    middle_down:    false,
+    right_down:     false,
+};
+
 
 
 function renderBoids(display: Display, go: GoFunctions) {
@@ -72,6 +87,7 @@ function renderBoids(display: Display, go: GoFunctions) {
         log(Log_Type.General, "Oh god. were resizing the buffer")
 
         if (display.backBufferArray.length < buffer_size) {
+            log(Log_Type.General, "Its getting bigger"); // my penis
             // make the buffer bigger
             display.backBufferArray = new Uint8ClampedArray(buffer_size)
         }
@@ -96,9 +112,7 @@ function renderBoids(display: Display, go: GoFunctions) {
         height: height,
         buffer: buffer,
 
-        mouse_x: mouse.pos[0],
-        mouse_y: mouse.pos[1],
-        mouse_left_down: mouse.left_down,
+        mouse: mouse,
     };
 
     const numFilled = go.GetNextFrame(args);
@@ -183,13 +197,17 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
     }
 
     // NOTE should this be on the canvas or on the root?
-    boidCanvas.addEventListener('mousemove', (ev) => { mouse.pos = [ev.x, ev.y] })
+    boidCanvas.addEventListener('mousemove', (ev) => { mouse.pos = {x: ev.x, y: ev.y} })
     // this will break if the user slides there mouse outside of the screen while clicking, but this is the web, people expect it to suck.
     boidCanvas.addEventListener('mousedown', (ev) => {
-        if (ev.button == mouse_buttons.MOUSE_LEFT) mouse.left_down = true;
+        if (ev.button == mouse_buttons.MOUSE_LEFT)      mouse.left_down   = true;
+        if (ev.button == mouse_buttons.MOUSE_MIDDLE)    mouse.middle_down = true;
+        if (ev.button == mouse_buttons.MOUSE_RIGHT)     mouse.right_down  = true;
     });
     boidCanvas.addEventListener('mouseup',   (ev) => {
-        if (ev.button == mouse_buttons.MOUSE_LEFT) mouse.left_down = false;
+        if (ev.button == mouse_buttons.MOUSE_LEFT)      mouse.left_down   = false;
+        if (ev.button == mouse_buttons.MOUSE_MIDDLE)    mouse.middle_down = false;
+        if (ev.button == mouse_buttons.MOUSE_RIGHT)     mouse.right_down  = false;
     });
 
 

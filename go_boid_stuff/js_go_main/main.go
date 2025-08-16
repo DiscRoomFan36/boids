@@ -86,8 +86,16 @@ func SetProperties(this js.Value, args []js.Value) any {
 
 
 // I feel like go is guilt tripping me with this syntax
-var mouse_pos   boid.Vector2[Boid_Float]
-var mouse_state boid.Mouse_State
+var mouse_pos           boid.Vector2[Boid_Float]
+var mouse_status        boid.Mouse_Status
+
+func js_to_Vector(obj js.Value) boid.Vector2[Boid_Float] {
+	result := boid.Vector2[float64]{
+		X: obj.Get("x").Float(),
+		Y: obj.Get("y").Float(),
+	}
+	return boid.Transform[float64, Boid_Float](result)
+}
 
 // Javascript function
 //
@@ -97,22 +105,22 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	height := args[0].Get("height").Int()
 	array := args[0].Get("buffer")
 
-	mouse_x := args[0].Get("mouse_x").Int()
-	mouse_y := args[0].Get("mouse_y").Int()
-	mouse_left_down := args[0].Get("mouse_left_down").Bool()
+	mouse := args[0].Get("mouse")
 
-	mouse_state = boid.Left_up;
-	if mouse_left_down { mouse_state = boid.Left_down }
+	mouse_pos = js_to_Vector(mouse.Get("pos"))
+	// into boid space
+	mouse_pos.Mult(BOID_SCALE)
 
-	mouse_pos_int := boid.Vector2[int]{X: mouse_x, Y: mouse_y};
-	// this position is slightly wrong. is correct at (0, 0), but drifts to the right
-	mouse_pos = boid.Transform[int, Boid_Float](mouse_pos_int)
-	mouse_pos.X *= BOID_SCALE
-	mouse_pos.Y *= BOID_SCALE
+	new_mouse_flags := boid.Mouse_Flag(0);
+	if mouse.Get("left_down")  .Bool() { new_mouse_flags |= boid.Left_down   }
+	if mouse.Get("middle_down").Bool() { new_mouse_flags |= boid.Middle_down }
+	if mouse.Get("right_down") .Bool() { new_mouse_flags |= boid.Right_down  }
+
+	mouse_status = boid.Get_New_State(mouse_status, new_mouse_flags)
 
 	boid_args := boid.Update_Boid_Arguments{
 		Mouse_pos: mouse_pos,
-		Mouse_state: mouse_state,
+		Mouse_status: mouse_status,
 	}
 
 
