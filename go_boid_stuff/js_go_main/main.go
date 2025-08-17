@@ -20,7 +20,6 @@ const BOID_FACTOR = 50
 const BOID_BOUNDS_WIDTH = 16 * BOID_FACTOR
 const BOID_BOUNDS_HEIGHT = 9 * BOID_FACTOR
 
-const BOID_SCALE = 0.5
 
 // Javascript function
 //
@@ -87,7 +86,7 @@ func SetProperties(this js.Value, args []js.Value) any {
 
 // I feel like go is guilt tripping me with this syntax
 var mouse_pos           boid.Vector2[Boid_Float]
-var mouse_status        boid.Mouse_Status
+var input_status        boid.Input_Status
 
 func js_to_Vector(obj js.Value) boid.Vector2[Boid_Float] {
 	result := boid.Vector2[float64]{
@@ -108,21 +107,15 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	mouse := args[0].Get("mouse")
 
 	mouse_pos = js_to_Vector(mouse.Get("pos"))
-	// into boid space
-	mouse_pos.Mult(BOID_SCALE)
+	mouse_pos = World_to_boid_vec(mouse_pos)
 
-	new_mouse_flags := boid.Mouse_Flag(0);
-	if mouse.Get("left_down")  .Bool() { new_mouse_flags |= boid.Left_down   }
-	if mouse.Get("middle_down").Bool() { new_mouse_flags |= boid.Middle_down }
-	if mouse.Get("right_down") .Bool() { new_mouse_flags |= boid.Right_down  }
-
-	mouse_status = boid.Get_New_State(mouse_status, new_mouse_flags)
-
-	boid_args := boid.Update_Boid_Arguments{
-		Mouse_pos: mouse_pos,
-		Mouse_status: mouse_status,
-	}
-
+	input_status = boid.Update_Input(
+		input_status,
+		mouse.Get("left_down")  .Bool(),
+		mouse.Get("middle_down").Bool(),
+		mouse.Get("right_down") .Bool(),
+		mouse_pos,
+	)
 
 	// saves space
 	if len(img.Buffer) < width*height*NUM_COLOR_COMPONENTS {
@@ -135,8 +128,8 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 
 	// Cool boid thing that makes the boid follow the screen
 	// TODO maybe remove until later.
-	boid_sim.Width = boid.Boid_Float(width) * BOID_SCALE
-	boid_sim.Height = boid.Boid_Float(height) * BOID_SCALE
+	boid_sim.Width  = World_to_boid(Boid_Float(width))
+	boid_sim.Height = World_to_boid(Boid_Float(height))
 
 	// TODO accept dt maybe
 	new_frame_time := time.Now()
@@ -150,7 +143,7 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	// Calculate the next frame of boids
 	// Times 60 because we want this to run at 60fps and dt=1 is supposed to be one time step
 	// TODO ^ this comment is dumb, just make it work. '1 time step' is a dumb unit, just use m/s
-	boid_sim.Update_boids(dt, boid_args)
+	boid_sim.Update_boids(dt, input_status)
 
 	// this might end up taking the most amount of time.
 	// TODO make a 'Draw a thing' file. (maybe in this module, stop boid from requiring Image...)

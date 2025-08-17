@@ -24,7 +24,7 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 	img.Clear_background(Color{R: 24, G: 24, B: 24, A: 255})
 
 	// we map the world-space to match the image space
-	scale_factor := boid.Boid_Float(img.Width) / boid_sim.Width
+	scale_factor := Boid_Float(1) / BOID_SCALE
 
 	if DEBUG_SPACIAL_ARRAY {
 		draw_spacial_array_into_image(img, boid_sim.Spacial_array, scale_factor)

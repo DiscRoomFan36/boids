@@ -73,7 +73,7 @@ type Boid_simulation struct {
 	Wind_X_Factor Boid_Float `Property:"float" Range:"-10;10" Default:"0"`
 	Wind_Y_Factor Boid_Float `Property:"float" Range:"-10;10" Default:"0"`
 
-	Mouse_Draw_Factor Boid_Float `Property:"float" Range:"1;100" Default:"10"`
+	Mouse_Draw_Factor Boid_Float `Property:"float" Range:"1;100" Default:"5"`
 
 	Final_Acceleration_Boost Boid_Float `Property:"float" Range:"1;25" Default:"5"`
 	Final_Drag_Coefficient   Boid_Float `Property:"float" Range:"0;2" Default:"1"`
@@ -153,17 +153,9 @@ func (boid_sim Boid_simulation) bounding_force(index int) Vector2[Boid_Float] {
 }
 
 
-// because go cannot have named arguments.
-type Update_Boid_Arguments struct {
-	Mouse_pos Vector2[Boid_Float]
-	Mouse_status Mouse_Status
-}
-
 // NOTE dt is in seconds
-func (boid_sim *Boid_simulation) Update_boids(dt float64, args Update_Boid_Arguments) {
-	mouse_state := args.Mouse_status.state
-
-	// if Has_Flag(mouse_state, Left_clicked) {
+func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
+	// if input.Left_Clicked {
 	// 	fmt.Printf("Clicked\n")
 	// }
 
@@ -369,9 +361,9 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, args Update_Boid_Argum
 	//            Mouse stuff
 	// ------------------------------------
 	// on mouse down, move all boids towards mouse.
-	if HasFlag(mouse_state, Left_down) {
+	if input.Left_Down {
 		for i := range len(boid_sim.Boids) {
-			toward_mouse := Sub(args.Mouse_pos, boid_sim.Boids[i].Position)
+			toward_mouse := Sub(input.Mouse_Pos, boid_sim.Boids[i].Position)
 			force := Mult(Normalized(toward_mouse), boid_sim.Mouse_Draw_Factor)
 			boid_sim.Boids[i].Acceleration.Add(force)
 		}
