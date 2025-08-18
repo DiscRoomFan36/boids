@@ -3,9 +3,14 @@ package boid
 import (
 	"math"
 	"math/rand"
+	"time"
 )
 
 const NUM_RANDOM_GENERATORS = 32
+
+// in seconds.
+const CLICK_FADE_TIME = 3
+
 
 type Boid_Float float32
 
@@ -27,6 +32,11 @@ type Boid struct {
 	Acceleration Vec2[Boid_Float]
 }
 
+type Position_And_Time struct {
+	Pos Vec2[Boid_Float]
+	Time time.Time
+}
+
 type Boid_simulation struct {
 	Boids []Boid
 
@@ -37,6 +47,11 @@ type Boid_simulation struct {
 
 	// used for random draw forces
 	generators [NUM_RANDOM_GENERATORS]Random_Generator
+
+
+	// for animations.
+	Click_Positions_And_Times []Position_And_Time
+
 
 	// Thing a boid can hit, maybe they can see it as well?
 	Walls []Rectangle
@@ -99,6 +114,8 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 
 		Spacial_array: New_Spacial_Array[Boid_Float](),
 
+		Click_Positions_And_Times: make([]Position_And_Time, 0, 32),
+
 		// just make a temp thing in the middle of the field.
 		Walls: make([]Rectangle, 1),
 
@@ -155,9 +172,21 @@ func (boid_sim Boid_simulation) bounding_force(index int) Vec2[Boid_Float] {
 
 // NOTE dt is in seconds
 func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
-	// if input.Left_Clicked {
-	// 	fmt.Printf("Clicked\n")
-	// }
+	now := time.Now()
+
+	if input.Left_Clicked {
+		Append(&boid_sim.Click_Positions_And_Times, Position_And_Time{input.Mouse_Pos, now})
+	}
+
+	for i := 0; i < len(boid_sim.Click_Positions_And_Times); i++ {
+		// remove if its been to long.
+		pos_and_time := boid_sim.Click_Positions_And_Times[i]
+		if now.Sub(pos_and_time.Time).Seconds() > CLICK_FADE_TIME {
+			Remove_Unordered(&boid_sim.Click_Positions_And_Times, i)
+			i -= 1 // hack, to check the thing that was just put here,
+			// maybe it would be better to just remove everything later, after the loop is done.
+		}
+	}
 
 	// put the wall in the center
 	boid_sim.Walls[0] = make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)
@@ -185,19 +214,13 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 					Velocity: Mult(Random_unit_vector[Boid_Float](), (boid_sim.Min_Speed + boid_sim.Max_Speed) / 2),
 				}
 
-				boid_sim.Boids = append(boid_sim.Boids, new_boid)
+				Append(&boid_sim.Boids, new_boid)
 			} else {
 				// remove 1 boid.
 				// do it randomly so its cooler.
 
 				random_index := rand.Intn(len(boid_sim.Boids))
-				last_index := len(boid_sim.Boids)-1
-
-				// a good old swap and remove, without the swap.
-				if random_index != last_index { boid_sim.Boids[random_index] = boid_sim.Boids[last_index] }
-
-				// remove the last element
-				boid_sim.Boids = boid_sim.Boids[:last_index]
+				Remove_Unordered(&boid_sim.Boids, random_index)
 			}
 		}
 	}
@@ -210,7 +233,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 		// TODO make this just how we store boid positions or something.
 		boid_positions := make([]Vec2[Boid_Float], 0, len(boid_sim.Boids))
 		for _, b := range boid_sim.Boids {
-			boid_positions = append(boid_positions, b.Position)
+			Append(&boid_positions, b.Position)
 		}
 
 		boid_sim.Spacial_array.Append_points(boid_positions)

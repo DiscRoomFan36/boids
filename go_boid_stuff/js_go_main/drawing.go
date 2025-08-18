@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"time"
 
 	"boidstuff.com/boid"
 )
@@ -11,8 +12,8 @@ const DEBUG_BOUNDARY      = true
 const DEBUG_HEADING       = true
 const DEBUG_VISUAL_RANGES = false
 
-var boid_heading_color = Color{R: 10, G: 240, B: 10, A: 255}
-var boid_boundary_color = Color{R: 240, G: 240, B: 240, A: 255}
+var boid_heading_color  = Color{r: 10/256.0, g: 240/256.0, b: 10/256.0, a: 1}
+var boid_boundary_color = Color{r: 240/256.0, g: 240/256.0, b: 240/256.0, a: 1}
 
 type Boid_Float = boid.Boid_Float
 
@@ -21,7 +22,7 @@ type Boid_Float = boid.Boid_Float
 // go incorrectly reports this function as unused if it is not public...
 func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 
-	img.Clear_background(Color{R: 24, G: 24, B: 24, A: 255})
+	img.Clear_background(Color_Data{r: 24, g: 24, b: 24, a: 255})
 
 	// we map the world-space to match the image space
 	scale_factor := Boid_Float(1) / BOID_SCALE
@@ -114,12 +115,7 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 		}
 
 		// get cool color for boid
-
 		speed := b.Velocity.Mag() / boid_sim.Max_Speed
-
-		clamp := func(x, mini, maxi Boid_Float) Boid_Float {
-			return max(mini, min(x, maxi))
-		}
 
 		const SHIFT_FACTOR = 2
 		H := math.Mod(float64(clamp(speed, 0, 1)*360)*SHIFT_FACTOR, 360)
@@ -137,6 +133,23 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 		}
 	}
 
+	now := time.Now()
+	for _, pos_and_time := range boid_sim.Click_Positions_And_Times {
+		pos := pos_and_time.Pos
+		time := pos_and_time.Time
+
+		secs := float32(now.Sub(time).Seconds())
+		factor := secs / boid.CLICK_FADE_TIME
+		factor = (factor * factor)
+
+		color := Color_White()
+		color.a = lerp(1, 0, factor)
+
+		pos.Mult(scale_factor) // into world coord's
+
+		Draw_Ring(img, pos.X, pos.Y, Boid_Float(secs*10), Boid_Float(secs*10+3), color)
+		// Draw_Circle(img, int(pos.X), int(pos.Y), 10, Color_White())
+	}
 
 	// { // debug mouse pos
 	// 	color := Color_Yellow()
@@ -161,9 +174,7 @@ func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spac
 	// how big the boxes are.
 	step_x, step_y := w/T(sp_array.Boxes_wide), h/T(sp_array.Boxes_high)
 
-	{
-		// draw the outsides.
-		var outer_color = Color{R: 255, G: 255, B: 255, A: 255} // WHITE.
+	{ // draw the outsides.
 
 		bounding_box := [4]boid.Vec2[T]{
 			{X: min_x, Y: min_y},
@@ -180,13 +191,13 @@ func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spac
 				img,
 				bounding_box[i],
 				bounding_box[(i+1)%len(bounding_box)],
-				outer_color,
+				Color_White(),
 			)
 		}
 	}
 
 	{ // now draw the inner lines.
-		var inner_color = Color{R: 255, G: 0, B: 0, A: 255}
+		var inner_color = Color_Red()
 
 		// Vertical
 		for i := 1; i < sp_array.Boxes_wide; i++ {
@@ -248,7 +259,7 @@ func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spac
 
 }
 
-func lerp(a, b, t float32) float32 {
+func lerp[T boid.Float](a, b, t T) T {
 	return (1-t)*a + t*b
 }
 

@@ -150,7 +150,7 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	Draw_boids_into_image(&img, &boid_sim)
 	// boid_sim.Draw_Into_Image(&img)
 
-	// copy the pixels
+	// copy the pixels, must be in RGBA format
 	copied_bytes := js.CopyBytesToJS(array, img.Buffer[:width*height*NUM_COLOR_COMPONENTS])
 	return copied_bytes
 }

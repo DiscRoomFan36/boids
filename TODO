@@ -22,9 +22,12 @@ DONE
 * Put most of everything into one package.
 * boids follow mouse on mouse down
 * Vector2 to Vec2
-
+* make an animation on click.
+* use float colors in image.go
 
 NEXT
+
+* update the image.go file with generics. and make a better api
 
 * boids dodge obstacles, put a big rect in the middle of the screen.
 

@@ -93,7 +93,7 @@ func (array *Spacial_Array[T]) Append_points(points []Vec2[T]) {
 
 				// make a new box if there are no spares.
 				if array.backup_boxes_in_use == len(array.backup_boxes) {
-					array.backup_boxes = append(array.backup_boxes, box[T]{})
+					Append(&array.backup_boxes, box[T]{})
 				}
 
 				// get the next box

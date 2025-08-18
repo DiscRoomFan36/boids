@@ -12,29 +12,54 @@ import (
 // DO NOT CHANGE UNLESS YOU WANNA DO A MASSIVE REFACTOR (AGAIN)
 const NUM_COLOR_COMPONENTS = 4
 
+type Color_Data struct {
+	r, g, b, a uint8
+}
+
+func Color_Black()      Color { return Color{0, 0, 0, 1} }
+func Color_White()      Color { return Color{1, 1, 1, 1} }
+func Color_Red()        Color { return Color{1, 0, 0, 1} }
+func Color_Green()      Color { return Color{0, 1, 0, 1} }
+func Color_Blue()       Color { return Color{0, 0, 1, 1} }
+func Color_Yellow()     Color { return Color{1, 1, 0, 1} }
+
+
+func New_Color_Data(r, g, b, a uint8) Color_Data {
+	return Color_Data{r: r, g: g, b: b, a: a}
+}
+
+func (c Color_Data) Splat() (uint8, uint8, uint8, uint8) {
+	return c.r, c.g, c.b, c.a
+}
+
+func (c Color_Data) Splat_f() (float32, float32, float32, float32) {
+	return float32(c.r), float32(c.g), float32(c.b), float32(c.a)
+}
+
 type Color struct {
-	R uint8
-	G uint8
-	B uint8
-	A uint8
+	r, g, b, a float32
 }
 
-func Color_Black()      Color { return Color{  0,   0,   0, 255} }
-func Color_White()      Color { return Color{255, 255, 255, 255} }
-func Color_Red()        Color { return Color{255,   0,   0, 255} }
-func Color_Green()      Color { return Color{  0, 255,   0, 255} }
-func Color_Blue()       Color { return Color{  0,   0, 255, 255} }
-func Color_Yellow()     Color { return Color{255, 255,   0, 255} }
-
-func New_Color(r, g, b, a uint8) Color {
-	return Color{R: r, G: g, B: b, A: a}
+func (c Color) to_data() Color_Data {
+	return Color_Data{
+		r: uint8(Vector.Round(c.r * 255)),
+		g: uint8(Vector.Round(c.g * 255)),
+		b: uint8(Vector.Round(c.b * 255)),
+		a: uint8(Vector.Round(c.a * 255)),
+	}
 }
 
-func (c Color) Splat() (uint8, uint8, uint8, uint8) {
-	return c.R, c.G, c.B, c.A
+func blend(r1, g1, b1, r2, g2, b2 float32, alpha float32) Color {
+	return Color {
+		r: lerp(r1, r2, alpha),
+		g: lerp(g1, g2, alpha),
+		b: lerp(b1, b2, alpha),
+		a: 1,
+	}
 }
 
-// func clamp[T Vector.Number](x, max, min T) T {
+
+
 func clamp[T Vector.Number](x, mini, maxi T) T {
 	if mini > maxi {
 		panic("mini was bigger than maxi")
@@ -55,10 +80,10 @@ func HSL_to_RGB[T Vector.Float](H, S, L T) Color {
 	}
 
 	return Color{
-		R: uint8(Vector.Round(f(0) * 255)),
-		G: uint8(Vector.Round(f(8) * 255)),
-		B: uint8(Vector.Round(f(4) * 255)),
-		A: 255,
+		r: float32(f(0)),
+		g: float32(f(8)),
+		b: float32(f(4)),
+		a: 1,
 	}
 }
 
@@ -105,24 +130,42 @@ func (img *Image) point_within_bounds(x, y int) bool {
 	return x >= 0 && x < img.Width && y >= 0 && y < img.Height
 }
 
-func (img *Image) put_pixel(x, y int, c Color) {
-	// TODO care more about Alpha
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0] = c.R
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1] = c.G
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2] = c.B
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3] = c.A
+func (img *Image) put_color(x, y int, c Color) {
+	r_u8 := img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0]
+	g_u8 := img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1]
+	b_u8 := img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2]
+	// a_u8 := img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3]
+
+	r := float32(r_u8) / 255.0
+	g := float32(g_u8) / 255.0
+	b := float32(b_u8) / 255.0
+
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0] = uint8(Vector.Round(lerp(r, c.r, c.a) * 255))
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1] = uint8(Vector.Round(lerp(g, c.g, c.a) * 255))
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2] = uint8(Vector.Round(lerp(b, c.b, c.a) * 255))
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3] = 255
 }
+
+/*
+func (img *Image) put_pixel(x, y int, c Color_Data) {
+	// TODO care more about Alpha
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0] = c.r
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1] = c.g
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2] = c.b
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3] = c.a
+}
+*/
 
 func Draw_Rect(img *Image, x, y, w, h int, c Color) {
 	for j := max(y, 0); j < min(y+h, img.Height); j++ {
 		for i := max(x, 0); i < min(x+w, img.Width); i++ {
-			img.put_pixel(i, j, c)
+			img.put_color(i, j, c)
 		}
 	}
 }
 
-func (img *Image) Clear_background(c Color) {
-	bytes := [NUM_COLOR_COMPONENTS]byte{c.R, c.G, c.B, c.A}
+func (img *Image) Clear_background(c Color_Data) {
+	bytes := [NUM_COLOR_COMPONENTS]byte{c.r, c.g, c.b, c.a}
 	for i := 0; i < img.Width*img.Height*NUM_COLOR_COMPONENTS; i += NUM_COLOR_COMPONENTS {
 		img.Buffer[i+0] = bytes[0]
 		img.Buffer[i+1] = bytes[1]
@@ -137,11 +180,44 @@ func Draw_Circle(img *Image, x, y, r int, c Color) {
 			a := i - x
 			b := j - y
 			if a*a+b*b < r*r {
-				img.put_pixel(i, j, c)
+				img.put_color(i, j, c)
 			}
 		}
 	}
 }
+
+
+// accepts ints too...
+func Floor[T Vector.Number](x T) int {
+	return int(math.Floor(float64(x)))
+}
+// accepts ints too...
+func Ceil[T Vector.Number](x T) int {
+	return int(math.Ceil(float64(x)))
+}
+
+func Draw_Ring[T Vector.Number](img *Image, x, y, r1, r2 T, c Color) {
+	if !(r1 <= r2) { panic("r1 is less than r2") }
+
+	var min_y int = max(Floor(y-r2-1), 0)
+	var max_y int = min(Ceil(y+r2+1), img.Height)
+	var min_x int = max(Floor(x-r2-1), 0)
+	var max_x int = min(Ceil(x+r2+1), img.Width)
+
+	for j := min_y; j < max_y; j++ {
+		for i := min_x; i < max_x; i++ {
+			a := T(i) - x
+			b := T(j) - y
+			d := a*a + b*b
+
+			// i feel as though there might be a better way to do this.
+			if (r1*r1 < d) && (d < r2*r2) {
+				img.put_color(i, j, c)
+			}
+		}
+	}
+}
+
 
 // DDA line generation algorithm
 func Draw_Line[T Vector.Number](img *Image, _p1, _p2 Vector.Vec2[T], c Color) {
@@ -166,7 +242,7 @@ func Draw_Line[T Vector.Number](img *Image, _p1, _p2 Vector.Vec2[T], c Color) {
 		y1 := min(p1.Y, p2.Y)
 		y2 := max(p1.Y, p2.Y)
 		for y := max(y1, 0); y < min(y2, img.Height); y++ {
-			img.put_pixel(Vector.Round(p1.X), y, c)
+			img.put_color(Vector.Round(p1.X), y, c)
 		}
 		return
 	}
@@ -186,7 +262,7 @@ func Draw_Line[T Vector.Number](img *Image, _p1, _p2 Vector.Vec2[T], c Color) {
 		Y_r := Vector.Round(Y)
 
 		if img.point_within_bounds(X_r, Y_r) {
-			img.put_pixel(X_r, Y_r, c)
+			img.put_color(X_r, Y_r, c)
 		}
 
 		X += X_inc
@@ -223,7 +299,7 @@ func Draw_Triangle[T Vector.Number](img *Image, p1, p2, p3 Vector.Vec2[T], c Col
 			return
 		}
 		for x := max(min(x0, x1), 0); x < min(max(x0, x1), img.Width); x++ {
-			img.put_pixel(x, y, c)
+			img.put_color(x, y, c)
 		}
 	}
 	fillBottomFlatTriangle := func(v1, v2, v3 Vector.Vec2[int]) {
