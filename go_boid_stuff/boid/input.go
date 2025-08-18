@@ -28,8 +28,8 @@ type Input_Status struct {
 	Middle_Held_Prev    bool
 	Right_Held_Prev     bool
 
-	Mouse_Pos Vector2[Boid_Float]
-	Mouse_Pos_Prev Vector2[Boid_Float]
+	Mouse_Pos Vec2[Boid_Float]
+	Mouse_Pos_Prev Vec2[Boid_Float]
 
 	// TODO middle mouse scroll
 	// TODO keyboard inputs?
@@ -45,7 +45,7 @@ type Input_Status struct {
 
 func HasFlag[T ~int](x, flag T) bool { return x & flag != 0 }
 
-func Update_Input(prev Input_Status, is_left_down, is_middle_down, is_right_down bool, mouse_pos Vector2[Boid_Float]) Input_Status {
+func Update_Input(prev Input_Status, is_left_down, is_middle_down, is_right_down bool, mouse_pos Vec2[Boid_Float]) Input_Status {
 	new := Input_Status{
 		Left_Down  :        is_left_down,
 		Middle_Down:        is_middle_down,

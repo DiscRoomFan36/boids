@@ -48,61 +48,61 @@ func Round[T Number](x T) int {
 // TODO do some cool reflect stuff. (might mess up a lot of optimizations but it could be cool)
 
 // The Classic Vector, i wouldn't do all this [T Number] stuff if go has a better math library... well... maybe i would
-type Vector2[T Number] struct {
+type Vec2[T Number] struct {
 	X, Y T
 }
 
-func Make_Vector2[T Number](x, y T) Vector2[T] {
-	return Vector2[T]{x, y}
+func Make_Vec2[T Number](x, y T) Vec2[T] {
+	return Vec2[T]{x, y}
 }
 
-func (a Vector2[Number]) Splat() (Number, Number) {
+func (a Vec2[Number]) Splat() (Number, Number) {
 	return a.X, a.Y
 }
 
 // These math operators a dumb actually.
 
-func (a *Vector2[Number]) Add(vs ...Vector2[Number]) {
+func (a *Vec2[Number]) Add(vs ...Vec2[Number]) {
 	for _, b := range vs {
 		a.X += b.X
 		a.Y += b.Y
 	}
 }
-func Add[T Number](a Vector2[T], vs ...Vector2[T]) Vector2[T] {
+func Add[T Number](a Vec2[T], vs ...Vec2[T]) Vec2[T] {
 	// I hope the compiler knows what its doing
 	a.Add(vs...)
 	return a
 }
 
-func (a *Vector2[Number]) Sub(vs ...Vector2[Number]) {
+func (a *Vec2[Number]) Sub(vs ...Vec2[Number]) {
 	for _, b := range vs {
 		a.X -= b.X
 		a.Y -= b.Y
 	}
 }
-func Sub[T Number](a Vector2[T], vs ...Vector2[T]) Vector2[T] {
+func Sub[T Number](a Vec2[T], vs ...Vec2[T]) Vec2[T] {
 	a.Sub(vs...)
 	return a
 }
 
-func (a *Vector2[Number]) Mult(s Number) {
+func (a *Vec2[Number]) Mult(s Number) {
 	a.X *= s
 	a.Y *= s
 }
-func Mult[T Number](a Vector2[T], s T) Vector2[T] {
+func Mult[T Number](a Vec2[T], s T) Vec2[T] {
 	a.Mult(s)
 	return a
 }
 
-func (a Vector2[Number]) Dot() Number {
+func (a Vec2[Number]) Dot() Number {
 	return a.X*a.X + a.Y*a.Y
 }
 
-func (a Vector2[Number]) Mag() Number {
+func (a Vec2[Number]) Mag() Number {
 	return Number(math.Sqrt(float64(a.Dot())))
 }
 
-func (a *Vector2[Number]) SetMag(new_mag Number) {
+func (a *Vec2[Number]) SetMag(new_mag Number) {
 	mag := a.Mag()
 	if mag == 0 {
 		mag = 1
@@ -110,7 +110,7 @@ func (a *Vector2[Number]) SetMag(new_mag Number) {
 	a.Mult(new_mag / mag)
 }
 
-func (a *Vector2[Number]) ClampMag(mini, maxi Number) {
+func (a *Vec2[Number]) ClampMag(mini, maxi Number) {
 	mag := a.Mag()
 	if mag == 0 {
 		// if the vector is zero, just set x to something. maybe a random vector?
@@ -125,52 +125,52 @@ func (a *Vector2[Number]) ClampMag(mini, maxi Number) {
 	}
 }
 
-func (a *Vector2[Float]) Normalize() {
+func (a *Vec2[Float]) Normalize() {
 	a.Mult(1 / a.Mag())
 }
-func Normalized[T Float](a Vector2[T]) Vector2[T] {
+func Normalized[T Float](a Vec2[T]) Vec2[T] {
 	a.Normalize()
 	return a
 }
 
-func Dist[T Number](a, b Vector2[T]) T {
+func Dist[T Number](a, b Vec2[T]) T {
 	return Sub(a, b).Mag()
 }
-func DistSqr[T Number](a, b Vector2[T]) T {
+func DistSqr[T Number](a, b Vec2[T]) T {
 	return Sub(a, b).Dot()
 }
 
-func Random_unit_vector[T Float]() Vector2[T] {
+func Random_unit_vector[T Float]() Vec2[T] {
 	theta := rand.Float64() * 2 * math.Pi
 	sin, cos := math.Sincos(theta)
-	return Make_Vector2(T(cos), T(sin))
+	return Make_Vec2(T(cos), T(sin))
 }
 
 // Really useful helper, would recommend
-func Transform[T Number, U Number](v Vector2[T]) Vector2[U] {
-	return Vector2[U]{
+func Transform[T Number, U Number](v Vec2[T]) Vec2[U] {
+	return Vec2[U]{
 		X: U(v.X),
 		Y: U(v.Y),
 	}
 }
 
-func GetTheta[T Float](a Vector2[T]) T {
+func GetTheta[T Float](a Vec2[T]) T {
 	return T(math.Atan2(float64(a.Y), float64(a.X)))
 }
 
 // https://math.stackexchange.com/questions/2506306/rotation-of-a-vector-around-origin
 //
 // Note. this rotate function is correct. however, the image at the end is flipped. cool cool cool.
-func Rotate[T Float](a Vector2[T], theta T) Vector2[T] {
+func Rotate[T Float](a Vec2[T], theta T) Vec2[T] {
 	sin, cos := math.Sincos(float64(theta))
 
 	x := float64(a.X)*cos - float64(a.Y)*sin
 	y := float64(a.X)*sin + float64(a.Y)*cos
 
-	return Vector2[T]{T(x), T(y)}
+	return Vec2[T]{T(x), T(y)}
 }
 
-func Unit_Vector_With_Rotation[T Float](theta T) Vector2[T] {
+func Unit_Vector_With_Rotation[T Float](theta T) Vec2[T] {
 	sin, cos := math.Sincos(float64(theta))
-	return Make_Vector2(T(cos), T(sin))
+	return Make_Vec2(T(cos), T(sin))
 }

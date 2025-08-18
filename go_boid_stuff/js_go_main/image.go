@@ -144,7 +144,7 @@ func Draw_Circle(img *Image, x, y, r int, c Color) {
 }
 
 // DDA line generation algorithm
-func Draw_Line[T Vector.Number](img *Image, _p1, _p2 Vector.Vector2[T], c Color) {
+func Draw_Line[T Vector.Number](img *Image, _p1, _p2 Vector.Vec2[T], c Color) {
 	// convert to int. image library should be friendly
 	p1 := Vector.Transform[T, int](_p1)
 	p2 := Vector.Transform[T, int](_p2)
@@ -195,7 +195,7 @@ func Draw_Line[T Vector.Number](img *Image, _p1, _p2 Vector.Vector2[T], c Color)
 }
 
 // https://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
-func Draw_Triangle[T Vector.Number](img *Image, p1, p2, p3 Vector.Vector2[T], c Color) {
+func Draw_Triangle[T Vector.Number](img *Image, p1, p2, p3 Vector.Vec2[T], c Color) {
 	v1 := Vector.Transform[T, int](p1)
 	v2 := Vector.Transform[T, int](p2)
 	v3 := Vector.Transform[T, int](p3)
@@ -226,7 +226,7 @@ func Draw_Triangle[T Vector.Number](img *Image, p1, p2, p3 Vector.Vector2[T], c 
 			img.put_pixel(x, y, c)
 		}
 	}
-	fillBottomFlatTriangle := func(v1, v2, v3 Vector.Vector2[int]) {
+	fillBottomFlatTriangle := func(v1, v2, v3 Vector.Vec2[int]) {
 		inv_slope_1 := float32(v2.X-v1.X) / float32(v2.Y-v1.Y)
 		inv_slope_2 := float32(v3.X-v1.X) / float32(v3.Y-v1.Y)
 
@@ -239,7 +239,7 @@ func Draw_Triangle[T Vector.Number](img *Image, p1, p2, p3 Vector.Vector2[T], c 
 			cur_x_2 += inv_slope_2
 		}
 	}
-	fillTopFlatTriangle := func(v1, v2, v3 Vector.Vector2[int]) {
+	fillTopFlatTriangle := func(v1, v2, v3 Vector.Vec2[int]) {
 		inv_slope_1 := float32(v3.X-v1.X) / float32(v3.Y-v1.Y)
 		inv_slope_2 := float32(v3.X-v2.X) / float32(v3.Y-v2.Y)
 
@@ -260,7 +260,7 @@ func Draw_Triangle[T Vector.Number](img *Image, p1, p2, p3 Vector.Vector2[T], c 
 	} else {
 
 		// I did some rearranging here
-		v4 := Vector.Vector2[int]{
+		v4 := Vector.Vec2[int]{
 			// X: int(float32(v1.X) + float32(v2.Y-v1.Y)/float32(v3.Y-v1.Y)*float32(v3.X-v1.X)),
 			X: (((v2.Y - v1.Y) * (v3.X - v1.X)) + (v1.X * (v3.Y - v1.Y))) / (v3.Y - v1.Y),
 			Y: v2.Y,

@@ -85,11 +85,11 @@ func SetProperties(this js.Value, args []js.Value) any {
 
 
 // I feel like go is guilt tripping me with this syntax
-var mouse_pos           boid.Vector2[Boid_Float]
+var mouse_pos           boid.Vec2[Boid_Float]
 var input_status        boid.Input_Status
 
-func js_to_Vector(obj js.Value) boid.Vector2[Boid_Float] {
-	result := boid.Vector2[float64]{
+func js_to_Vector(obj js.Value) boid.Vec2[Boid_Float] {
+	result := boid.Vec2[float64]{
 		X: obj.Get("x").Float(),
 		Y: obj.Get("y").Float(),
 	}

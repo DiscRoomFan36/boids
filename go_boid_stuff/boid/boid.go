@@ -22,9 +22,9 @@ func (rect Rectangle) Splat() (Boid_Float, Boid_Float, Boid_Float, Boid_Float) {
 }
 
 type Boid struct {
-	Position Vector2[Boid_Float]
-	Velocity Vector2[Boid_Float]
-	Acceleration Vector2[Boid_Float]
+	Position Vec2[Boid_Float]
+	Velocity Vec2[Boid_Float]
+	Acceleration Vec2[Boid_Float]
 }
 
 type Boid_simulation struct {
@@ -119,7 +119,7 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 	return boid_sim
 }
 
-func (boid_sim *Boid_simulation) adjust_speed(vel Vector2[Boid_Float]) Vector2[Boid_Float] {
+func (boid_sim *Boid_simulation) adjust_speed(vel Vec2[Boid_Float]) Vec2[Boid_Float] {
 	speed := vel.Mag()
 	if speed > boid_sim.Max_Speed {
 		// we don't really need this now that we have drag
@@ -132,8 +132,8 @@ func (boid_sim *Boid_simulation) adjust_speed(vel Vector2[Boid_Float]) Vector2[B
 	return vel
 }
 
-func (boid_sim Boid_simulation) bounding_force(index int) Vector2[Boid_Float] {
-	vel := Vector2[Boid_Float]{}
+func (boid_sim Boid_simulation) bounding_force(index int) Vec2[Boid_Float] {
+	vel := Vec2[Boid_Float]{}
 
 	if boid_sim.Boids[index].Position.X < boid_sim.Margin {
 		vel.X += 1
@@ -178,7 +178,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 				// add 1 boid.
 
 				new_boid := Boid{
-					Position: Make_Vector2(
+					Position: Make_Vec2(
 						Boid_Float(rand.Float32()*float32(boid_sim.Width)),
 						Boid_Float(rand.Float32()*float32(boid_sim.Height)),
 					),
@@ -208,7 +208,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 		boid_sim.Spacial_array.Clear()
 
 		// TODO make this just how we store boid positions or something.
-		boid_positions := make([]Vector2[Boid_Float], 0, len(boid_sim.Boids))
+		boid_positions := make([]Vec2[Boid_Float], 0, len(boid_sim.Boids))
 		for _, b := range boid_sim.Boids {
 			boid_positions = append(boid_positions, b.Position)
 		}
@@ -218,7 +218,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 
 	// Set the Accelerations to zero.
 	for i := range len(boid_sim.Boids) {
-		boid_sim.Boids[i].Acceleration = Vector2[Boid_Float]{}
+		boid_sim.Boids[i].Acceleration = Vec2[Boid_Float]{}
 	}
 
 	// ------------------------------------
@@ -228,11 +228,11 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 		this_boid := boid_sim.Boids[i]
 
 		// Separation
-		sep := Vector2[Boid_Float]{}
+		sep := Vec2[Boid_Float]{}
 		// Alignment
-		align := Vector2[Boid_Float]{}
+		align := Vec2[Boid_Float]{}
 		// Cohesion
-		coh := Vector2[Boid_Float]{}
+		coh := Vec2[Boid_Float]{}
 
 		num_close_boids := 0
 		for j, near_pos := range boid_sim.Spacial_array.Iter_Over_Near(this_boid.Position, boid_sim.Visual_Range) {
@@ -303,7 +303,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 		// ..._Time_Dilation == seconds to switch generator.
 		time_advance := dt / float64(boid_sim.Random_Draw_Time_Dilation)
 
-		var force_vectors [NUM_RANDOM_GENERATORS]Vector2[Boid_Float]
+		var force_vectors [NUM_RANDOM_GENERATORS]Vec2[Boid_Float]
 		for i := range NUM_RANDOM_GENERATORS {
 			random_number := boid_sim.generators[i].Next(float32(time_advance))
 			theta := random_number * 2 * math.Pi
@@ -331,7 +331,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 			this_boid := boid_sim.Boids[i]
 
 			// center of the simulation
-			center := Make_Vector2(boid_sim.Width/2, boid_sim.Height/2)
+			center := Make_Vec2(boid_sim.Width/2, boid_sim.Height/2)
 
 			// if they in in this circle, don't be drawn into the center.
 			min_radius := min(boid_sim.Width, boid_sim.Height) / boid_sim.Center_Draw_Radius_Div
@@ -352,7 +352,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	//                 Wind
 	// ------------------------------------
 	for i := range len(boid_sim.Boids) {
-		wind := Make_Vector2(boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
+		wind := Make_Vec2(boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
 		boid_sim.Boids[i].Acceleration.Add(wind)
 	}
 

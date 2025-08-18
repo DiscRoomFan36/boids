@@ -18,7 +18,7 @@ type box[T Number] struct {
 	// The next box in the linked list
 	Next *box[T]
 
-	Points [BOX_SIZE]Vector2[T]
+	Points [BOX_SIZE]Vec2[T]
 	// TODO put these somewhere else?
 	// Indexes of the point that gave the corresponding point.
 	Indexes [BOX_SIZE]BOX_ID_TYPE
@@ -65,7 +65,7 @@ func New_Spacial_Array[T Number]() Spacial_Array[T] {
 	return result
 }
 
-func (array *Spacial_Array[T]) Append_points(points []Vector2[T]) {
+func (array *Spacial_Array[T]) Append_points(points []Vec2[T]) {
 	if array.inited {
 		panic("cannot append 2 sets of points, sorry")
 	}
@@ -113,8 +113,8 @@ func (array *Spacial_Array[T]) Append_points(points []Vector2[T]) {
 	}
 }
 
-func (array Spacial_Array[T]) Iter_Over_Near(point Vector2[T], radius T) iter.Seq2[BOX_ID_TYPE, Vector2[T]] {
-	return func(yield func(BOX_ID_TYPE, Vector2[T]) bool) {
+func (array Spacial_Array[T]) Iter_Over_Near(point Vec2[T], radius T) iter.Seq2[BOX_ID_TYPE, Vec2[T]] {
+	return func(yield func(BOX_ID_TYPE, Vec2[T]) bool) {
 		// get all near points...
 		box_x, box_y := array.point_to_box_loc(point)
 
@@ -171,7 +171,7 @@ func (array *Spacial_Array[T]) Clear() {
 	array.backup_boxes_in_use = 0
 }
 
-func (array Spacial_Array[T]) point_to_box_loc(point Vector2[T]) (int, int) {
+func (array Spacial_Array[T]) point_to_box_loc(point Vec2[T]) (int, int) {
 	x := map_and_clamp_range(point.X, array.Min_x, array.Max_x)
 	y := map_and_clamp_range(point.Y, array.Min_y, array.Max_y)
 
@@ -182,7 +182,7 @@ func (array Spacial_Array[T]) point_to_box_loc(point Vector2[T]) (int, int) {
 }
 
 // returns min_x, min_y, max_x, max_y
-func find_mins_and_maxs[T Number](points []Vector2[T]) (T, T, T, T) {
+func find_mins_and_maxs[T Number](points []Vec2[T]) (T, T, T, T) {
 	if len(points) == 0 { return 0, 0, 0, 0 }
 
 	min_x := points[0].X
