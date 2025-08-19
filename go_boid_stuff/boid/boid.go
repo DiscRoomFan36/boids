@@ -9,7 +9,7 @@ import (
 const NUM_RANDOM_GENERATORS = 32
 
 // in seconds.
-const CLICK_FADE_TIME = 3
+const CLICK_FADE_TIME = 1
 
 
 type Boid_Float float32

@@ -72,7 +72,7 @@ func (gen *Random_Generator) Next(dt float32) float32 {
 
 	// skip the rest if not wrapping
 	if !gen.wrapping {
-		return lerp(gen.curr, gen.next, step)
+		return Lerp(gen.curr, gen.next, step)
 	}
 
 	if gen.turning_direction {
@@ -80,11 +80,11 @@ func (gen *Random_Generator) Next(dt float32) float32 {
 
 		if gen.curr <= gen.next {
 			// the normal case.
-			return lerp(gen.curr, gen.next, step)
+			return Lerp(gen.curr, gen.next, step)
 		} else {
 			// wrap around.
 			next := gen.next + 1
-			ler := lerp(gen.curr, next, step)
+			ler := Lerp(gen.curr, next, step)
 			return mod1(ler)
 		}
 
@@ -93,11 +93,11 @@ func (gen *Random_Generator) Next(dt float32) float32 {
 
 		if gen.next <= gen.curr {
 			// the normal case.
-			return lerp(gen.curr, gen.next, step)
+			return Lerp(gen.curr, gen.next, step)
 		} else {
 			// wrap around.
 			next := gen.next - 1
-			ler := lerp(gen.curr, next, step)
+			ler := Lerp(gen.curr, next, step)
 			return mod1(ler)
 		}
 	}
@@ -111,26 +111,8 @@ func (gen *Random_Generator) Next(dt float32) float32 {
 //
 // smoothly transitions from 0 to 1, given x
 func smoothstep(x float32) float32 {
-	// clamp x to 0..1 range
-	x = clamp(0, 1, x)
-
+	x = Clamp(x, 0, 1)
 	return x * x * (3.0 - 2.0*x)
-}
-
-// liner interpolate between a and b.
-func lerp(a, b, t float32) float32 {
-	return (1-t)*a + t*b
-}
-
-// clamp x into range [low, high]
-func clamp(low, high, x float32) float32 {
-	if x < low {
-		return low
-	}
-	if x > high {
-		return high
-	}
-	return x
 }
 
 // ---------------------------
@@ -144,11 +126,11 @@ func random_32() float32 {
 
 // floating point mod, always returns a number [0, 1)
 // Modf but better.
-func mod1(x float32) float32 {
+func mod1[T Float](x T) T {
 	_, a_64 := math.Modf(float64(x))
 
 	// assert(abs(a) < 1)
-	a := float32(a_64)
+	a := T(a_64)
 	// if the sign was negative, make it positive,
 	if a < 0 {
 		return 1 + a

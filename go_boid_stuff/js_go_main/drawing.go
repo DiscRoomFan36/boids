@@ -49,18 +49,18 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 		// Draw visual radius.
 		visual_radius_color := HSL_to_RGB(50, 0.7, 0.9)
 		for _, b := range boid_sim.Boids {
-			x := int(b.Position.X * scale_factor)
-			y := int(b.Position.Y * scale_factor)
-			r := int(boid_sim.Visual_Range * scale_factor)
+			x := b.Position.X * scale_factor
+			y := b.Position.Y * scale_factor
+			r := boid_sim.Visual_Range * scale_factor
 			Draw_Circle(img, x, y, r, visual_radius_color)
 		}
 
 		// Draw minimum visual radius. (for separation.)
 		minimum_radius_color := HSL_to_RGB(270, 0.7, 0.7)
 		for _, b := range boid_sim.Boids {
-			x := int(b.Position.X * scale_factor)
-			y := int(b.Position.Y * scale_factor)
-			r := int(boid_sim.Separation_Min_Distance * scale_factor)
+			x := b.Position.X * scale_factor
+			y := b.Position.Y * scale_factor
+			r := boid_sim.Separation_Min_Distance * scale_factor
 			Draw_Circle(img, x, y, r, minimum_radius_color)
 		}
 	}
@@ -118,7 +118,7 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 		speed := b.Velocity.Mag() / boid_sim.Max_Speed
 
 		const SHIFT_FACTOR = 2
-		H := math.Mod(float64(clamp(speed, 0, 1)*360)*SHIFT_FACTOR, 360)
+		H := math.Mod(float64(boid.Clamp(speed, 0, 1)*360)*SHIFT_FACTOR, 360)
 
 		boid_color := HSL_to_RGB(H, 0.75, 0.6)
 
@@ -136,19 +136,22 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 	now := time.Now()
 	for _, pos_and_time := range boid_sim.Click_Positions_And_Times {
 		pos := pos_and_time.Pos
-		time := pos_and_time.Time
+		pos.Mult(scale_factor) // into world co-ord's
 
+		time := pos_and_time.Time
 		secs := float32(now.Sub(time).Seconds())
-		factor := secs / boid.CLICK_FADE_TIME
-		factor = (factor * factor)
+		percent := secs / boid.CLICK_FADE_TIME
 
 		color := Color_White()
-		color.a = lerp(1, 0, factor)
+		color.a = 1 - ease_in_out_quint(percent)
 
-		pos.Mult(scale_factor) // into world coord's
+		// in image pixels
+		const SIZE_SCALE = 20
+		// in image pixels
+		const RING_WIDTH = 2
 
-		Draw_Ring(img, pos.X, pos.Y, Boid_Float(secs*10), Boid_Float(secs*10+3), color)
-		// Draw_Circle(img, int(pos.X), int(pos.Y), 10, Color_White())
+		size_factor := ease_out_quint(percent)
+		Draw_Ring(img, pos.X, pos.Y, Boid_Float(size_factor*SIZE_SCALE), Boid_Float(size_factor*SIZE_SCALE+RING_WIDTH), color)
 	}
 
 	// { // debug mouse pos
@@ -157,11 +160,26 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 
 	// 	Draw_Rect(
 	// 		img,
-	// 		int(mouse_pos.X), int(mouse_pos.Y), 10, 10,
+	// 		mouse_pos.X, mouse_pos.Y, 10, 10,
 	// 		color,
 	// 	)
 	// }
 }
+
+// https://easings.net
+func ease_out_quint[T boid.Float](x T) T {
+	xp := 1 - x
+	return 1 - (xp*xp*xp*xp*xp);
+}
+// https://easings.net
+func ease_in_out_quint[T boid.Float](x T) T {
+	if x < 0.5 {
+		return 16 * x * x * x * x * x
+	} else {
+		return T(1 - math.Pow(-2 * float64(x) + 2, 5) / 2)
+	}
+}
+
 
 func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spacial_Array[T], scale T) {
 
@@ -182,11 +200,9 @@ func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spac
 			{X: max_x, Y: max_y},
 			{X: min_x, Y: max_y},
 		}
-		for i := 0; i < len(bounding_box); i++ {
-			bounding_box[i].Mult(scale)
-		}
+		for i := range len(bounding_box) { bounding_box[i].Mult(scale) }
 
-		for i := 0; i < len(bounding_box); i++ {
+		for i := range len(bounding_box) {
 			Draw_Line(
 				img,
 				bounding_box[i],
@@ -197,7 +213,7 @@ func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spac
 	}
 
 	{ // now draw the inner lines.
-		var inner_color = Color_Red()
+		inner_color := Color_Red()
 
 		// Vertical
 		for i := 1; i < sp_array.Boxes_wide; i++ {
@@ -235,9 +251,7 @@ func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spac
 
 				// if there is some points in the box, show a color.
 				box := &sp_array.Boxes[j*sp_array.Boxes_wide+i]
-				if box.Count == 0 {
-					continue
-				}
+				if box.Count == 0 { continue }
 
 				// The colors from blue to red.
 				// it would be better if we had something that could blend a color.
@@ -247,21 +261,18 @@ func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spac
 				fill_amount := float32(box.Count) / boid.BOX_SIZE
 				fill_amount = min(fill_amount, 1)
 
-				blended := lerp(start_number, end_number, fill_amount)
+				blended := boid.Lerp(start_number, end_number, fill_amount)
 
 				// fade alpha based on how many points are in it.
 				faded_color := HSL_to_RGB(blended, 0.9, 0.5)
 
-				Draw_Rect(img, int(x*scale), int(y*scale), int(step_x*scale), int(step_y*scale), faded_color)
+				Draw_Rect(img, x*scale, y*scale, step_x*scale, step_y*scale, faded_color)
 			}
 		}
 	}
-
 }
 
-func lerp[T boid.Float](a, b, t T) T {
-	return (1-t)*a + t*b
-}
+
 
 // -----------------------------------------
 //   Code for testing Color interpolation.
@@ -302,7 +313,7 @@ func lerp[T boid.Float](a, b, t T) T {
 // 	// move to center
 // 	rotated.Add(boid.Make_Vec2(float32(img.Width)/2, float32(img.Height)/2))
 
-// 	Draw_Circle(img, int(rotated.X), int(rotated.Y), 10, test_color)
+// 	Draw_Circle(img, rotated.X, rotated.Y, 10, test_color)
 
 // 	p1 := boid.Make_Vec2(float32(img.Width/2), float32(img.Height/2))
 // 	Draw_Line(img, p1, rotated, test_color)

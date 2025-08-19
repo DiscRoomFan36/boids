@@ -24,14 +24,15 @@ DONE
 * Vector2 to Vec2
 * make an animation on click.
 * use float colors in image.go
+* update the image.go file with generics. and make a better api
+* make a cool click animation.
+
 
 NEXT
 
-* update the image.go file with generics. and make a better api
+* have typescript control the walls, make more walls. with right click and drag?
 
 * boids dodge obstacles, put a big rect in the middle of the screen.
-
-* have typescript control the walls, make more walls.
 
 * make boids see in front of them. (with rays?)
 
