@@ -1,51 +1,9 @@
 package main
 
 import (
-	"log"
 	"math"
 	"math/rand"
 )
-
-// TODO this math stuff is dumb, "Don't needlessly abstract." - Some Smart Guy
-
-type Int interface {
-	~int | ~uint | ~int8 | ~uint8 | ~int16 | ~uint16 | ~int32 | ~uint32 | ~int64 | ~uint64
-}
-type Float interface {
-	~float32 | ~float64
-}
-type Number interface {
-	Int | Float
-}
-
-func Abs[T Number](x T) T {
-	// this would be faster if the type was known but w/e
-	if x < 0 {
-		x = -x
-	}
-	return x
-}
-
-// To Nearest Whole number
-func Round[T Number](x T) int {
-	// Adds 0.5, works for ints and floats, look out for overflow
-	var rounded int
-	if x > 0 {
-		rounded = int((x*2 + 1) / 2)
-	} else {
-		rounded = int((x*2 - 1) / 2)
-	}
-
-	// NOTE Speed up if we need it
-	if Abs(T(rounded)-x) >= 1 {
-		// Overflow!!!
-		log.Fatalf("oh no, the rounding did not work!! orig: %v got: %v\n", x, rounded)
-	}
-
-	return rounded
-}
-
-// TODO do some cool reflect stuff. (might mess up a lot of optimizations but it could be cool)
 
 // The Classic Vector, i wouldn't do all this [T Number] stuff if go has a better math library... well... maybe i would
 type Vec2[T Number] struct {
@@ -125,20 +83,15 @@ func (a *Vec2[Number]) ClampMag(mini, maxi Number) {
 	}
 }
 
-func (a *Vec2[Float]) Normalize() {
-	a.Mult(1 / a.Mag())
-}
+func (a *Vec2[Float]) Normalize() { a.Mult(1 / a.Mag()) }
+
 func Normalized[T Float](a Vec2[T]) Vec2[T] {
 	a.Normalize()
 	return a
 }
 
-func Dist[T Number](a, b Vec2[T]) T {
-	return Sub(a, b).Mag()
-}
-func DistSqr[T Number](a, b Vec2[T]) T {
-	return Sub(a, b).Dot()
-}
+func Dist   [T Number](a, b Vec2[T]) T { return Sub(a, b).Mag() }
+func DistSqr[T Number](a, b Vec2[T]) T { return Sub(a, b).Dot() }
 
 func Random_unit_vector[T Float]() Vec2[T] {
 	theta := rand.Float64() * 2 * math.Pi

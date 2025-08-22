@@ -1,6 +1,9 @@
 package main
 
-import "math"
+import (
+	"log"
+	"math"
+)
 
 // good old swap and remove
 func Remove_Unordered[T any](s *[]T, index int) {
@@ -20,6 +23,13 @@ func Append[T any](s *[]T, elems ...T) {
 }
 
 
+// TODO this math stuff is dumb, "Don't needlessly abstract." - Some Smart Guy
+
+type Int    interface { ~int | ~uint | ~int8 | ~uint8 | ~int16 | ~uint16 | ~int32 | ~uint32 | ~int64 | ~uint64 }
+type Float  interface { ~float32 | ~float64 }
+type Number interface { Int | Float }
+
+
 // this function (and Ceil) also accepts int's, witch is dumb, but makes it a better api to call.
 func Floor[T Number](x T) int { return int(math.Floor(float64(x))) }
 func Ceil[ T Number](x T) int { return int(math.Ceil( float64(x))) }
@@ -33,6 +43,28 @@ func Clamp[T Number](x, mini, maxi T) T {
 	return x
 }
 
-func Lerp[T Float](a, b, t T) T {
-	return (1-t)*a + t*b
+func Lerp[T Float](a, b, t T) T { return (1-t)*a + t*b }
+
+
+func Abs[T Number](x T) T {
+	// this would be faster if the type was known but w/e
+	if x < 0 { x = -x }
+	return x
 }
+
+// To Nearest Whole number
+func Round[T Number](x T) int {
+	// Adds 0.5, works for ints and floats, look out for overflow
+	var rounded int
+	if x > 0 { rounded = int((x*2 + 1) / 2)
+	} else {   rounded = int((x*2 - 1) / 2) }
+
+	// NOTE Speed up if we need it
+	if Abs(T(rounded)-x) >= 1 {
+		// Overflow!!!
+		log.Fatalf("oh no, the rounding did not work!! orig: %v got: %v\n", x, rounded)
+	}
+
+	return rounded
+}
+

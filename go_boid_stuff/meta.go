@@ -13,7 +13,7 @@ import (
 
 type Property_Type int
 const (
-	None = iota
+	None    Property_Type = iota
 	Property_Float
 	Property_Int
 	Property_Bool
@@ -41,7 +41,7 @@ type Property_Struct struct {
 
 type Property_Struct_Field_Flags int
 const (
-	Flag_None Property_Struct_Field_Flags = 0
+	Flag_None   Property_Struct_Field_Flags = 0
 
 	// this is always set. // TODO make it not always set?
 	// Flag_Property_type   = 1<<0
