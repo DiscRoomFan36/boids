@@ -1,4 +1,4 @@
-package boid
+package main
 
 import "time"
 

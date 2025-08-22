@@ -3,8 +3,6 @@ package main
 import (
 	"math"
 	"time"
-
-	"boidstuff.com/boid"
 )
 
 const DEBUG_SPACIAL_ARRAY = false
@@ -15,12 +13,10 @@ const DEBUG_VISUAL_RANGES = false
 var boid_heading_color  = Color{r: 10/256.0, g: 240/256.0, b: 10/256.0, a: 1}
 var boid_boundary_color = Color{r: 240/256.0, g: 240/256.0, b: 240/256.0, a: 1}
 
-type Boid_Float = boid.Boid_Float
-
 // TODO have some sort of view mode here, so we can 'move' the 'camera'
 //
 // go incorrectly reports this function as unused if it is not public...
-func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
+func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 
 	img.Clear_background(Color_Data{r: 24, g: 24, b: 24, a: 255})
 
@@ -33,7 +29,7 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 
 	if DEBUG_BOUNDARY {
 		margin := int(boid_sim.Margin * scale_factor)
-		boundary_points := [4]boid.Vec2[int]{
+		boundary_points := [4]Vec2[int]{
 			{X: margin, Y: margin},
 			{X: img.Width - margin, Y: margin},
 			{X: img.Width - margin, Y: img.Height - margin},
@@ -68,7 +64,7 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 	{ // draw the walls
 		for _, wall := range boid_sim.Walls {
 			x, y, w, h := wall.Splat()
-			boundary_points := [4]boid.Vec2[Boid_Float]{
+			boundary_points := [4]Vec2[Boid_Float]{
 				{X: x,     Y: y    },
 				{X: x + w, Y: y    },
 				{X: x + w, Y: y + h},
@@ -96,7 +92,7 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 
 		// Draw boid body
 		// TODO maybe some LOD shit, where its just a triangle? 2x speed?
-		boid_shape := [4]boid.Vec2[Boid_Float]{
+		boid_shape := [4]Vec2[Boid_Float]{
 			{X: 0, Y: 1},      // tip
 			{X: 0, Y: -0.5},   // back
 			{X: 1, Y: -0.75},  // wing1
@@ -104,11 +100,11 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 		}
 
 		// Rotate to face them in the right direction
-		theta := boid.GetTheta(b.Velocity) - math.Pi/2
+		theta := GetTheta(b.Velocity) - math.Pi/2
 		// TODO i also think this is slowing us down, put in own function
 		for i := range len(boid_shape) {
 			// someone who knows math explain this
-			boid_shape[i] = boid.Rotate(boid_shape[i], theta)
+			boid_shape[i] = Rotate(boid_shape[i], theta)
 
 			boid_shape[i].Mult(boid_sim.Boid_Radius * scale_factor)
 			boid_shape[i].Add(b.Position)
@@ -118,7 +114,7 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 		speed := b.Velocity.Mag() / boid_sim.Max_Speed
 
 		const SHIFT_FACTOR = 2
-		H := math.Mod(float64(boid.Clamp(speed, 0, 1)*360)*SHIFT_FACTOR, 360)
+		H := math.Mod(float64(Clamp(speed, 0, 1)*360)*SHIFT_FACTOR, 360)
 
 		boid_color := HSL_to_RGB(H, 0.75, 0.6)
 
@@ -128,7 +124,7 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 
 		if DEBUG_HEADING {
 			// Draw heading line
-			where_boid_will_be := boid.Add(b.Position, b.Velocity)
+			where_boid_will_be := Add(b.Position, b.Velocity)
 			Draw_Line(img, b.Position, where_boid_will_be, boid_heading_color)
 		}
 	}
@@ -140,7 +136,7 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 
 		time := pos_and_time.Time
 		secs := float32(now.Sub(time).Seconds())
-		percent := secs / boid.CLICK_FADE_TIME
+		percent := secs / CLICK_FADE_TIME
 
 		color := Color_White()
 		color.a = 1 - ease_in_out_quint(percent)
@@ -156,7 +152,7 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 
 	// { // debug mouse pos
 	// 	color := Color_Yellow()
-	// 	if mouse_state == boid.Left_down { color = Color_Red() }
+	// 	if mouse_state == Left_down { color = Color_Red() }
 
 	// 	Draw_Rect(
 	// 		img,
@@ -167,12 +163,12 @@ func Draw_boids_into_image(img *Image, boid_sim *boid.Boid_simulation) {
 }
 
 // https://easings.net
-func ease_out_quint[T boid.Float](x T) T {
+func ease_out_quint[T Float](x T) T {
 	xp := 1 - x
 	return 1 - (xp*xp*xp*xp*xp);
 }
 // https://easings.net
-func ease_in_out_quint[T boid.Float](x T) T {
+func ease_in_out_quint[T Float](x T) T {
 	if x < 0.5 {
 		return 16 * x * x * x * x * x
 	} else {
@@ -181,7 +177,7 @@ func ease_in_out_quint[T boid.Float](x T) T {
 }
 
 
-func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spacial_Array[T], scale T) {
+func draw_spacial_array_into_image[T Number](img *Image, sp_array Spacial_Array[T], scale T) {
 
 	min_x, min_y := sp_array.Min_x, sp_array.Min_y
 	max_x, max_y := sp_array.Max_x, sp_array.Max_y
@@ -194,7 +190,7 @@ func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spac
 
 	{ // draw the outsides.
 
-		bounding_box := [4]boid.Vec2[T]{
+		bounding_box := [4]Vec2[T]{
 			{X: min_x, Y: min_y},
 			{X: max_x, Y: min_y},
 			{X: max_x, Y: max_y},
@@ -219,8 +215,8 @@ func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spac
 		for i := 1; i < sp_array.Boxes_wide; i++ {
 			x := sp_array.Min_x + step_x*T(i)
 
-			p1 := boid.Vec2[T]{X: x, Y: sp_array.Min_y}
-			p2 := boid.Vec2[T]{X: x, Y: sp_array.Max_y}
+			p1 := Vec2[T]{X: x, Y: sp_array.Min_y}
+			p2 := Vec2[T]{X: x, Y: sp_array.Max_y}
 
 			p1.Mult(scale)
 			p2.Mult(scale)
@@ -232,8 +228,8 @@ func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spac
 		for j := 1; j < sp_array.Boxes_high; j++ {
 			y := sp_array.Min_y + step_y*T(j)
 
-			p1 := boid.Vec2[T]{X: sp_array.Min_x, Y: y}
-			p2 := boid.Vec2[T]{X: sp_array.Max_x, Y: y}
+			p1 := Vec2[T]{X: sp_array.Min_x, Y: y}
+			p2 := Vec2[T]{X: sp_array.Max_x, Y: y}
 
 			p1.Mult(scale)
 			p2.Mult(scale)
@@ -258,10 +254,10 @@ func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spac
 				const start_number = 230
 				const end_number = 360
 
-				fill_amount := float32(box.Count) / boid.BOX_SIZE
+				fill_amount := float32(box.Count) / BOX_SIZE
 				fill_amount = min(fill_amount, 1)
 
-				blended := boid.Lerp(start_number, end_number, fill_amount)
+				blended := Lerp(start_number, end_number, fill_amount)
 
 				// fade alpha based on how many points are in it.
 				faded_color := HSL_to_RGB(blended, 0.9, 0.5)
@@ -304,22 +300,22 @@ func draw_spacial_array_into_image[T boid.Number](img *Image, sp_array boid.Spac
 // 	x := new_random_number * float32(img.Width)
 // 	Draw_Rect(img, int(x-10), h, 20, 20, test_color)
 
-// 	unit_vector := boid.Make_Vec2[float32](1, 0)
+// 	unit_vector := Make_Vec2[float32](1, 0)
 // 	theta := new_random_number * 2 * math.Pi
 
-// 	rotated := boid.Rotate(unit_vector, theta)
+// 	rotated := Rotate(unit_vector, theta)
 // 	// give it some length
 // 	rotated.Mult(300)
 // 	// move to center
-// 	rotated.Add(boid.Make_Vec2(float32(img.Width)/2, float32(img.Height)/2))
+// 	rotated.Add(Make_Vec2(float32(img.Width)/2, float32(img.Height)/2))
 
 // 	Draw_Circle(img, rotated.X, rotated.Y, 10, test_color)
 
-// 	p1 := boid.Make_Vec2(float32(img.Width/2), float32(img.Height/2))
+// 	p1 := Make_Vec2(float32(img.Width/2), float32(img.Height/2))
 // 	Draw_Line(img, p1, rotated, test_color)
 
 // // for testing. move these to global scope.
-// 	var nocheckin_generator = boid.New_Random_Generator(true)
+// 	var nocheckin_generator = New_Random_Generator(true)
 // 	var nocheckin_dt = 0.0
 
 // }

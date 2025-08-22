@@ -6,13 +6,11 @@ import (
 	"log"
 	"syscall/js"
 	"time"
-
-	"boidstuff.com/boid"
 )
 
 var img Image
 
-var boid_sim boid.Boid_simulation
+var boid_sim Boid_simulation
 
 var last_frame_time time.Time
 
@@ -29,7 +27,7 @@ func GetProperties(this js.Value, args []js.Value) any {
 		log.Panicf("GetProperties: don't pass anything to this function")
 	}
 
-	property_structs := boid.Get_property_structs()
+	property_structs := Get_property_structs()
 
 	// We have to do this because js.FuncOf() expects this function to return a map to any. (aka a javascript object.)
 	properties_to_any := make(map[string]any)
@@ -54,20 +52,20 @@ func SetProperties(this js.Value, args []js.Value) any {
 		log.Panicf("SetProperties: arg is not an object, it is a %v", args[0].Type().String())
 	}
 
-	the_map := make(map[string]boid.Union_Like)
-	for name, prop_struct := range boid.Get_property_structs() {
+	the_map := make(map[string]Union_Like)
+	for name, prop_struct := range Get_property_structs() {
 		value := obj.Get(name)
 		if value.IsUndefined() {
 			continue
 		}
 
-		union := boid.Union_Like{}
+		union := Union_Like{}
 
 		// the .Float() and others will panic is something is not right. Good behavior
 		switch prop_struct.Property_type {
-		case boid.Property_Float: union.As_float = value.Float()
-		case boid.Property_Int:   union.As_int   = value.Int()
-		case boid.Property_Bool:  union.As_bool  = value.Bool()
+		case Property_Float: union.As_float = value.Float()
+		case Property_Int:   union.As_int   = value.Int()
+		case Property_Bool:  union.As_bool  = value.Bool()
 
 		default: log.Panicf("%v: unknown property in 'SetProperty()'", name)
 		}
@@ -85,31 +83,31 @@ func SetProperties(this js.Value, args []js.Value) any {
 
 
 // I feel like go is guilt tripping me with this syntax
-var mouse_pos           boid.Vec2[Boid_Float]
-var input_status        boid.Input_Status
+var mouse_pos           Vec2[Boid_Float]
+var input_status        Input_Status
 
-func js_to_Vector(obj js.Value) boid.Vec2[Boid_Float] {
-	result := boid.Vec2[float64]{
+func js_to_Vector(obj js.Value) Vec2[Boid_Float] {
+	result := Vec2[float64]{
 		X: obj.Get("x").Float(),
 		Y: obj.Get("y").Float(),
 	}
-	return boid.Transform[float64, Boid_Float](result)
+	return Transform[float64, Boid_Float](result)
 }
 
 // Javascript function
 //
 // Will pass back a bunch of pixels, (though array), in [RGBA] format
 func GetNextFrame(this js.Value, args []js.Value) any {
-	width := args[0].Get("width").Int()
+	width  := args[0].Get("width").Int()
 	height := args[0].Get("height").Int()
-	array := args[0].Get("buffer")
+	array  := args[0].Get("buffer")
 
 	mouse := args[0].Get("mouse")
 
 	mouse_pos = js_to_Vector(mouse.Get("pos"))
 	mouse_pos = World_to_boid_vec(mouse_pos)
 
-	input_status = boid.Update_Input(
+	input_status = Update_Input(
 		input_status,
 		mouse.Get("left_down")  .Bool(),
 		mouse.Get("middle_down").Bool(),
@@ -148,7 +146,6 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	// this might end up taking the most amount of time.
 	// TODO make a 'Draw a thing' file. (maybe in this module, stop boid from requiring Image...)
 	Draw_boids_into_image(&img, &boid_sim)
-	// boid_sim.Draw_Into_Image(&img)
 
 	// copy the pixels, must be in RGBA format
 	copied_bytes := js.CopyBytesToJS(array, img.Buffer[:width*height*NUM_COLOR_COMPONENTS])
@@ -160,13 +157,13 @@ func main() {
 
 	// set img to screen size, and shrink
 	img = New_image(1920, 1080)
-	boid_sim = boid.New_boid_simulation(BOID_BOUNDS_WIDTH, BOID_BOUNDS_HEIGHT)
+	boid_sim = New_boid_simulation(BOID_BOUNDS_WIDTH, BOID_BOUNDS_HEIGHT)
 
 	last_frame_time = time.Now()
 
 	js.Global().Set("GetProperties", js.FuncOf(GetProperties))
 	js.Global().Set("SetProperties", js.FuncOf(SetProperties))
-	js.Global().Set("GetNextFrame", js.FuncOf(GetNextFrame))
+	js.Global().Set("GetNextFrame",  js.FuncOf(GetNextFrame))
 
 	// this stalls the go program, because go has a 'run time' that needs to be aware of everything. bleh
 	<-make(chan struct{})

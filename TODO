@@ -26,6 +26,7 @@ DONE
 * use float colors in image.go
 * update the image.go file with generics. and make a better api
 * make a cool click animation.
+* move everything into a single go module
 
 
 NEXT

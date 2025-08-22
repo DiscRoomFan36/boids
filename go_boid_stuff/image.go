@@ -5,8 +5,6 @@ import (
 	"log"
 	"math"
 	"os"
-
-	"boidstuff.com/boid"
 )
 
 // DO NOT CHANGE UNLESS YOU WANNA DO A MASSIVE REFACTOR (AGAIN)
@@ -43,20 +41,20 @@ type Color struct {
 /*
 func (c Color) to_data() Color_Data {
 	return Color_Data{
-		r: uint8(boid.Round(c.r * 255)),
-		g: uint8(boid.Round(c.g * 255)),
-		b: uint8(boid.Round(c.b * 255)),
-		a: uint8(boid.Round(c.a * 255)),
+		r: uint8(Round(c.r * 255)),
+		g: uint8(Round(c.g * 255)),
+		b: uint8(Round(c.b * 255)),
+		a: uint8(Round(c.a * 255)),
 	}
 }
 */
 
 
 // https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB_alternative
-func HSL_to_RGB[T boid.Float](H, S, L T) Color {
-	H = boid.Clamp(H, 0, 360)
-	S = boid.Clamp(S, 0, 1)
-	L = boid.Clamp(L, 0, 1)
+func HSL_to_RGB[T Float](H, S, L T) Color {
+	H = Clamp(H, 0, 360)
+	S = Clamp(S, 0, 1)
+	L = Clamp(L, 0, 1)
 
 	a := S * min(L, 1-L)
 	f := func(n T) T {
@@ -125,9 +123,9 @@ func (img *Image) put_color(x, y int, c Color) {
 	g := float32(g_u8) / 255.0
 	b := float32(b_u8) / 255.0
 
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0] = uint8(boid.Round(boid.Lerp(r, c.r, c.a) * 255))
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1] = uint8(boid.Round(boid.Lerp(g, c.g, c.a) * 255))
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2] = uint8(boid.Round(boid.Lerp(b, c.b, c.a) * 255))
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0] = uint8(Round(Lerp(r, c.r, c.a) * 255))
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1] = uint8(Round(Lerp(g, c.g, c.a) * 255))
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2] = uint8(Round(Lerp(b, c.b, c.a) * 255))
 	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3] = 255
 }
 
@@ -141,11 +139,11 @@ func (img *Image) put_pixel(x, y int, c Color_Data) {
 }
 */
 
-func Draw_Rect[T boid.Number](img *Image, x, y, w, h T, c Color) {
-	_x := boid.Round(x)
-	_y := boid.Round(y)
-	_w := boid.Round(w)
-	_h := boid.Round(h)
+func Draw_Rect[T Number](img *Image, x, y, w, h T, c Color) {
+	_x := Round(x)
+	_y := Round(y)
+	_w := Round(w)
+	_h := Round(h)
 
 	for j := max(_y, 0); j < min(_y+_h, img.Height); j++ {
 		for i := max(_x, 0); i < min(_x+_w, img.Width); i++ {
@@ -164,11 +162,11 @@ func (img *Image) Clear_background(c Color_Data) {
 	}
 }
 
-func Draw_Circle[T boid.Number](img *Image, x, y, r T, c Color) {
-	var min_x int = max(boid.Floor(x-r-1), 0)
-	var max_x int = min(boid.Ceil( x+r+1), img.Width)
-	var min_y int = max(boid.Floor(y-r-1), 0)
-	var max_y int = min(boid.Ceil( y+r+1), img.Height)
+func Draw_Circle[T Number](img *Image, x, y, r T, c Color) {
+	var min_x int = max(Floor(x-r-1), 0)
+	var max_x int = min(Ceil( x+r+1), img.Width)
+	var min_y int = max(Floor(y-r-1), 0)
+	var max_y int = min(Ceil( y+r+1), img.Height)
 
 	for j := min_y; j < max_y; j++ {
 		for i := min_x; i < max_x; i++ {
@@ -183,13 +181,13 @@ func Draw_Circle[T boid.Number](img *Image, x, y, r T, c Color) {
 
 
 
-func Draw_Ring[T boid.Number](img *Image, x, y, r1, r2 T, c Color) {
+func Draw_Ring[T Number](img *Image, x, y, r1, r2 T, c Color) {
 	if !(r1 <= r2) { panic("r1 is less than r2") }
 
-	var min_x int = max(boid.Floor(x-r2-1), 0)
-	var max_x int = min(boid.Ceil( x+r2+1), img.Width)
-	var min_y int = max(boid.Floor(y-r2-1), 0)
-	var max_y int = min(boid.Ceil( y+r2+1), img.Height)
+	var min_x int = max(Floor(x-r2-1), 0)
+	var max_x int = min(Ceil( x+r2+1), img.Width)
+	var min_y int = max(Floor(y-r2-1), 0)
+	var max_y int = min(Ceil( y+r2+1), img.Height)
 
 	for j := min_y; j < max_y; j++ {
 		for i := min_x; i < max_x; i++ {
@@ -207,10 +205,10 @@ func Draw_Ring[T boid.Number](img *Image, x, y, r1, r2 T, c Color) {
 
 
 // DDA line generation algorithm
-func Draw_Line[T boid.Number](img *Image, _p1, _p2 boid.Vec2[T], c Color) {
+func Draw_Line[T Number](img *Image, _p1, _p2 Vec2[T], c Color) {
 	// convert to int. image library should be friendly
-	p1 := boid.Transform[T, int](_p1)
-	p2 := boid.Transform[T, int](_p2)
+	p1 := Transform[T, int](_p1)
+	p2 := Transform[T, int](_p2)
 
 	if p1.X > p2.X {
 		tmp := p1
@@ -229,12 +227,12 @@ func Draw_Line[T boid.Number](img *Image, _p1, _p2 boid.Vec2[T], c Color) {
 		y1 := min(p1.Y, p2.Y)
 		y2 := max(p1.Y, p2.Y)
 		for y := max(y1, 0); y < min(y2, img.Height); y++ {
-			img.put_color(boid.Round(p1.X), y, c)
+			img.put_color(Round(p1.X), y, c)
 		}
 		return
 	}
 
-	steps := max(boid.Abs(dx), boid.Abs(dy))
+	steps := max(Abs(dx), Abs(dy))
 
 	X_inc := float32(dx) / float32(steps)
 	Y_inc := float32(dy) / float32(steps)
@@ -242,8 +240,8 @@ func Draw_Line[T boid.Number](img *Image, _p1, _p2 boid.Vec2[T], c Color) {
 	X := float32(p1.X)
 	Y := float32(p1.Y)
 	for range steps {
-		X_r := boid.Round(X)
-		Y_r := boid.Round(Y)
+		X_r := Round(X)
+		Y_r := Round(Y)
 
 		if img.point_within_bounds(X_r, Y_r) {
 			img.put_color(X_r, Y_r, c)
@@ -255,10 +253,10 @@ func Draw_Line[T boid.Number](img *Image, _p1, _p2 boid.Vec2[T], c Color) {
 }
 
 // https://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
-func Draw_Triangle[T boid.Number](img *Image, p1, p2, p3 boid.Vec2[T], color Color) {
-	v1 := boid.Transform[T, int](p1)
-	v2 := boid.Transform[T, int](p2)
-	v3 := boid.Transform[T, int](p3)
+func Draw_Triangle[T Number](img *Image, p1, p2, p3 Vec2[T], color Color) {
+	v1 := Transform[T, int](p1)
+	v2 := Transform[T, int](p2)
+	v3 := Transform[T, int](p3)
 
 	sortVerticesAscendingByY := func() {
 		// bubble sort, i wish go had a better way to do this, like passing a function into the sort interface, (v1, v2, v3 used to be an array)
@@ -286,7 +284,7 @@ func Draw_Triangle[T boid.Number](img *Image, p1, p2, p3 boid.Vec2[T], color Col
 			img.put_color(x, y, color)
 		}
 	}
-	fillBottomFlatTriangle := func(v1, v2, v3 boid.Vec2[int]) {
+	fillBottomFlatTriangle := func(v1, v2, v3 Vec2[int]) {
 		inv_slope_1 := float32(v2.X-v1.X) / float32(v2.Y-v1.Y)
 		inv_slope_2 := float32(v3.X-v1.X) / float32(v3.Y-v1.Y)
 
@@ -299,7 +297,7 @@ func Draw_Triangle[T boid.Number](img *Image, p1, p2, p3 boid.Vec2[T], color Col
 			cur_x_2 += inv_slope_2
 		}
 	}
-	fillTopFlatTriangle := func(v1, v2, v3 boid.Vec2[int]) {
+	fillTopFlatTriangle := func(v1, v2, v3 Vec2[int]) {
 		inv_slope_1 := float32(v3.X-v1.X) / float32(v3.Y-v1.Y)
 		inv_slope_2 := float32(v3.X-v2.X) / float32(v3.Y-v2.Y)
 
@@ -320,7 +318,7 @@ func Draw_Triangle[T boid.Number](img *Image, p1, p2, p3 boid.Vec2[T], color Col
 	} else {
 
 		// I did some rearranging here
-		v4 := boid.Vec2[int]{
+		v4 := Vec2[int]{
 			// X: int(float32(v1.X) + float32(v2.Y-v1.Y)/float32(v3.Y-v1.Y)*float32(v3.X-v1.X)),
 			X: (((v2.Y - v1.Y) * (v3.X - v1.X)) + (v1.X * (v3.Y - v1.Y))) / (v3.Y - v1.Y),
 			Y: v2.Y,
