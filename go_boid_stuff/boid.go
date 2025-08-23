@@ -37,33 +37,8 @@ type Position_And_Time struct {
 	Time time.Time
 }
 
-type Boid_simulation struct {
-	Boids []Boid
-
-	Width, Height Boid_Float
-
-	// for fast proximity detection.
-	Spacial_array Spacial_Array[Boid_Float]
-
-	// used for random draw forces
-	generators [NUM_RANDOM_GENERATORS]Random_Generator
-
-
-	// for animations.
-	Click_Positions_And_Times []Position_And_Time
-
-
-	// Thing a boid can hit, maybe they can see it as well?
-	Walls []Rectangle
-
-	// used to calculate how long until the next boid is spawned / de-spawned
-	//
-	// should this be a float64 since its about time?
-	spawn_timer Boid_Float
-
-	// ---------------------------------------------
-	// Properties, in rough order of when their used
-	// ---------------------------------------------
+type Properties struct {
+	// in rough order of when their used
 
 	Max_Boids          int `Property:"int" Range:"0;5000" Default:"100"`
 	// how many spawn / de-spawn per second.
@@ -101,8 +76,35 @@ type Boid_simulation struct {
 	Toggle_Bounding bool `Property:"bool" Default:"true"`
 
 
-	// This doesn't make sense to have here, but it is convenient.
 	Boid_Radius Boid_Float `Property:"float" Range:"0;10" Default:"2.5"`
+}
+
+type Boid_simulation struct {
+	Boids []Boid
+
+	Width, Height Boid_Float
+
+	// for fast proximity detection.
+	Spacial_array Spacial_Array[Boid_Float]
+
+	// used for random draw forces
+	generators [NUM_RANDOM_GENERATORS]Random_Generator
+
+
+	// for animations.
+	Click_Positions_And_Times []Position_And_Time
+
+
+	// Thing a boid can hit, maybe they can see it as well?
+	Walls []Rectangle
+
+	// used to calculate how long until the next boid is spawned / de-spawned
+	//
+	// should this be a float64 since its about time?
+	spawn_timer Boid_Float
+
+	// props Properties
+	props Properties
 }
 
 func New_boid_simulation(width, height Boid_Float) Boid_simulation {
@@ -138,12 +140,12 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 
 func (boid_sim *Boid_simulation) adjust_speed(vel Vec2[Boid_Float]) Vec2[Boid_Float] {
 	speed := vel.Mag()
-	if speed > boid_sim.Max_Speed {
+	if speed > boid_sim.props.Max_Speed {
 		// we don't really need this now that we have drag
 		// fmt.Printf("boid is faster than max\n")
 		// vel.Mult(boid_sim.Max_Speed / speed)
-	} else if speed < boid_sim.Min_Speed {
-		vel.Mult(boid_sim.Min_Speed / speed)
+	} else if speed < boid_sim.props.Min_Speed {
+		vel.Mult(boid_sim.props.Min_Speed / speed)
 	}
 
 	return vel
@@ -152,17 +154,17 @@ func (boid_sim *Boid_simulation) adjust_speed(vel Vec2[Boid_Float]) Vec2[Boid_Fl
 func (boid_sim Boid_simulation) bounding_force(index int) Vec2[Boid_Float] {
 	vel := Vec2[Boid_Float]{}
 
-	if boid_sim.Boids[index].Position.X < boid_sim.Margin {
+	if boid_sim.Boids[index].Position.X < boid_sim.props.Margin {
 		vel.X += 1
 	}
-	if boid_sim.Boids[index].Position.X > boid_sim.Width-boid_sim.Margin {
+	if boid_sim.Boids[index].Position.X > boid_sim.Width-boid_sim.props.Margin {
 		vel.X -= 1
 	}
 
-	if boid_sim.Boids[index].Position.Y < boid_sim.Margin {
+	if boid_sim.Boids[index].Position.Y < boid_sim.props.Margin {
 		vel.Y += 1
 	}
-	if boid_sim.Boids[index].Position.Y > boid_sim.Height-boid_sim.Margin {
+	if boid_sim.Boids[index].Position.Y > boid_sim.Height-boid_sim.props.Margin {
 		vel.Y -= 1
 	}
 
@@ -174,10 +176,10 @@ func (boid_sim Boid_simulation) bounding_force(index int) Vec2[Boid_Float] {
 func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	now := time.Now()
 
+	// make a little splash effect on left click.
 	if input.Left_Clicked {
 		Append(&boid_sim.Click_Positions_And_Times, Position_And_Time{input.Mouse_Pos, now})
 	}
-
 	for i := 0; i < len(boid_sim.Click_Positions_And_Times); i++ {
 		// remove if its been to long.
 		pos_and_time := boid_sim.Click_Positions_And_Times[i]
@@ -188,6 +190,10 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 		}
 	}
 
+	// make a new wall on right click and drag
+	// if 
+
+
 	// put the wall in the center
 	boid_sim.Walls[0] = make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)
 
@@ -195,15 +201,15 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	{ // spawn / despawn boids.
 		// TODO this could maybe do a ramp up / down?
 		boid_sim.spawn_timer += Boid_Float(dt)
-		time_to_spawn := 1 / boid_sim.Boid_Spawn_Rate
+		time_to_spawn := 1 / boid_sim.props.Boid_Spawn_Rate
 
 		for boid_sim.spawn_timer >= time_to_spawn {
 			boid_sim.spawn_timer -= time_to_spawn
 
 			// check if we even need to add a new boid.
-			if len(boid_sim.Boids) == boid_sim.Max_Boids { continue; }
+			if len(boid_sim.Boids) == boid_sim.props.Max_Boids { continue; }
 
-			if len(boid_sim.Boids) < boid_sim.Max_Boids {
+			if len(boid_sim.Boids) < boid_sim.props.Max_Boids {
 				// add 1 boid.
 
 				new_boid := Boid{
@@ -211,7 +217,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 						Boid_Float(rand.Float32()*float32(boid_sim.Width)),
 						Boid_Float(rand.Float32()*float32(boid_sim.Height)),
 					),
-					Velocity: Mult(Random_unit_vector[Boid_Float](), (boid_sim.Min_Speed + boid_sim.Max_Speed) / 2),
+					Velocity: Mult(Random_unit_vector[Boid_Float](), (boid_sim.props.Min_Speed + boid_sim.props.Max_Speed) / 2),
 				}
 
 				Append(&boid_sim.Boids, new_boid)
@@ -258,12 +264,12 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 		coh := Vec2[Boid_Float]{}
 
 		num_close_boids := 0
-		for j, near_pos := range boid_sim.Spacial_array.Iter_Over_Near(this_boid.Position, boid_sim.Visual_Range) {
+		for j, near_pos := range boid_sim.Spacial_array.Iter_Over_Near(this_boid.Position, boid_sim.props.Visual_Range) {
 			num_close_boids += 1
 
 			// if the near guy is super close. move away
 			dist_sqr := DistSqr(this_boid.Position, near_pos)
-			sep_min_dist_sqr := square(boid_sim.Separation_Min_Distance)
+			sep_min_dist_sqr := square(boid_sim.props.Separation_Min_Distance)
 			if dist_sqr < sep_min_dist_sqr {
 
 				// in percent, how close it is, 0 is same position
@@ -287,20 +293,20 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 		// divide by number of close boids.
 		if num_close_boids > 0 {
 			// TODO ? what was i doing here?
-			align.SetMag(boid_sim.Max_Speed)
+			align.SetMag(boid_sim.props.Max_Speed)
 			align.Sub(this_boid.Velocity)
 			align.Mult(1 / Boid_Float(num_close_boids))
 			align.Sub(this_boid.Velocity)
 
 			coh.Mult(1 / Boid_Float(num_close_boids))
 			coh.Sub(this_boid.Position)
-			// coh.SetMag(boid_sim.Max_Speed)
+			// coh.SetMag(boid_sim.props.Max_Speed)
 			// coh.Sub(this_boid.Velocity)
 		}
 
-		sep.Mult(boid_sim.Separation_Factor)
-		align.Mult(boid_sim.Alignment_Factor)
-		coh.Mult(boid_sim.Cohesion_Factor)
+		sep.Mult(boid_sim.props.Separation_Factor)
+		align.Mult(boid_sim.props.Alignment_Factor)
+		coh.Mult(boid_sim.props.Cohesion_Factor)
 
 		boid_sim.Boids[i].Acceleration.Add(sep, align, coh)
 	}
@@ -308,10 +314,10 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	// ------------------------------------
 	//          Bounding forces
 	// ------------------------------------
-	if boid_sim.Toggle_Bounding {
+	if boid_sim.props.Toggle_Bounding {
 		for i := range len(boid_sim.Boids) {
 			// TODO get rid of bounding force function, pull it in
-			bounding := Mult(boid_sim.bounding_force(i), boid_sim.Margin_Turn_Factor)
+			bounding := Mult(boid_sim.bounding_force(i), boid_sim.props.Margin_Turn_Factor)
 			boid_sim.Boids[i].Acceleration.Add(bounding)
 		}
 	}
@@ -324,7 +330,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 
 		// how far to advance the random generator,
 		// ..._Time_Dilation == seconds to switch generator.
-		time_advance := dt / float64(boid_sim.Random_Draw_Time_Dilation)
+		time_advance := dt / float64(boid_sim.props.Random_Draw_Time_Dilation)
 
 		var force_vectors [NUM_RANDOM_GENERATORS]Vec2[Boid_Float]
 		for i := range NUM_RANDOM_GENERATORS {
@@ -332,7 +338,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 			theta := random_number * 2 * math.Pi
 
 			rotated_vector := Unit_Vector_With_Rotation(Boid_Float(theta))
-			rotated_vector.Mult(boid_sim.Random_Draw_Factor)
+			rotated_vector.Mult(boid_sim.props.Random_Draw_Factor)
 
 			force_vectors[i] = rotated_vector
 		}
@@ -349,7 +355,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	// ------------------------------------
 	//         Center draw forces
 	// ------------------------------------
-	if boid_sim.Center_Draw_Factor != 0 && boid_sim.Center_Draw_Radius_Div != 0 {
+	if boid_sim.props.Center_Draw_Factor != 0 && boid_sim.props.Center_Draw_Radius_Div != 0 {
 		for i := range len(boid_sim.Boids) {
 			this_boid := boid_sim.Boids[i]
 
@@ -357,7 +363,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 			center := Make_Vec2(boid_sim.Width/2, boid_sim.Height/2)
 
 			// if they in in this circle, don't be drawn into the center.
-			min_radius := min(boid_sim.Width, boid_sim.Height) / boid_sim.Center_Draw_Radius_Div
+			min_radius := min(boid_sim.Width, boid_sim.Height) / boid_sim.props.Center_Draw_Radius_Div
 
 			if DistSqr(this_boid.Position, center) < square(min_radius) {
 				continue
@@ -366,7 +372,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 			// vector pointing towards the center.
 			center_pointer := Normalized(Sub(center, this_boid.Position))
 
-			center_draw := Mult(center_pointer, boid_sim.Center_Draw_Factor)
+			center_draw := Mult(center_pointer, boid_sim.props.Center_Draw_Factor)
 			boid_sim.Boids[i].Acceleration.Add(center_draw)
 		}
 	}
@@ -375,7 +381,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	//                 Wind
 	// ------------------------------------
 	for i := range len(boid_sim.Boids) {
-		wind := Make_Vec2(boid_sim.Wind_X_Factor, boid_sim.Wind_Y_Factor)
+		wind := Make_Vec2(boid_sim.props.Wind_X_Factor, boid_sim.props.Wind_Y_Factor)
 		boid_sim.Boids[i].Acceleration.Add(wind)
 	}
 
@@ -387,7 +393,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	if input.Left_Down {
 		for i := range len(boid_sim.Boids) {
 			toward_mouse := Sub(input.Mouse_Pos, boid_sim.Boids[i].Position)
-			force := Mult(Normalized(toward_mouse), boid_sim.Mouse_Draw_Factor)
+			force := Mult(Normalized(toward_mouse), boid_sim.props.Mouse_Draw_Factor)
 			boid_sim.Boids[i].Acceleration.Add(force)
 		}
 	}
@@ -408,10 +414,10 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 		v0 := boid_sim.Boids[i].Velocity
 		a := boid_sim.Boids[i].Acceleration
 
-		a.Mult(boid_sim.Final_Acceleration_Boost)
+		a.Mult(boid_sim.props.Final_Acceleration_Boost)
 		// just the negative velocity for drag, must be after the final acceleration boost.
 		// this stops things from getting to out of hand.
-		drag := Mult(v0, -boid_sim.Final_Drag_Coefficient)
+		drag := Mult(v0, -boid_sim.props.Final_Drag_Coefficient)
 		a.Add(drag)
 
 		boid_sim.Boids[i].Acceleration = a
@@ -425,13 +431,13 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 
 func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 	// make a bounding box.
-	bounds_x1 := boid_sim.Margin
-	bounds_x2 := boid_sim.Width  - boid_sim.Margin
+	bounds_x1 := boid_sim.props.Margin
+	bounds_x2 := boid_sim.Width  - boid_sim.props.Margin
 
-	bounds_y1 := boid_sim.Margin
-	bounds_y2 := boid_sim.Height - boid_sim.Margin
+	bounds_y1 := boid_sim.props.Margin
+	bounds_y2 := boid_sim.Height - boid_sim.props.Margin
 
-	boid_radius := boid_sim.Boid_Radius
+	boid_radius := boid_sim.props.Boid_Radius
 
 	time := Boid_Float(dt)
 	for i := range len(boid_sim.Boids) {
@@ -588,7 +594,7 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 
 		// TODO is this needed?
 		// // makes them wrap around the screen
-		// if boid_sim.Toggle_Wrapping {
+		// if boid_sim.props.Toggle_Wrapping {
 		// 	boid_sim.Boids[i].Position.X = proper_mod(boid_sim.Boids[i].Position.X, boid_sim.Width)
 		// 	boid_sim.Boids[i].Position.Y = proper_mod(boid_sim.Boids[i].Position.Y, boid_sim.Height)
 		// }

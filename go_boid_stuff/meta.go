@@ -69,7 +69,7 @@ func Get_property_structs() map[string]Property_Struct {
 func set_boid_defaults(boid_sim *Boid_simulation) {
 	property_structs := Get_property_structs()
 
-	s := reflect.ValueOf(boid_sim).Elem()
+	s := reflect.ValueOf(&boid_sim.props).Elem()
 
 	for name, prop_struct := range property_structs {
 
@@ -96,7 +96,7 @@ func (boid_sim *Boid_simulation) Set_Properties_with_map(the_map map[string]Unio
 
 	// check if the name is in the property names.
 	bad_name := false
-	for name, _ := range the_map {
+	for name := range the_map {
 		if !contains(property_structs, name) {
 			fmt.Printf("ERROR: '%v' is not in property structs\n", name)
 			bad_name = true
@@ -109,7 +109,7 @@ func (boid_sim *Boid_simulation) Set_Properties_with_map(the_map map[string]Unio
 
 		prop_struct := property_structs[name]
 
-		settable_field := reflect.ValueOf(boid_sim).Elem().FieldByName(name)
+		settable_field := reflect.ValueOf(&boid_sim.props).Elem().FieldByName(name)
 
 		switch prop_struct.Property_type {
 		case Property_Float: settable_field.SetFloat(union.As_float)
@@ -130,7 +130,7 @@ func create_property_structs() map[string]Property_Struct {
 	property_structs := make(map[string]Property_Struct, 0)
 
 	boid_sim := Boid_simulation{}
-	s := reflect.ValueOf(&boid_sim).Elem()
+	s := reflect.ValueOf(&boid_sim.props).Elem()
 	typeOfT := s.Type()
 
 	for i := range s.NumField() {

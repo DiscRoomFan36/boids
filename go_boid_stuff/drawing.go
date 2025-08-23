@@ -28,7 +28,7 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 	}
 
 	if DEBUG_BOUNDARY {
-		margin := int(boid_sim.Margin * scale_factor)
+		margin := int(boid_sim.props.Margin * scale_factor)
 		boundary_points := [4]Vec2[int]{
 			{X: margin, Y: margin},
 			{X: img.Width - margin, Y: margin},
@@ -47,7 +47,7 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		for _, b := range boid_sim.Boids {
 			x := b.Position.X * scale_factor
 			y := b.Position.Y * scale_factor
-			r := boid_sim.Visual_Range * scale_factor
+			r := boid_sim.props.Visual_Range * scale_factor
 			Draw_Circle(img, x, y, r, visual_radius_color)
 		}
 
@@ -56,7 +56,7 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		for _, b := range boid_sim.Boids {
 			x := b.Position.X * scale_factor
 			y := b.Position.Y * scale_factor
-			r := boid_sim.Separation_Min_Distance * scale_factor
+			r := boid_sim.props.Separation_Min_Distance * scale_factor
 			Draw_Circle(img, x, y, r, minimum_radius_color)
 		}
 	}
@@ -106,12 +106,12 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 			// someone who knows math explain this
 			boid_shape[i] = Rotate(boid_shape[i], theta)
 
-			boid_shape[i].Mult(boid_sim.Boid_Radius * scale_factor)
+			boid_shape[i].Mult(boid_sim.props.Boid_Radius * scale_factor)
 			boid_shape[i].Add(b.Position)
 		}
 
 		// get cool color for boid
-		speed := b.Velocity.Mag() / boid_sim.Max_Speed
+		speed := b.Velocity.Mag() / boid_sim.props.Max_Speed
 
 		const SHIFT_FACTOR = 2
 		H := math.Mod(float64(Clamp(speed, 0, 1)*360)*SHIFT_FACTOR, 360)
