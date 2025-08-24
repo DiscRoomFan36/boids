@@ -27,11 +27,12 @@ DONE
 * update the image.go file with generics. and make a better api
 * make a cool click animation.
 * move everything into a single go module
+* have typescript control the walls, make more walls. with right click and drag?
 
 
 NEXT
 
-* have typescript control the walls, make more walls. with right click and drag?
+* use middle_held in boid make new walls
 
 * boids dodge obstacles, put a big rect in the middle of the screen.
 
