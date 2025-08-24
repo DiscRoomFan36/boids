@@ -7,7 +7,7 @@ import (
 
 const DEBUG_SPACIAL_ARRAY = false
 const DEBUG_BOUNDARY      = true
-const DEBUG_HEADING       = true
+const DEBUG_HEADING       = false
 const DEBUG_VISUAL_RANGES = false
 
 var boid_heading_color  = Color{r: 10/256.0, g: 240/256.0, b: 10/256.0, a: 1}
@@ -61,8 +61,8 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		}
 	}
 
-	{ // draw the walls
-		for _, wall := range boid_sim.Walls {
+	{ // draw the rectangles
+		for _, wall := range boid_sim.Rectangles {
 			x, y, w, h := wall.Splat()
 			boundary_points := [4]Vec2[Boid_Float]{
 				{X: x,     Y: y    },
@@ -81,6 +81,24 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 				Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], Color_Red())
 			}
 		}
+	}
+
+	{ // Walls / Lines
+		for _, line := range boid_sim.Walls {
+			p1, p2 := line.to_vec()
+			p1.Mult(scale_factor)
+			p2.Mult(scale_factor)
+			Draw_Line(img, p1, p2, Color_Red())
+		}
+	}
+
+	if boid_sim.making_new_wall {
+		p1 := boid_sim.new_wall_start
+		// get a better static analyzer.
+		p2 := input_status.Mouse_Pos
+		p1.Mult(scale_factor)
+		p2.Mult(scale_factor)
+		Draw_Line(img, p1, p2, Color_Green())
 	}
 
 	// NOTE i would put this in a go routine, but wasm doesn't do multithreading, fuck

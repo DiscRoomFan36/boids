@@ -57,7 +57,7 @@ func Update_Input(prev Input_Status, is_left_down, is_middle_down, is_right_down
 
 		Left_Released  :    prev.Left_Down   && !is_left_down,
 		Middle_Released:    prev.Middle_Down && !is_middle_down,
-		Right_Released :    prev.Left_Down   && !is_left_down,
+		Right_Released :    prev.Right_Down  && !is_right_down,
 
 		// Left_Held  :        ,
 		// Middle_Held:        ,

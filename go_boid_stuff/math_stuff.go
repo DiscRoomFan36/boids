@@ -5,6 +5,8 @@ import (
 	"math/rand"
 )
 
+// TODO just make it float32? i like the generics, but it might be a bit much.
+
 // The Classic Vector, i wouldn't do all this [T Number] stuff if go has a better math library... well... maybe i would
 type Vec2[T Number] struct {
 	X, Y T
@@ -52,9 +54,8 @@ func Mult[T Number](a Vec2[T], s T) Vec2[T] {
 	return a
 }
 
-func (a Vec2[Number]) Dot() Number {
-	return a.X*a.X + a.Y*a.Y
-}
+func Dot[T Number](a, b Vec2[T]) T { return a.X*b.X + a.Y*b.Y }
+func (a Vec2[Number]) Dot() Number { return Dot(a, a) }
 
 func (a Vec2[Number]) Mag() Number {
 	return Number(math.Sqrt(float64(a.Dot())))
@@ -127,3 +128,37 @@ func Unit_Vector_With_Rotation[T Float](theta T) Vec2[T] {
 	sin, cos := math.Sincos(float64(theta))
 	return Make_Vec2(T(cos), T(sin))
 }
+
+
+// kinda annoying that I have Boid_Float here, but I really only need these with the floats.
+
+type Rectangle struct {
+	x, y, w, h Boid_Float
+}
+
+func make_rectangle(x, y, w, h Boid_Float) Rectangle {
+	return Rectangle{x: x, y: y, w: w, h: h}
+}
+
+func (rect Rectangle) Splat() (Boid_Float, Boid_Float, Boid_Float, Boid_Float) {
+	return rect.x, rect.y, rect.w, rect.h
+}
+
+
+
+type Line struct {
+	x1, y1, x2, y2 Boid_Float
+}
+
+func (line Line) to_vec() (Vec2[Boid_Float], Vec2[Boid_Float]) {
+	return Vec2[Boid_Float]{line.x1, line.y1}, Vec2[Boid_Float]{line.x2, line.y2}
+}
+
+// func rectangle_to_lines(x, y, w, h Boid_Float) []Line {
+// 	lines := make([]Line, 4)
+// 	lines[0] = Line{x,     y,     x + w, y    }
+// 	lines[1] = Line{x + w, y,     x + w, y + h}
+// 	lines[2] = Line{x + w, y + h, x,     y + h}
+// 	lines[3] = Line{x,     y + h, x,     y}
+// 	return lines
+// }

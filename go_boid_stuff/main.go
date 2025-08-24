@@ -82,10 +82,6 @@ func SetProperties(this js.Value, args []js.Value) any {
 }
 
 
-// I feel like go is guilt tripping me with this syntax
-var mouse_pos           Vec2[Boid_Float]
-var input_status        Input_Status
-
 func js_to_Vector(obj js.Value) Vec2[Boid_Float] {
 	result := Vec2[float64]{
 		X: obj.Get("x").Float(),
@@ -93,6 +89,11 @@ func js_to_Vector(obj js.Value) Vec2[Boid_Float] {
 	}
 	return Transform[float64, Boid_Float](result)
 }
+
+
+// I feel like go is guilt tripping me with this syntax
+var input_status Input_Status
+
 
 // Javascript function
 //
@@ -104,7 +105,7 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 
 	mouse := args[0].Get("mouse")
 
-	mouse_pos = js_to_Vector(mouse.Get("pos"))
+	mouse_pos := js_to_Vector(mouse.Get("pos"))
 	mouse_pos = World_to_boid_vec(mouse_pos)
 
 	input_status = Update_Input(

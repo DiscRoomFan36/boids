@@ -68,3 +68,22 @@ func Round[T Number](x T) int {
 	return rounded
 }
 
+
+func Sloppy_Equal[T Float](a, b T) bool {
+	// some small number
+	const EPSILON = 0.000000001
+	return Abs(a - b) < EPSILON
+}
+
+// outputs a number from [0, b). ignore the float64. go math module is dumb.
+func Proper_Mod[T Float](a, b T) T {
+	return T(math.Mod(math.Mod(float64(a), float64(b))+float64(b), float64(b)))
+}
+
+func Square[T Number](x T) T {
+	return x * x
+}
+
+func Sqrt[T Float](x T) T {
+	return T(math.Sqrt(float64(x)))
+}

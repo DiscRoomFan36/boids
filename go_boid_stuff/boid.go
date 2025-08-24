@@ -14,18 +14,6 @@ const CLICK_FADE_TIME = 1
 
 type Boid_Float float32
 
-type Rectangle struct {
-	x, y, w, h Boid_Float
-}
-
-func make_rectangle(x, y, w, h Boid_Float) Rectangle {
-	return Rectangle{x: x, y: y, w: w, h: h}
-}
-
-func (rect Rectangle) Splat() (Boid_Float, Boid_Float, Boid_Float, Boid_Float) {
-	return rect.x, rect.y, rect.w, rect.h
-}
-
 type Boid struct {
 	Position Vec2[Boid_Float]
 	Velocity Vec2[Boid_Float]
@@ -95,15 +83,19 @@ type Boid_simulation struct {
 	Click_Positions_And_Times []Position_And_Time
 
 
+	making_new_wall bool
+	new_wall_start Vec2[Boid_Float]
+
+
 	// Thing a boid can hit, maybe they can see it as well?
-	Walls []Rectangle
+	Walls []Line
+	Rectangles []Rectangle
 
 	// used to calculate how long until the next boid is spawned / de-spawned
 	//
 	// should this be a float64 since its about time?
 	spawn_timer Boid_Float
 
-	// props Properties
 	props Properties
 }
 
@@ -118,8 +110,11 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 
 		Click_Positions_And_Times: make([]Position_And_Time, 0, 32),
 
+		making_new_wall: false,
+
 		// just make a temp thing in the middle of the field.
-		Walls: make([]Rectangle, 1),
+		Walls: make([]Line, 0),
+		Rectangles: make([]Rectangle, 0),
 
 		spawn_timer: 0,
 	}
@@ -133,7 +128,9 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 		boid_sim.generators[i].t = random_32()
 	}
 
-	boid_sim.Walls[0] = make_rectangle(width/2-50, height/2-50, 100, 100)
+	// put the wall in the center
+	// Append(&boid_sim.Walls1, rectangle_to_lines(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)...)
+	Append(&boid_sim.Rectangles, make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100))
 
 	return boid_sim
 }
@@ -191,11 +188,27 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	}
 
 	// make a new wall on right click and drag
-	// if 
+	if input.Middle_Clicked {
+		// fmt.Printf("Middle Clicked\n")
+		boid_sim.making_new_wall = true
+		boid_sim.new_wall_start = input.Mouse_Pos
+	}
+	if boid_sim.making_new_wall {
+		// TODO detect if dragging.
+		if input.Middle_Released {
+			// fmt.Printf("Middle Release\n")
+			boid_sim.making_new_wall = false
+			new_line := Line{
+				boid_sim.new_wall_start.X, boid_sim.new_wall_start.Y,
+				input.Mouse_Pos.X, input.Mouse_Pos.Y,
+			}
 
+			Append(&boid_sim.Walls, new_line)
+		}
+	}
 
-	// put the wall in the center
-	boid_sim.Walls[0] = make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)
+	// update the position of the middle rectangle, to move with the screen.
+	boid_sim.Rectangles[0] = make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)
 
 
 	{ // spawn / despawn boids.
@@ -269,7 +282,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 
 			// if the near guy is super close. move away
 			dist_sqr := DistSqr(this_boid.Position, near_pos)
-			sep_min_dist_sqr := square(boid_sim.props.Separation_Min_Distance)
+			sep_min_dist_sqr := Square(boid_sim.props.Separation_Min_Distance)
 			if dist_sqr < sep_min_dist_sqr {
 
 				// in percent, how close it is, 0 is same position
@@ -365,9 +378,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 			// if they in in this circle, don't be drawn into the center.
 			min_radius := min(boid_sim.Width, boid_sim.Height) / boid_sim.props.Center_Draw_Radius_Div
 
-			if DistSqr(this_boid.Position, center) < square(min_radius) {
-				continue
-			}
+			if DistSqr(this_boid.Position, center) < Square(min_radius) { continue }
 
 			// vector pointing towards the center.
 			center_pointer := Normalized(Sub(center, this_boid.Position))
@@ -429,7 +440,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	boid_sim.finally_move_and_collide(dt)
 }
 
-func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
+func (boid_sim *Boid_simulation) finally_move_and_collide(dt_ float64) {
 	// make a bounding box.
 	bounds_x1 := boid_sim.props.Margin
 	bounds_x2 := boid_sim.Width  - boid_sim.props.Margin
@@ -439,7 +450,10 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 
 	boid_radius := boid_sim.props.Boid_Radius
 
-	time := Boid_Float(dt)
+	dt := Boid_Float(dt_)
+
+	// TODO clean this mess up. god damn, its messy
+
 	for i := range len(boid_sim.Boids) {
 		boid := &boid_sim.Boids[i]
 
@@ -450,7 +464,7 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 		a := boid.Acceleration
 
 		// v1 = a*t + v0
-		v1 := Add(Mult(a, time), v0)
+		v1 := Add(Mult(a, dt), v0)
 
 		// adjust the velocity
 		// TODO do we even have to limit speed? drag dose that for us.
@@ -466,10 +480,11 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 		//          Collisions
 		// -------------------------------
 
-		vx := v_avg_x * time
-		vy := v_avg_y * time
+		vx := v_avg_x * dt
+		vy := v_avg_y * dt
 
-		boid_x, boid_y := p0.Splat()
+		start_boid_pos := p0
+		boid_x, boid_y := start_boid_pos.Splat()
 
 		// make it so a boid can only hit one thing.
 		// TODO be smarter?
@@ -504,9 +519,33 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 		//           wall collisions
 		// --------------------------------------
 
-		// loop over all walls,
+		for _, line := range boid_sim.Walls {
+			if hit_something { continue }
+
+			l0, l1 := line.to_vec()
+
+			new_boid_pos := Make_Vec2(new_x, new_y)
+
+			closest := closest_point_on_line_to_point(l0, l1, new_boid_pos)
+			if DistSqr(closest, start_boid_pos) > Square(boid_radius) { continue }
+
+			hit_something = true
+			// TODO bounce off line.
+
+			normal := Normalized(Sub(start_boid_pos, closest))
+			dot := Dot(normal, Make_Vec2(new_vx, new_vy))
+
+			// if the boid is already going in the same direction.
+			// maybe also hit_something = false?
+			if dot > 0 { continue }
+
+			new_vx -= 2 * dot * normal.X;
+			new_vy -= 2 * dot * normal.Y;
+		}
+
+		// loop over all Rectangles,
 		// TODO maybe use spacial array for speed?
-		for _, wall := range boid_sim.Walls {
+		for _, wall := range boid_sim.Rectangles {
 
 			if !hit_something {
 				// collide with boid_sim.wall
@@ -530,11 +569,11 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 						// bounce the boid off the box
 
 						// if the px == boid_x, you hit a wall, just flip a sign.
-						if sloppy_equal(new_x, px) {
+						if Sloppy_Equal(new_x, px) {
 							new_y = bounce_1d(boid_y, boid_radius, vy, py)
 							new_vy *= -1 // flip the y velocity
 
-						} else if sloppy_equal(new_y, py) {
+						} else if Sloppy_Equal(new_y, py) {
 							new_x = bounce_1d(boid_x, boid_radius, vx, px)
 							new_vx *= -1 // flip the x velocity
 
@@ -548,7 +587,7 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 							cx := boid_x
 							cy := boid_y
 
-							q := -(2 * (vx*(cx - px) + vy*(cy - py))) / square(boid_radius)
+							q := -(2 * (vx*(cx - px) + vy*(cy - py))) / Square(boid_radius)
 
 							// velocity after collision with corner.
 							vx_after := vx + q*(cx - px)
@@ -575,8 +614,8 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 							// (vx / time) * 2 - v0.X = v1.X
 							// v1.X = (vx / time) * 2 - v0.X
 
-							new_vx = vx_after / time * 2 - v0.X
-							new_vy = vy_after / time * 2 - v0.Y
+							new_vx = vx_after / dt * 2 - v0.X
+							new_vy = vy_after / dt * 2 - v0.Y
 						}
 
 					}
@@ -601,11 +640,6 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt float64) {
 	}
 }
 
-func sloppy_equal[T Float](a, b T) bool {
-	// some small number
-	const EPSILON = 0.000000001
-	return abs(a - b) < EPSILON
-}
 
 // returns if there was a collision, and the closest point on the rectangle.
 func circle_rectangle_collision(x, y, r Boid_Float, rect Rectangle) (bool, Boid_Float, Boid_Float) {
@@ -617,9 +651,34 @@ func circle_rectangle_collision(x, y, r Boid_Float, rect Rectangle) (bool, Boid_
 	py = min(py, rect.y + rect.h)
 
 	// check for collision
-	collision := square(x - px) + square(y - py) < square(r)
+	collision := Square(x - px) + Square(y - py) < Square(r)
 
 	return collision, px, py
+}
+
+
+// Returns the minimum distance between line segment vw and point p
+//
+// https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+func closest_point_on_line_to_point[T Float](v Vec2[T], w Vec2[T], p Vec2[T]) Vec2[T] {
+
+	length_sqr := DistSqr(v, w)                   // i.e. |w-v|^2 -  avoid a sqrt
+	if (Sloppy_Equal(length_sqr, 0)) { return v } // v == w case
+
+	// Consider the line extending the segment, parameterized as v + t (w - v).
+	// We find projection of point p onto the line. 
+	// It falls where t = [(p-v) . (w-v)] / |w-v|^2
+	p_sub_v := Sub(p, v);
+	w_sub_v := Sub(w, v);
+	t := Dot(p_sub_v, w_sub_v) / length_sqr;
+
+	// We clamp t from [0,1] to handle points outside the segment vw.
+	if        (t < 0) { t = 0
+	} else if (t > 1) { t = 1 }
+
+	// projection = v + t * (w - v);
+	projection := Add(v, Mult(w_sub_v, t)) // Projection falls on the segment
+	return projection;
 }
 
 
@@ -672,20 +731,3 @@ func bounce_1d[T Number](x, r, v, w T) T {
 }
 
 
-// outputs a number from [0, b). ignore the float64. go math module is dumb.
-func proper_mod[T Float](a, b T) T {
-	return T(math.Mod(math.Mod(float64(a), float64(b))+float64(b), float64(b)))
-}
-
-func square[T Number](x T) T {
-	return x * x
-}
-
-func abs[T Float](x T) T {
-	if x < 0 { return -x }
-	return x
-}
-
-func sqrt[T Float](x T) T {
-	return T(math.Sqrt(float64(x)))
-}
