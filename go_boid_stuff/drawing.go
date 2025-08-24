@@ -30,10 +30,10 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 	if DEBUG_BOUNDARY {
 		margin := int(boid_sim.props.Margin * scale_factor)
 		boundary_points := [4]Vec2[int]{
-			{X: margin, Y: margin},
-			{X: img.Width - margin, Y: margin},
-			{X: img.Width - margin, Y: img.Height - margin},
-			{X: margin, Y: img.Height - margin},
+			{x: margin, y: margin},
+			{x: img.Width - margin, y: margin},
+			{x: img.Width - margin, y: img.Height - margin},
+			{x: margin, y: img.Height - margin},
 		}
 
 		for i := range len(boundary_points) {
@@ -45,8 +45,8 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		// Draw visual radius.
 		visual_radius_color := HSL_to_RGB(50, 0.7, 0.9)
 		for _, b := range boid_sim.Boids {
-			x := b.Position.X * scale_factor
-			y := b.Position.Y * scale_factor
+			x := b.Position.x * scale_factor
+			y := b.Position.y * scale_factor
 			r := boid_sim.props.Visual_Range * scale_factor
 			Draw_Circle(img, x, y, r, visual_radius_color)
 		}
@@ -54,8 +54,8 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		// Draw minimum visual radius. (for separation.)
 		minimum_radius_color := HSL_to_RGB(270, 0.7, 0.7)
 		for _, b := range boid_sim.Boids {
-			x := b.Position.X * scale_factor
-			y := b.Position.Y * scale_factor
+			x := b.Position.x * scale_factor
+			y := b.Position.y * scale_factor
 			r := boid_sim.props.Separation_Min_Distance * scale_factor
 			Draw_Circle(img, x, y, r, minimum_radius_color)
 		}
@@ -65,16 +65,16 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		for _, wall := range boid_sim.Rectangles {
 			x, y, w, h := wall.Splat()
 			boundary_points := [4]Vec2[Boid_Float]{
-				{X: x,     Y: y    },
-				{X: x + w, Y: y    },
-				{X: x + w, Y: y + h},
-				{X: x,     Y: y + h},
+				{x: x,     y: y    },
+				{x: x + w, y: y    },
+				{x: x + w, y: y + h},
+				{x: x,     y: y + h},
 			}
 
 			// scale the points
 			for i := range len(boundary_points) {
-				boundary_points[i].X *= scale_factor
-				boundary_points[i].Y *= scale_factor
+				boundary_points[i].x *= scale_factor
+				boundary_points[i].y *= scale_factor
 			}
 
 			for i := range len(boundary_points) {
@@ -111,10 +111,10 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		// Draw boid body
 		// TODO maybe some LOD shit, where its just a triangle? 2x speed?
 		boid_shape := [4]Vec2[Boid_Float]{
-			{X: 0, Y: 1},      // tip
-			{X: 0, Y: -0.5},   // back
-			{X: 1, Y: -0.75},  // wing1
-			{X: -1, Y: -0.75}, // wing2
+			{x: 0, y: 1},      // tip
+			{x: 0, y: -0.5},   // back
+			{x: 1, y: -0.75},  // wing1
+			{x: -1, y: -0.75}, // wing2
 		}
 
 		// Rotate to face them in the right direction
@@ -165,7 +165,7 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		const RING_WIDTH = 2
 
 		size_factor := ease_out_quint(percent)
-		Draw_Ring(img, pos.X, pos.Y, Boid_Float(size_factor*SIZE_SCALE), Boid_Float(size_factor*SIZE_SCALE+RING_WIDTH), color)
+		Draw_Ring(img, pos.x, pos.y, Boid_Float(size_factor*SIZE_SCALE), Boid_Float(size_factor*SIZE_SCALE+RING_WIDTH), color)
 	}
 
 	// { // debug mouse pos
@@ -209,10 +209,10 @@ func draw_spacial_array_into_image[T Number](img *Image, sp_array Spacial_Array[
 	{ // draw the outsides.
 
 		bounding_box := [4]Vec2[T]{
-			{X: min_x, Y: min_y},
-			{X: max_x, Y: min_y},
-			{X: max_x, Y: max_y},
-			{X: min_x, Y: max_y},
+			{x: min_x, y: min_y},
+			{x: max_x, y: min_y},
+			{x: max_x, y: max_y},
+			{x: min_x, y: max_y},
 		}
 		for i := range len(bounding_box) { bounding_box[i].Mult(scale) }
 
@@ -233,8 +233,8 @@ func draw_spacial_array_into_image[T Number](img *Image, sp_array Spacial_Array[
 		for i := 1; i < sp_array.Boxes_wide; i++ {
 			x := sp_array.Min_x + step_x*T(i)
 
-			p1 := Vec2[T]{X: x, Y: sp_array.Min_y}
-			p2 := Vec2[T]{X: x, Y: sp_array.Max_y}
+			p1 := Vec2[T]{x: x, y: sp_array.Min_y}
+			p2 := Vec2[T]{x: x, y: sp_array.Max_y}
 
 			p1.Mult(scale)
 			p2.Mult(scale)
@@ -246,8 +246,8 @@ func draw_spacial_array_into_image[T Number](img *Image, sp_array Spacial_Array[
 		for j := 1; j < sp_array.Boxes_high; j++ {
 			y := sp_array.Min_y + step_y*T(j)
 
-			p1 := Vec2[T]{X: sp_array.Min_x, Y: y}
-			p2 := Vec2[T]{X: sp_array.Max_x, Y: y}
+			p1 := Vec2[T]{x: sp_array.Min_x, y: y}
+			p2 := Vec2[T]{x: sp_array.Max_x, y: y}
 
 			p1.Mult(scale)
 			p2.Mult(scale)

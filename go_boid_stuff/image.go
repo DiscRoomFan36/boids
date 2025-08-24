@@ -210,24 +210,24 @@ func Draw_Line[T Number](img *Image, _p1, _p2 Vec2[T], c Color) {
 	p1 := Transform[T, int](_p1)
 	p2 := Transform[T, int](_p2)
 
-	if p1.X > p2.X {
+	if p1.x > p2.x {
 		tmp := p1
 		p1 = p2
 		p2 = tmp
 	}
 
-	dx := p2.X - p1.X
-	dy := p2.Y - p1.Y
+	dx := p2.x - p1.x
+	dy := p2.y - p1.y
 
 	if dx == 0 {
-		if !(0 <= p1.X && p1.X < img.Width) {
+		if !(0 <= p1.x && p1.x < img.Width) {
 			return
 		}
 		// draw up down line
-		y1 := min(p1.Y, p2.Y)
-		y2 := max(p1.Y, p2.Y)
+		y1 := min(p1.y, p2.y)
+		y2 := max(p1.y, p2.y)
 		for y := max(y1, 0); y < min(y2, img.Height); y++ {
-			img.put_color(Round(p1.X), y, c)
+			img.put_color(Round(p1.x), y, c)
 		}
 		return
 	}
@@ -237,8 +237,8 @@ func Draw_Line[T Number](img *Image, _p1, _p2 Vec2[T], c Color) {
 	X_inc := float32(dx) / float32(steps)
 	Y_inc := float32(dy) / float32(steps)
 
-	X := float32(p1.X)
-	Y := float32(p1.Y)
+	X := float32(p1.x)
+	Y := float32(p1.y)
 	for range steps {
 		X_r := Round(X)
 		Y_r := Round(Y)
@@ -260,17 +260,17 @@ func Draw_Triangle[T Number](img *Image, p1, p2, p3 Vec2[T], color Color) {
 
 	sortVerticesAscendingByY := func() {
 		// bubble sort, i wish go had a better way to do this, like passing a function into the sort interface, (v1, v2, v3 used to be an array)
-		if v1.Y > v2.Y {
+		if v1.y > v2.y {
 			v1, v2 = v2, v1
 		}
-		if v2.Y > v3.Y {
+		if v2.y > v3.y {
 			v2, v3 = v3, v2
 		}
-		if v1.Y > v2.Y {
+		if v1.y > v2.y {
 			v1, v2 = v2, v1
 		}
 
-		if !(v1.Y <= v2.Y && v2.Y <= v3.Y) {
+		if !(v1.y <= v2.y && v2.y <= v3.y) {
 			log.Fatalf("Did not sort vertex's correctly, got %v, %v, %v\n", v1, v2, v3)
 		}
 	}
@@ -285,43 +285,43 @@ func Draw_Triangle[T Number](img *Image, p1, p2, p3 Vec2[T], color Color) {
 		}
 	}
 	fillBottomFlatTriangle := func(v1, v2, v3 Vec2[int]) {
-		inv_slope_1 := float32(v2.X-v1.X) / float32(v2.Y-v1.Y)
-		inv_slope_2 := float32(v3.X-v1.X) / float32(v3.Y-v1.Y)
+		inv_slope_1 := float32(v2.x-v1.x) / float32(v2.y-v1.y)
+		inv_slope_2 := float32(v3.x-v1.x) / float32(v3.y-v1.y)
 
-		cur_x_1 := float32(v1.X)
-		cur_x_2 := float32(v1.X)
+		cur_x_1 := float32(v1.x)
+		cur_x_2 := float32(v1.x)
 
-		for scan_line_Y := v1.Y; scan_line_Y <= v2.Y; scan_line_Y++ {
+		for scan_line_Y := v1.y; scan_line_Y <= v2.y; scan_line_Y++ {
 			draw_line(int(cur_x_1), int(cur_x_2), scan_line_Y)
 			cur_x_1 += inv_slope_1
 			cur_x_2 += inv_slope_2
 		}
 	}
 	fillTopFlatTriangle := func(v1, v2, v3 Vec2[int]) {
-		inv_slope_1 := float32(v3.X-v1.X) / float32(v3.Y-v1.Y)
-		inv_slope_2 := float32(v3.X-v2.X) / float32(v3.Y-v2.Y)
+		inv_slope_1 := float32(v3.x-v1.x) / float32(v3.y-v1.y)
+		inv_slope_2 := float32(v3.x-v2.x) / float32(v3.y-v2.y)
 
-		cur_x_1 := float32(v3.X)
-		cur_x_2 := float32(v3.X)
+		cur_x_1 := float32(v3.x)
+		cur_x_2 := float32(v3.x)
 
-		for scan_line_Y := v3.Y; scan_line_Y > v1.Y; scan_line_Y-- {
+		for scan_line_Y := v3.y; scan_line_Y > v1.y; scan_line_Y-- {
 			draw_line(int(cur_x_1), int(cur_x_2), scan_line_Y)
 			cur_x_1 -= inv_slope_1
 			cur_x_2 -= inv_slope_2
 		}
 	}
 
-	if v2.Y == v3.Y {
+	if v2.y == v3.y {
 		fillBottomFlatTriangle(v1, v2, v3)
-	} else if v1.Y == v2.Y {
+	} else if v1.y == v2.y {
 		fillTopFlatTriangle(v1, v2, v3)
 	} else {
 
 		// I did some rearranging here
 		v4 := Vec2[int]{
 			// X: int(float32(v1.X) + float32(v2.Y-v1.Y)/float32(v3.Y-v1.Y)*float32(v3.X-v1.X)),
-			X: (((v2.Y - v1.Y) * (v3.X - v1.X)) + (v1.X * (v3.Y - v1.Y))) / (v3.Y - v1.Y),
-			Y: v2.Y,
+			x: (((v2.y - v1.y) * (v3.x - v1.x)) + (v1.x * (v3.y - v1.y))) / (v3.y - v1.y),
+			y: v2.y,
 		}
 
 		fillBottomFlatTriangle(v1, v2, v4)

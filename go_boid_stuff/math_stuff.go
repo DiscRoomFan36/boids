@@ -9,7 +9,7 @@ import (
 
 // The Classic Vector, i wouldn't do all this [T Number] stuff if go has a better math library... well... maybe i would
 type Vec2[T Number] struct {
-	X, Y T
+	x, y T
 }
 
 func Make_Vec2[T Number](x, y T) Vec2[T] {
@@ -17,15 +17,15 @@ func Make_Vec2[T Number](x, y T) Vec2[T] {
 }
 
 func (a Vec2[Number]) Splat() (Number, Number) {
-	return a.X, a.Y
+	return a.x, a.y
 }
 
 // These math operators a dumb actually.
 
 func (a *Vec2[Number]) Add(vs ...Vec2[Number]) {
 	for _, b := range vs {
-		a.X += b.X
-		a.Y += b.Y
+		a.x += b.x
+		a.y += b.y
 	}
 }
 func Add[T Number](a Vec2[T], vs ...Vec2[T]) Vec2[T] {
@@ -36,8 +36,8 @@ func Add[T Number](a Vec2[T], vs ...Vec2[T]) Vec2[T] {
 
 func (a *Vec2[Number]) Sub(vs ...Vec2[Number]) {
 	for _, b := range vs {
-		a.X -= b.X
-		a.Y -= b.Y
+		a.x -= b.x
+		a.y -= b.y
 	}
 }
 func Sub[T Number](a Vec2[T], vs ...Vec2[T]) Vec2[T] {
@@ -46,15 +46,15 @@ func Sub[T Number](a Vec2[T], vs ...Vec2[T]) Vec2[T] {
 }
 
 func (a *Vec2[Number]) Mult(s Number) {
-	a.X *= s
-	a.Y *= s
+	a.x *= s
+	a.y *= s
 }
 func Mult[T Number](a Vec2[T], s T) Vec2[T] {
 	a.Mult(s)
 	return a
 }
 
-func Dot[T Number](a, b Vec2[T]) T { return a.X*b.X + a.Y*b.Y }
+func Dot[T Number](a, b Vec2[T]) T { return a.x*b.x + a.y*b.y }
 func (a Vec2[Number]) Dot() Number { return Dot(a, a) }
 
 func (a Vec2[Number]) Mag() Number {
@@ -73,7 +73,7 @@ func (a *Vec2[Number]) ClampMag(mini, maxi Number) {
 	mag := a.Mag()
 	if mag == 0 {
 		// if the vector is zero, just set x to something. maybe a random vector?
-		a.X = mini
+		a.x = mini
 		return
 	}
 
@@ -103,13 +103,13 @@ func Random_unit_vector[T Float]() Vec2[T] {
 // Really useful helper, would recommend
 func Transform[T Number, U Number](v Vec2[T]) Vec2[U] {
 	return Vec2[U]{
-		X: U(v.X),
-		Y: U(v.Y),
+		x: U(v.x),
+		y: U(v.y),
 	}
 }
 
 func GetTheta[T Float](a Vec2[T]) T {
-	return T(math.Atan2(float64(a.Y), float64(a.X)))
+	return T(math.Atan2(float64(a.y), float64(a.x)))
 }
 
 // https://math.stackexchange.com/questions/2506306/rotation-of-a-vector-around-origin
@@ -118,8 +118,8 @@ func GetTheta[T Float](a Vec2[T]) T {
 func Rotate[T Float](a Vec2[T], theta T) Vec2[T] {
 	sin, cos := math.Sincos(float64(theta))
 
-	x := float64(a.X)*cos - float64(a.Y)*sin
-	y := float64(a.X)*sin + float64(a.Y)*cos
+	x := float64(a.x)*cos - float64(a.y)*sin
+	y := float64(a.x)*sin + float64(a.y)*cos
 
 	return Vec2[T]{T(x), T(y)}
 }

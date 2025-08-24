@@ -84,8 +84,8 @@ func SetProperties(this js.Value, args []js.Value) any {
 
 func js_to_Vector(obj js.Value) Vec2[Boid_Float] {
 	result := Vec2[float64]{
-		X: obj.Get("x").Float(),
-		Y: obj.Get("y").Float(),
+		x: obj.Get("x").Float(),
+		y: obj.Get("y").Float(),
 	}
 	return Transform[float64, Boid_Float](result)
 }

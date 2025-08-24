@@ -151,18 +151,18 @@ func (boid_sim *Boid_simulation) adjust_speed(vel Vec2[Boid_Float]) Vec2[Boid_Fl
 func (boid_sim Boid_simulation) bounding_force(index int) Vec2[Boid_Float] {
 	vel := Vec2[Boid_Float]{}
 
-	if boid_sim.Boids[index].Position.X < boid_sim.props.Margin {
-		vel.X += 1
+	if boid_sim.Boids[index].Position.x < boid_sim.props.Margin {
+		vel.x += 1
 	}
-	if boid_sim.Boids[index].Position.X > boid_sim.Width-boid_sim.props.Margin {
-		vel.X -= 1
+	if boid_sim.Boids[index].Position.x > boid_sim.Width-boid_sim.props.Margin {
+		vel.x -= 1
 	}
 
-	if boid_sim.Boids[index].Position.Y < boid_sim.props.Margin {
-		vel.Y += 1
+	if boid_sim.Boids[index].Position.y < boid_sim.props.Margin {
+		vel.y += 1
 	}
-	if boid_sim.Boids[index].Position.Y > boid_sim.Height-boid_sim.props.Margin {
-		vel.Y -= 1
+	if boid_sim.Boids[index].Position.y > boid_sim.Height-boid_sim.props.Margin {
+		vel.y -= 1
 	}
 
 	return vel
@@ -199,8 +199,8 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 			// fmt.Printf("Middle Release\n")
 			boid_sim.making_new_wall = false
 			new_line := Line{
-				boid_sim.new_wall_start.X, boid_sim.new_wall_start.Y,
-				input.Mouse_Pos.X, input.Mouse_Pos.Y,
+				boid_sim.new_wall_start.x, boid_sim.new_wall_start.y,
+				input.Mouse_Pos.x, input.Mouse_Pos.y,
 			}
 
 			Append(&boid_sim.Walls, new_line)
@@ -293,8 +293,8 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 				// the closer the stronger
 				force := 1 / closeness
 
-				sep.X += (this_boid.Position.X - near_pos.X) * force
-				sep.Y += (this_boid.Position.Y - near_pos.Y) * force
+				sep.x += (this_boid.Position.x - near_pos.x) * force
+				sep.y += (this_boid.Position.y - near_pos.y) * force
 			}
 
 			// make the velocity's match.
@@ -360,8 +360,8 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 		for i := range len(boid_sim.Boids) {
 			// for all intense and purposes, this is random to the viewer.
 			force := force_vectors[i%NUM_RANDOM_GENERATORS]
-			boid_sim.Boids[i].Acceleration.X += force.X
-			boid_sim.Boids[i].Acceleration.Y += force.Y
+			boid_sim.Boids[i].Acceleration.x += force.x
+			boid_sim.Boids[i].Acceleration.y += force.y
 		}
 	}
 
@@ -472,8 +472,8 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt_ float64) {
 
 		// a very nice way to calculate displacement.
 		// v_avg = (v0 + v1) / 2
-		v_avg_x := (v0.X + v1.X) / 2
-		v_avg_y := (v0.Y + v1.Y) / 2
+		v_avg_x := (v0.x + v1.x) / 2
+		v_avg_y := (v0.y + v1.y) / 2
 
 
 		// -------------------------------
@@ -539,8 +539,8 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt_ float64) {
 			// maybe also hit_something = false?
 			if dot > 0 { continue }
 
-			new_vx -= 2 * dot * normal.X;
-			new_vy -= 2 * dot * normal.Y;
+			new_vx -= 2 * dot * normal.x;
+			new_vy -= 2 * dot * normal.y;
 		}
 
 		// loop over all Rectangles,
@@ -614,8 +614,8 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt_ float64) {
 							// (vx / time) * 2 - v0.X = v1.X
 							// v1.X = (vx / time) * 2 - v0.X
 
-							new_vx = vx_after / dt * 2 - v0.X
-							new_vy = vy_after / dt * 2 - v0.Y
+							new_vx = vx_after / dt * 2 - v0.x
+							new_vy = vy_after / dt * 2 - v0.y
 						}
 
 					}
@@ -625,11 +625,11 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt_ float64) {
 
 		}
 
-		boid.Position.X = new_x
-		boid.Position.Y = new_y
+		boid.Position.x = new_x
+		boid.Position.y = new_y
 
-		boid.Velocity.X = new_vx
-		boid.Velocity.Y = new_vy
+		boid.Velocity.x = new_vx
+		boid.Velocity.y = new_vy
 
 		// TODO is this needed?
 		// // makes them wrap around the screen

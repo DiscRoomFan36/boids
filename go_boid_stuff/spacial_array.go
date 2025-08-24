@@ -172,8 +172,8 @@ func (array *Spacial_Array[T]) Clear() {
 }
 
 func (array Spacial_Array[T]) point_to_box_loc(point Vec2[T]) (int, int) {
-	x := map_and_clamp_range(point.X, array.Min_x, array.Max_x)
-	y := map_and_clamp_range(point.Y, array.Min_y, array.Max_y)
+	x := map_and_clamp_range(point.x, array.Min_x, array.Max_x)
+	y := map_and_clamp_range(point.y, array.Min_y, array.Max_y)
 
 	i_x := min(int(x*T(array.Boxes_wide)), array.Boxes_wide-1)
 	i_y := min(int(y*T(array.Boxes_high)), array.Boxes_high-1)
@@ -185,15 +185,15 @@ func (array Spacial_Array[T]) point_to_box_loc(point Vec2[T]) (int, int) {
 func find_mins_and_maxs[T Number](points []Vec2[T]) (T, T, T, T) {
 	if len(points) == 0 { return 0, 0, 0, 0 }
 
-	min_x := points[0].X
-	max_x := points[0].X
-	min_y := points[0].Y
-	max_y := points[0].Y
+	min_x := points[0].x
+	max_x := points[0].x
+	min_y := points[0].y
+	max_y := points[0].y
 	for _, p := range points[1:] {
-		min_x = min(min_x, p.X)
-		max_x = max(max_x, p.X)
-		min_y = min(min_y, p.Y)
-		max_y = max(max_y, p.Y)
+		min_x = min(min_x, p.x)
+		max_x = max(max_x, p.x)
+		min_y = min(min_y, p.y)
+		max_y = max(max_y, p.y)
 	}
 	return min_x, min_y, max_x, max_y
 }
