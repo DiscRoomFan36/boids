@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"math"
 )
 
@@ -59,11 +58,11 @@ func Round[T Number](x T) int {
 	if x > 0 { rounded = int((x*2 + 1) / 2)
 	} else {   rounded = int((x*2 - 1) / 2) }
 
-	// NOTE Speed up if we need it
-	if Abs(T(rounded)-x) >= 1 {
-		// Overflow!!!
-		log.Fatalf("oh no, the rounding did not work!! orig: %v got: %v\n", x, rounded)
-	}
+	// // NOTE Speed up if we need it
+	// if Abs(T(rounded)-x) >= 1 {
+	// 	// Overflow!!!
+	// 	log.Fatalf("oh no, the rounding did not work!! orig: %v got: %v\n", x, rounded)
+	// }
 
 	return rounded
 }
