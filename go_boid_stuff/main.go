@@ -91,10 +91,6 @@ func js_to_Vector(obj js.Value) Vec2[Boid_Float] {
 }
 
 
-// I feel like go is guilt tripping me with this syntax
-var input_status Input_Status
-
-
 // Javascript function
 //
 // Will pass back a bunch of pixels, (though array), in [RGBA] format
@@ -108,8 +104,8 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	mouse_pos := js_to_Vector(mouse.Get("pos"))
 	mouse_pos = World_to_boid_vec(mouse_pos)
 
-	input_status = Update_Input(
-		input_status,
+	input = Update_Input(
+		input,
 		mouse.Get("left_down")  .Bool(),
 		mouse.Get("middle_down").Bool(),
 		mouse.Get("right_down") .Bool(),
@@ -142,7 +138,7 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	// Calculate the next frame of boids
 	// Times 60 because we want this to run at 60fps and dt=1 is supposed to be one time step
 	// TODO ^ this comment is dumb, just make it work. '1 time step' is a dumb unit, just use m/s
-	boid_sim.Update_boids(dt, input_status)
+	boid_sim.Update_boids(dt, input)
 
 	// this might end up taking the most amount of time.
 	// TODO make a 'Draw a thing' file. (maybe in this module, stop boid from requiring Image...)

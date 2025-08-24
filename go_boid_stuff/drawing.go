@@ -5,12 +5,17 @@ import (
 	"time"
 )
 
+// I feel like go is guilt tripping me with this syntax.
+// Also this has to be here because go-static is dumb
+var input Input_Status
+
+
 const DEBUG_SPACIAL_ARRAY = false
 const DEBUG_BOUNDARY      = true
 const DEBUG_HEADING       = false
 const DEBUG_VISUAL_RANGES = false
 
-var boid_heading_color  = Color{r: 10/256.0, g: 240/256.0, b: 10/256.0, a: 1}
+var boid_heading_color  = Color{r:  10/256.0, g: 240/256.0, b:  10/256.0, a: 1}
 var boid_boundary_color = Color{r: 240/256.0, g: 240/256.0, b: 240/256.0, a: 1}
 
 // TODO have some sort of view mode here, so we can 'move' the 'camera'
@@ -95,7 +100,7 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 	if boid_sim.making_new_wall {
 		p1 := boid_sim.new_wall_start
 		// get a better static analyzer.
-		p2 := input_status.Mouse_Pos
+		p2 := input.Mouse_Pos
 		p1.Mult(scale_factor)
 		p2.Mult(scale_factor)
 		Draw_Line(img, p1, p2, Color_Green())
