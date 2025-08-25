@@ -42,6 +42,8 @@ NEXT
 
 * make the sim feel gooder.
 
+* unify the collision stuff. currently 3 different systems. maybe make a collisional interface?
+
 * fix boid vortex of death (when a bunch of boids get stuck in the corner)
 
 * make the rendering a camera like, so you can scroll and what not.
