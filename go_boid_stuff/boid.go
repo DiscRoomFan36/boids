@@ -738,3 +738,77 @@ func bounce_1d[T Number](x, r, v, w T) T {
 }
 
 
+const NUM_BOID_RAYS = 3
+// in radians, pi/4 is 45 deg. either side
+const VISUAL_CONE_RADIUS = math.Pi / 4
+
+func (boid_sim *Boid_simulation) get_boid_rays(boid Boid) [NUM_BOID_RAYS]Line {
+	result := [NUM_BOID_RAYS]Line{}
+
+	for i := range NUM_BOID_RAYS {
+		angle := Lerp(-VISUAL_CONE_RADIUS, VISUAL_CONE_RADIUS, Boid_Float(i) / NUM_BOID_RAYS)
+		dir := Rotate(boid.Velocity, angle)
+
+		dir.SetMag(boid_sim.props.Visual_Range) // Visual_Range is the farthest it can see.
+
+		pos := boid.Position
+		ray := Line{pos.x, pos.y, pos.x + dir.x, pos.y + dir.y}
+
+		result[i] = ray
+	}
+
+	return result
+}
+
+func (boid_sim *Boid_simulation) get_boid_ray_distances(boid Boid) [NUM_BOID_RAYS]Boid_Float {
+	result := [NUM_BOID_RAYS]Boid_Float{}
+
+	for i := range NUM_BOID_RAYS {
+		angle := Lerp(-VISUAL_CONE_RADIUS, VISUAL_CONE_RADIUS, Boid_Float(i) / NUM_BOID_RAYS)
+		dir := Rotate(boid.Velocity, angle)
+
+		result[i] = boid_sim.shoot_ray(boid.Position, dir)
+	}
+
+	return result
+}
+
+// returns the distance to the nearest line, or VISUAL_RANGE
+func (boid_sim *Boid_simulation) shoot_ray(pos, dir Vec2[Boid_Float]) Boid_Float {
+	dir.SetMag(boid_sim.props.Visual_Range) // Visual_Range is the farthest it can see.
+
+	ray := Line{pos.x, pos.y, pos.x + dir.x, pos.y + dir.y}
+
+	min_dist_sqr := Square(boid_sim.props.Visual_Range)
+	for _, line := range boid_sim.Walls {
+		hit, loc := line_line_intersection(ray, line)
+		if !hit { continue }
+
+		dist_sqr := DistSqr(pos, loc)
+		if dist_sqr < min_dist_sqr { min_dist_sqr = dist_sqr }
+	}
+
+	return Sqrt(min_dist_sqr)
+}
+
+// returns weather it hit, and the location of the hit.
+func line_line_intersection(l1, l2 Line) (bool, Vec2[Boid_Float]) {
+	x1, y1, x2, y2 := l1.x1, l1.y1, l1.x2, l1.y2
+	x3, y3, x4, y4 := l2.x1, l2.y1, l2.x2, l2.y2
+
+	// calculate the distance to intersection point
+	uA := ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1))
+	uB := ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1))
+
+	// TODO faster to always calc the loc?
+	if (0 <= uA && uA <= 1) && (0 <= uB && uB <= 1) {
+		loc := Vec2[Boid_Float]{
+			x1 + (uA * (x2-x1)),
+			y1 + (uA * (y2-y1)),
+		}
+		return true, loc
+	}
+	return false, Vec2[Boid_Float]{}
+}
+
+

@@ -57,9 +57,7 @@ func Mult[T Number](a Vec2[T], s T) Vec2[T] {
 func Dot[T Number](a, b Vec2[T]) T { return a.x*b.x + a.y*b.y }
 func (a Vec2[Number]) Dot() Number { return Dot(a, a) }
 
-func (a Vec2[Number]) Mag() Number {
-	return Number(math.Sqrt(float64(a.Dot())))
-}
+func (a Vec2[Number]) Mag() Number { return Number(math.Sqrt(float64(Dot(a, a)))) }
 
 func (a *Vec2[Number]) SetMag(new_mag Number) {
 	mag := a.Mag()
