@@ -173,6 +173,10 @@ func (boid_sim Boid_simulation) bounding_force(index int) Vec2[Boid_Float] {
 func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	now := time.Now()
 
+	// ------------------------------------------------------
+	//               handle user input.
+	// ------------------------------------------------------
+
 	// make a little splash effect on left click.
 	if input.Left_Clicked {
 		Append(&boid_sim.Click_Positions_And_Times, Position_And_Time{input.Mouse_Pos, now})
@@ -189,26 +193,28 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 
 	// make a new wall on right click and drag
 	if input.Middle_Clicked {
-		// fmt.Printf("Middle Clicked\n")
 		boid_sim.making_new_wall = true
 		boid_sim.new_wall_start = input.Mouse_Pos
 	}
 	if boid_sim.making_new_wall {
-		// TODO detect if dragging.
 		if input.Middle_Released {
-			// fmt.Printf("Middle Release\n")
 			boid_sim.making_new_wall = false
-			new_line := Line{
-				boid_sim.new_wall_start.x, boid_sim.new_wall_start.y,
-				input.Mouse_Pos.x, input.Mouse_Pos.y,
-			}
 
-			Append(&boid_sim.Walls, new_line)
+			// middle click must be held down for some time until it counts as a drag movement.
+			if input.Middle_Held_Prev {
+				new_line := Line{
+					boid_sim.new_wall_start.x, boid_sim.new_wall_start.y,
+					input.Mouse_Pos.x, input.Mouse_Pos.y,
+				}
+	
+				Append(&boid_sim.Walls, new_line)
+			}
 		}
 	}
 
 	// update the position of the middle rectangle, to move with the screen.
 	boid_sim.Rectangles[0] = make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)
+
 
 
 	{ // spawn / despawn boids.
@@ -245,6 +251,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	}
 
 
+
 	{ // Setup the spacial array.
 		// Clear out previous uses.
 		boid_sim.Spacial_array.Clear()
@@ -258,10 +265,10 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 		boid_sim.Spacial_array.Append_points(boid_positions)
 	}
 
-	// Set the Accelerations to zero.
-	for i := range len(boid_sim.Boids) {
-		boid_sim.Boids[i].Acceleration = Vec2[Boid_Float]{}
-	}
+
+
+	// Reset Acceleration for new update.
+	for i := range len(boid_sim.Boids) { boid_sim.Boids[i].Acceleration = Vec2[Boid_Float]{} }
 
 	// ------------------------------------
 	//   Separation, Alignment, Cohesion

@@ -3,7 +3,7 @@ package main
 import "time"
 
 // how long until something is considered 'held', in seconds.
-const HELD_TIME = 0.25
+const HELD_TIME = 0.15
 
 type Input_Status struct {
 	Left_Down           bool
@@ -36,7 +36,7 @@ type Input_Status struct {
 
 	// private stuff for calculations
 
-	// probably could compress a lot of this stuff...
+	// probably could compress a lot of this code...
 	left_down_since     time.Time
 	middle_down_since   time.Time
 	right_down_since    time.Time
@@ -96,13 +96,13 @@ func Update_Input(prev Input_Status, is_left_down, is_middle_down, is_right_down
 
 	{ // check for held.
 		if new.Left_Down   && now.Sub(new.left_down_since  ).Seconds() > HELD_TIME {
-			new.Left_Held = true
+			new.Left_Held   = true
 		}
 		if new.Middle_Down && now.Sub(new.middle_down_since).Seconds() > HELD_TIME {
 			new.Middle_Held = true
 		}
 		if new.Right_Down  && now.Sub(new.right_down_since ).Seconds() > HELD_TIME {
-			new.Right_Held = true
+			new.Right_Held  = true
 		}
 	}
 

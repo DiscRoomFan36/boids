@@ -103,7 +103,9 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		p2 := input.Mouse_Pos
 		p1.Mult(scale_factor)
 		p2.Mult(scale_factor)
-		Draw_Line(img, p1, p2, Color_Green())
+		color := Color_Yellow()
+		if input.Middle_Held { color = Color_Green() }
+		Draw_Line(img, p1, p2, color)
 	}
 
 	// NOTE i would put this in a go routine, but wasm doesn't do multithreading, fuck
