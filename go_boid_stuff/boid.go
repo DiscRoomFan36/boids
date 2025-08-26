@@ -766,8 +766,7 @@ func (boid_sim *Boid_simulation) get_boid_rays(boid Boid) []Line {
 }
 
 
-// returns the distance to the nearest line, or ray.Mag()
-// maybe this should return the closest point? and then the other guy can get the distance.
+// returns the distance to the nearest line squared, and the point it represents.
 func (boid_sim *Boid_simulation) ray_collide_against_all_lines_and_find_smallest(ray Line) (Boid_Float, Vec2[Boid_Float]) {
 	start, end := ray.to_vec()
 	min_dist_sqr := DistSqr(start, end)
@@ -822,6 +821,6 @@ func (boid_sim *Boid_simulation) ray_collide_against_all_lines_and_find_smallest
 		}
 	}
 
-	return Sqrt(min_dist_sqr), hit_pos
+	return min_dist_sqr, hit_pos
 }
 
