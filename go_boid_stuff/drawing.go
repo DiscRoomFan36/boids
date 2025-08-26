@@ -163,7 +163,7 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		secs := float32(now.Sub(time).Seconds())
 		percent := secs / CLICK_FADE_TIME
 
-		color := Color_White()
+		color := Color_Pure_White()
 		color.a = 1 - ease_in_out_quint(percent)
 
 		// in image pixels
@@ -174,6 +174,28 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		size_factor := ease_out_quint(percent)
 		Draw_Ring(img, pos.x, pos.y, Boid_Float(size_factor*SIZE_SCALE), Boid_Float(size_factor*SIZE_SCALE+RING_WIDTH), color)
 	}
+
+
+	// draw the boid rays, not all of them though
+	for i := range min(len(boid_sim.Boids), 10) {
+		boid := boid_sim.Boids[i]
+		rays := boid_sim.get_boid_rays(boid)
+
+		for _, ray := range rays {
+			_, pos := boid_sim.ray_collide_against_all_lines_and_find_smallest(ray)
+
+			ray.x1 *= scale_factor
+			ray.y1 *= scale_factor
+			ray.x2 *= scale_factor
+			ray.y2 *= scale_factor
+			pos.Mult(scale_factor)
+
+			Draw_Line_l(img, ray, rgb(245, 130, 22))
+
+			Draw_Circle(img, pos.x, pos.y, 5, rgba(20, 228, 228, 0.5))
+		}
+	}
+
 
 	// { // debug mouse pos
 	// 	color := Color_Yellow()
@@ -228,7 +250,7 @@ func draw_spacial_array_into_image[T Number](img *Image, sp_array Spacial_Array[
 				img,
 				bounding_box[i],
 				bounding_box[(i+1)%len(bounding_box)],
-				Color_White(),
+				Color_Pure_White(),
 			)
 		}
 	}

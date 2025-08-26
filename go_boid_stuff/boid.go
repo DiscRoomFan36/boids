@@ -742,8 +742,8 @@ const NUM_BOID_RAYS = 3
 // in radians, pi/4 is 45 deg. either side
 const VISUAL_CONE_RADIUS = math.Pi / 4
 
-func (boid_sim *Boid_simulation) get_boid_rays(boid Boid) [NUM_BOID_RAYS]Line {
-	result := [NUM_BOID_RAYS]Line{}
+func (boid_sim *Boid_simulation) get_boid_rays(boid Boid) []Line {
+	result := make([]Line, NUM_BOID_RAYS)
 
 	for i := range NUM_BOID_RAYS {
 		angle := Lerp(-VISUAL_CONE_RADIUS, VISUAL_CONE_RADIUS, Boid_Float(i) / NUM_BOID_RAYS)
@@ -760,42 +760,40 @@ func (boid_sim *Boid_simulation) get_boid_rays(boid Boid) [NUM_BOID_RAYS]Line {
 	return result
 }
 
-func (boid_sim *Boid_simulation) get_boid_ray_distances(boid Boid) [NUM_BOID_RAYS]Boid_Float {
-	result := [NUM_BOID_RAYS]Boid_Float{}
+// func (boid_sim *Boid_simulation) get_boid_ray_distances(boid Boid) []Boid_Float {
+// 	result := make([]Boid_Float, NUM_BOID_RAYS)
 
-	for i := range NUM_BOID_RAYS {
-		angle := Lerp(-VISUAL_CONE_RADIUS, VISUAL_CONE_RADIUS, Boid_Float(i) / NUM_BOID_RAYS)
-		dir := Rotate(boid.Velocity, angle)
+// 	for i, ray := range boid_sim.get_boid_rays(boid) {
+// 		result[i] = boid_sim.ray_collide_against_all_lines_and_find_smallest(ray)
+// 	}
 
-		result[i] = boid_sim.shoot_ray(boid.Position, dir)
-	}
+// 	return result
+// }
 
-	return result
-}
+// returns the distance to the nearest line, or ray.Mag()
+// maybe this should return the closest point? and then the other guy can get the distance.
+func (boid_sim *Boid_simulation) ray_collide_against_all_lines_and_find_smallest(ray Line) (Boid_Float, Vec2[Boid_Float]) {
+	start, end := ray.to_vec()
+	min_dist_sqr := DistSqr(start, end)
+	hit_pos := end
 
-// returns the distance to the nearest line, or VISUAL_RANGE
-func (boid_sim *Boid_simulation) shoot_ray(pos, dir Vec2[Boid_Float]) Boid_Float {
-	dir.SetMag(boid_sim.props.Visual_Range) // Visual_Range is the farthest it can see.
-
-	ray := Line{pos.x, pos.y, pos.x + dir.x, pos.y + dir.y}
-
-	min_dist_sqr := Square(boid_sim.props.Visual_Range)
 	for _, line := range boid_sim.Walls {
-		hit, loc := line_line_intersection(ray, line)
+		hit, loc := line_line_intersection_l(ray, line)
 		if !hit { continue }
 
-		dist_sqr := DistSqr(pos, loc)
-		if dist_sqr < min_dist_sqr { min_dist_sqr = dist_sqr }
+		dist_sqr := DistSqr(start, loc)
+		if dist_sqr < min_dist_sqr {
+			min_dist_sqr = dist_sqr
+			hit_pos = loc
+		}
 	}
 
-	return Sqrt(min_dist_sqr)
+	return Sqrt(min_dist_sqr), hit_pos
 }
 
-// returns weather it hit, and the location of the hit.
-func line_line_intersection(l1, l2 Line) (bool, Vec2[Boid_Float]) {
-	x1, y1, x2, y2 := l1.x1, l1.y1, l1.x2, l1.y2
-	x3, y3, x4, y4 := l2.x1, l2.y1, l2.x2, l2.y2
 
+// returns weather it hit, and the location of the hit.
+func line_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4 Boid_Float) (bool, Vec2[Boid_Float]) {
 	// calculate the distance to intersection point
 	uA := ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1))
 	uB := ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1))
@@ -810,5 +808,16 @@ func line_line_intersection(l1, l2 Line) (bool, Vec2[Boid_Float]) {
 	}
 	return false, Vec2[Boid_Float]{}
 }
+func line_line_intersection_l(l1, l2 Line) (bool, Vec2[Boid_Float]) { return line_line_intersection(l1.x1, l1.y1, l1.x2, l1.y2, l2.x1, l2.y1, l2.x2, l2.y2) }
 
+func fix_rectangle(rect Rectangle) Rectangle {
+	// fix the rectangle, no negative widths/hights
+	if rect.w < 0 { rect.x, rect.w = rect.x + rect.w, -rect.w }
+	if rect.h < 0 { rect.y, rect.h = rect.y + rect.h, -rect.h }
+	return rect
+}
 
+func rect_rect_intersection(x1, y1, w1, h1, x2, y2, w2, h2 Boid_Float) bool {
+	return (x1 + w1 >= x2) && (x1 <= x2 + w2) && (y1 + h1 >= y2) && (y1 <= y2 + h2)
+}
+func rect_rect_intersection_r(r1, r2 Rectangle) bool { return rect_rect_intersection(r1.x, r1.y, r1.w, r1.h, r2.x, r2.y, r2.w, r2.h) }

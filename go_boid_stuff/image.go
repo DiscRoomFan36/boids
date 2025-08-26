@@ -14,14 +14,6 @@ type Color_Data struct {
 	r, g, b, a uint8
 }
 
-func Color_Black()      Color { return Color{0, 0, 0, 1} }
-func Color_White()      Color { return Color{1, 1, 1, 1} }
-func Color_Red()        Color { return Color{1, 0, 0, 1} }
-func Color_Green()      Color { return Color{0, 1, 0, 1} }
-func Color_Blue()       Color { return Color{0, 0, 1, 1} }
-func Color_Yellow()     Color { return Color{1, 1, 0, 1} }
-
-
 func New_Color_Data(r, g, b, a uint8) Color_Data {
 	return Color_Data{r: r, g: g, b: b, a: a}
 }
@@ -37,6 +29,24 @@ func (c Color_Data) Splat_f() (float32, float32, float32, float32) {
 type Color struct {
 	r, g, b, a float32
 }
+
+// my editor has a feature where if you put rgb(28, 110, 192),
+// it makes a color picker. this was probably intended for HTML/CSS,
+// but it works anywhere. Sick Hack.
+func rgb(r, g, b uint8) Color {
+	return Color{float32(r) / 255, float32(g) / 255, float32(b) / 255, 1}
+}
+func rgba(r, g, b uint8, a float32) Color {
+	return Color{float32(r) / 255, float32(g) / 255, float32(b) / 255, a}
+}
+
+func Color_Black()      Color { return Color{0, 0, 0, 1} }
+func Color_Pure_White() Color { return Color{1, 1, 1, 1} }
+func Color_Red()        Color { return rgb(217,  36,  36) }
+func Color_Green()      Color { return rgb( 42, 217,  36) }
+func Color_Blue()       Color { return rgb( 50,  78, 255) }
+func Color_Yellow()     Color { return rgb(240, 255,  34) }
+func Color_Orange()     Color { return rgb(255, 146,  95) }
 
 /*
 func (c Color) to_data() Color_Data {
@@ -250,6 +260,10 @@ func Draw_Line[T Number](img *Image, _p1, _p2 Vec2[T], c Color) {
 		X += X_inc
 		Y += Y_inc
 	}
+}
+func Draw_Line_l(img *Image, line Line, color Color) {
+	p1, p2 := line.to_vec()
+	Draw_Line(img, p1, p2, color)
 }
 
 // https://www.sunshine2k.de/coding/java/TriangleRasterization/TriangleRasterization.html
