@@ -138,8 +138,14 @@ func make_rectangle(x, y, w, h Boid_Float) Rectangle {
 	return Rectangle{x: x, y: y, w: w, h: h}
 }
 
+// returns x, y, w, h
 func (rect Rectangle) Splat() (Boid_Float, Boid_Float, Boid_Float, Boid_Float) {
 	return rect.x, rect.y, rect.w, rect.h
+}
+
+// returns x1, y1, x2, y2
+func (rect Rectangle) Splat_Vec() (Boid_Float, Boid_Float, Boid_Float, Boid_Float) {
+	return rect.x, rect.y, rect.x + rect.w, rect.x + rect.h
 }
 
 
@@ -152,11 +158,60 @@ func (line Line) to_vec() (Vec2[Boid_Float], Vec2[Boid_Float]) {
 	return Vec2[Boid_Float]{line.x1, line.y1}, Vec2[Boid_Float]{line.x2, line.y2}
 }
 
-// func rectangle_to_lines(x, y, w, h Boid_Float) []Line {
-// 	lines := make([]Line, 4)
-// 	lines[0] = Line{x,     y,     x + w, y    }
-// 	lines[1] = Line{x + w, y,     x + w, y + h}
-// 	lines[2] = Line{x + w, y + h, x,     y + h}
-// 	lines[3] = Line{x,     y + h, x,     y}
-// 	return lines
+func rectangle_to_lines(x, y, w, h Boid_Float) [4]Line {
+	lines := [4]Line{}
+	lines[0] = Line{x,     y,     x + w, y    }
+	lines[1] = Line{x + w, y,     x + w, y + h}
+	lines[2] = Line{x + w, y + h, x,     y + h}
+	lines[3] = Line{x,     y + h, x,     y}
+	return lines
+}
+func rectangle_to_lines_r(r Rectangle) [4]Line { return rectangle_to_lines(r.x, r.y, r.w, r.h) }
+
+
+
+///////////////////////////////////////////////////////
+//              Collision Functions
+///////////////////////////////////////////////////////
+
+
+// point in rect
+func point_rect_collision(x, y, rx, ry, rw, rh Boid_Float) bool {
+	return (rx <= x && x <= rx + rw) && (ry <= y && y <= ry + rh)
+}
+func point_rect_collision_vr(p Vec2[Boid_Float], r Rectangle) bool { return point_rect_collision(p.x, p.y, r.x, r.y, r.w, r.h) }
+
+
+// these might be good for AABB's
+
+// func fix_rectangle(rect Rectangle) Rectangle {
+// 	// fix the rectangle, no negative widths/hights
+// 	if rect.w < 0 { rect.x, rect.w = rect.x + rect.w, -rect.w }
+// 	if rect.h < 0 { rect.y, rect.h = rect.y + rect.h, -rect.h }
+// 	return rect
 // }
+
+// func rect_rect_intersection(x1, y1, w1, h1, x2, y2, w2, h2 Boid_Float) bool {
+// 	return (x1 + w1 >= x2) && (x1 <= x2 + w2) && (y1 + h1 >= y2) && (y1 <= y2 + h2)
+// }
+// func rect_rect_intersection_r(r1, r2 Rectangle) bool { return rect_rect_intersection(r1.x, r1.y, r1.w, r1.h, r2.x, r2.y, r2.w, r2.h) }
+
+
+// returns weather it hit, and the location of the hit.
+func line_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4 Boid_Float) (bool, Vec2[Boid_Float]) {
+	// calculate the distance to intersection point
+	uA := ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1))
+	uB := ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1))
+
+	// TODO faster to always calc the loc?
+	if (0 <= uA && uA <= 1) && (0 <= uB && uB <= 1) {
+		loc := Vec2[Boid_Float]{
+			x1 + (uA * (x2-x1)),
+			y1 + (uA * (y2-y1)),
+		}
+		return true, loc
+	}
+	return false, Vec2[Boid_Float]{}
+}
+func line_line_intersection_l(l1, l2 Line) (bool, Vec2[Boid_Float]) { return line_line_intersection(l1.x1, l1.y1, l1.x2, l1.y2, l2.x1, l2.y1, l2.x2, l2.y2) }
+

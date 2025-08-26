@@ -135,6 +135,15 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 	return boid_sim
 }
 
+func (boid_sim *Boid_simulation) bounds_as_rect() Rectangle {
+	return Rectangle{
+		boid_sim.props.Margin,
+		boid_sim.props.Margin,
+		boid_sim.Width  - 2*boid_sim.props.Margin,
+		boid_sim.Height - 2*boid_sim.props.Margin,
+	}
+}
+
 func (boid_sim *Boid_simulation) adjust_speed(vel Vec2[Boid_Float]) Vec2[Boid_Float] {
 	speed := vel.Mag()
 	if speed > boid_sim.props.Max_Speed {
@@ -449,11 +458,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 
 func (boid_sim *Boid_simulation) finally_move_and_collide(dt_ float64) {
 	// make a bounding box.
-	bounds_x1 := boid_sim.props.Margin
-	bounds_x2 := boid_sim.Width  - boid_sim.props.Margin
-
-	bounds_y1 := boid_sim.props.Margin
-	bounds_y2 := boid_sim.Height - boid_sim.props.Margin
+	bounds_x1, bounds_y1, bounds_x2, bounds_y2 := boid_sim.bounds_as_rect().Splat_Vec()
 
 	boid_radius := boid_sim.props.Boid_Radius
 
@@ -760,15 +765,6 @@ func (boid_sim *Boid_simulation) get_boid_rays(boid Boid) []Line {
 	return result
 }
 
-// func (boid_sim *Boid_simulation) get_boid_ray_distances(boid Boid) []Boid_Float {
-// 	result := make([]Boid_Float, NUM_BOID_RAYS)
-
-// 	for i, ray := range boid_sim.get_boid_rays(boid) {
-// 		result[i] = boid_sim.ray_collide_against_all_lines_and_find_smallest(ray)
-// 	}
-
-// 	return result
-// }
 
 // returns the distance to the nearest line, or ray.Mag()
 // maybe this should return the closest point? and then the other guy can get the distance.
@@ -776,6 +772,9 @@ func (boid_sim *Boid_simulation) ray_collide_against_all_lines_and_find_smallest
 	start, end := ray.to_vec()
 	min_dist_sqr := DistSqr(start, end)
 	hit_pos := end
+
+	// TODO if this is ever the slow part,
+	// maybe try checking the AABB first? might be faster. maybe.
 
 	for _, line := range boid_sim.Walls {
 		hit, loc := line_line_intersection_l(ray, line)
@@ -788,36 +787,41 @@ func (boid_sim *Boid_simulation) ray_collide_against_all_lines_and_find_smallest
 		}
 	}
 
+	for _, rect := range boid_sim.Rectangles {
+		// if the ray starts in the rectangle, don't hit the rectangle.
+		if point_rect_collision_vr(start, rect) { continue }
+
+		lines := rectangle_to_lines(rect.x, rect.y, rect.w, rect.h)
+		// @Copypasta!
+		for _, line := range lines {
+			hit, loc := line_line_intersection_l(ray, line)
+			if !hit { continue }
+
+			dist_sqr := DistSqr(start, loc)
+			if dist_sqr < min_dist_sqr {
+				min_dist_sqr = dist_sqr
+				hit_pos = loc
+			}
+		}
+	}
+
+	bounding_box := boid_sim.bounds_as_rect()
+	// if the start if outside of the bounding box, don't check
+	// TODO this will slightly fail if the boid is just outside and facing a different edge.
+	if point_rect_collision_vr(start, bounding_box) {
+		// @Copypasta!
+		for _, line := range rectangle_to_lines_r(bounding_box) {
+			hit, loc := line_line_intersection_l(ray, line)
+			if !hit { continue }
+
+			dist_sqr := DistSqr(start, loc)
+			if dist_sqr < min_dist_sqr {
+				min_dist_sqr = dist_sqr
+				hit_pos = loc
+			}
+		}
+	}
+
 	return Sqrt(min_dist_sqr), hit_pos
 }
 
-
-// returns weather it hit, and the location of the hit.
-func line_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4 Boid_Float) (bool, Vec2[Boid_Float]) {
-	// calculate the distance to intersection point
-	uA := ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1))
-	uB := ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / ((y4-y3)*(x2-x1) - (x4-x3)*(y2-y1))
-
-	// TODO faster to always calc the loc?
-	if (0 <= uA && uA <= 1) && (0 <= uB && uB <= 1) {
-		loc := Vec2[Boid_Float]{
-			x1 + (uA * (x2-x1)),
-			y1 + (uA * (y2-y1)),
-		}
-		return true, loc
-	}
-	return false, Vec2[Boid_Float]{}
-}
-func line_line_intersection_l(l1, l2 Line) (bool, Vec2[Boid_Float]) { return line_line_intersection(l1.x1, l1.y1, l1.x2, l1.y2, l2.x1, l2.y1, l2.x2, l2.y2) }
-
-func fix_rectangle(rect Rectangle) Rectangle {
-	// fix the rectangle, no negative widths/hights
-	if rect.w < 0 { rect.x, rect.w = rect.x + rect.w, -rect.w }
-	if rect.h < 0 { rect.y, rect.h = rect.y + rect.h, -rect.h }
-	return rect
-}
-
-func rect_rect_intersection(x1, y1, w1, h1, x2, y2, w2, h2 Boid_Float) bool {
-	return (x1 + w1 >= x2) && (x1 <= x2 + w2) && (y1 + h1 >= y2) && (y1 <= y2 + h2)
-}
-func rect_rect_intersection_r(r1, r2 Rectangle) bool { return rect_rect_intersection(r1.x, r1.y, r1.w, r1.h, r2.x, r2.y, r2.w, r2.h) }
