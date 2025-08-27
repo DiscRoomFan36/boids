@@ -12,7 +12,7 @@ var input Input_Status
 
 const DEBUG_SPACIAL_ARRAY = false
 const DEBUG_BOUNDARY      = true
-const DEBUG_HEADING       = true
+const DEBUG_HEADING       = false
 const DEBUG_VISUAL_RANGES = false
 
 var boid_boundary_color = Color{r: 240/256.0, g: 240/256.0, b: 240/256.0, a: 1}
@@ -180,8 +180,12 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		boid := boid_sim.Boids[i]
 		rays := boid_sim.get_boid_rays(boid)
 
+		combined_ray := Vec2[Boid_Float]{}
+
 		for _, ray := range rays {
 			_, pos := boid_sim.ray_collide_against_all_lines_and_find_smallest(ray)
+
+			combined_ray.Add(Sub(pos, boid.Position))
 
 			ray.x1 *= scale_factor
 			ray.y1 *= scale_factor
@@ -189,10 +193,17 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 			ray.y2 *= scale_factor
 			pos.Mult(scale_factor)
 
-			Draw_Line_l(img, ray, rgb(245, 130, 22))
+			Draw_Line_l(img, ray, rgba(245, 130, 22, 0.5))
 
-			Draw_Circle(img, pos.x, pos.y, 5, rgba(20, 228, 228, 0.5))
+			Draw_Circle_v(img, pos, 5, rgba(20, 228, 228, 0.5))
 		}
+
+		combined_ray.Mult(1 / Boid_Float(boid_sim.props.Num_Boid_Rays))
+		combined_ray.Add(boid.Position)
+		combined_ray.Mult(scale_factor)
+
+		Draw_Line(img, Mult(boid.Position, scale_factor), combined_ray, rgba(165, 33, 143, 1))
+		Draw_Circle_v(img, combined_ray, 5, rgba(235, 41, 41, 0.25))
 	}
 
 

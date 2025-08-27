@@ -188,6 +188,7 @@ func Draw_Circle[T Number](img *Image, x, y, r T, c Color) {
 		}
 	}
 }
+func Draw_Circle_v[T Number](img *Image, p Vec2[T], r T, c Color) { Draw_Circle(img, p.x, p.y, r, c) }
 
 
 
