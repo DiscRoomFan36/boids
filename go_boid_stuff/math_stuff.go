@@ -20,6 +20,15 @@ func (a Vec2[Number]) Splat() (Number, Number) {
 	return a.x, a.y
 }
 
+// Really useful helper, would recommend
+func Transform[T Number, U Number](v Vec2[T]) Vec2[U] {
+	return Vec2[U]{
+		x: U(v.x),
+		y: U(v.y),
+	}
+}
+
+
 // These math operators a dumb actually.
 
 func (a *Vec2[Number]) Add(vs ...Vec2[Number]) {
@@ -75,11 +84,8 @@ func (a *Vec2[Number]) ClampMag(mini, maxi Number) {
 		return
 	}
 
-	if mag < mini {
-		a.Mult(mini / mag)
-	} else if mag > maxi {
-		a.Mult(maxi / mag)
-	}
+	if mag < mini        { a.Mult(mini / mag)
+	} else if mag > maxi { a.Mult(maxi / mag) }
 }
 
 func (a *Vec2[Float]) Normalize() { a.Mult(1 / a.Mag()) }
@@ -92,27 +98,26 @@ func Normalized[T Float](a Vec2[T]) Vec2[T] {
 func Dist   [T Number](a, b Vec2[T]) T { return Sub(a, b).Mag() }
 func DistSqr[T Number](a, b Vec2[T]) T { return Sub(a, b).Dot() }
 
+
+
+const DEG_TO_RAD = math.Pi / 180
+const RAD_TO_DEG = 180 / math.Pi
+
+// in radians
 func Random_unit_vector[T Float]() Vec2[T] {
 	theta := rand.Float64() * 2 * math.Pi
 	sin, cos := math.Sincos(theta)
 	return Make_Vec2(T(cos), T(sin))
 }
 
-// Really useful helper, would recommend
-func Transform[T Number, U Number](v Vec2[T]) Vec2[U] {
-	return Vec2[U]{
-		x: U(v.x),
-		y: U(v.y),
-	}
-}
-
+// in radians
 func GetTheta[T Float](a Vec2[T]) T {
 	return T(math.Atan2(float64(a.y), float64(a.x)))
 }
 
 // https://math.stackexchange.com/questions/2506306/rotation-of-a-vector-around-origin
 //
-// Note. this rotate function is correct. however, the image at the end is flipped. cool cool cool.
+// in radians
 func Rotate[T Float](a Vec2[T], theta T) Vec2[T] {
 	sin, cos := math.Sincos(float64(theta))
 
@@ -122,6 +127,7 @@ func Rotate[T Float](a Vec2[T], theta T) Vec2[T] {
 	return Vec2[T]{T(x), T(y)}
 }
 
+// in radians
 func Unit_Vector_With_Rotation[T Float](theta T) Vec2[T] {
 	sin, cos := math.Sincos(float64(theta))
 	return Make_Vec2(T(cos), T(sin))

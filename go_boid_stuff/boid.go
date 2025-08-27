@@ -53,6 +53,10 @@ type Properties struct {
 
 	Mouse_Draw_Factor Boid_Float `Property:"float" Range:"1;100" Default:"5"`
 
+	Num_Boid_Rays      int        `Property:"int" Range:"1;10" Default:"3"`
+	// in radians
+	Visual_Cone_Radius Boid_Float `Property:"float" Range:"0;360" Default:"90"`
+
 	Final_Acceleration_Boost Boid_Float `Property:"float" Range:"1;25" Default:"5"`
 	Final_Drag_Coefficient   Boid_Float `Property:"float" Range:"0;2" Default:"1"`
 
@@ -743,15 +747,19 @@ func bounce_1d[T Number](x, r, v, w T) T {
 }
 
 
-const NUM_BOID_RAYS = 3
-// in radians, pi/4 is 45 deg. either side
-const VISUAL_CONE_RADIUS = math.Pi / 4
-
 func (boid_sim *Boid_simulation) get_boid_rays(boid Boid) []Line {
-	result := make([]Line, NUM_BOID_RAYS)
+	num_rays    := boid_sim.props.Num_Boid_Rays
+	cone_radius := boid_sim.props.Visual_Cone_Radius
 
-	for i := range NUM_BOID_RAYS {
-		angle := Lerp(-VISUAL_CONE_RADIUS, VISUAL_CONE_RADIUS, Boid_Float(i) / (NUM_BOID_RAYS - 1))
+	result := make([]Line, num_rays)
+
+	cone_radians := (cone_radius * DEG_TO_RAD) / 2
+
+	for i := range num_rays {
+		var angle Boid_Float = 0
+		if num_rays > 1 {
+			angle = Lerp(-cone_radians, cone_radians, Boid_Float(i) / Boid_Float(num_rays - 1))
+		}
 		dir := Rotate(boid.Velocity, angle)
 
 		dir.SetMag(boid_sim.props.Visual_Range) // Visual_Range is the farthest it can see.
