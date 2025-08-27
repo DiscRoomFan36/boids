@@ -12,10 +12,9 @@ var input Input_Status
 
 const DEBUG_SPACIAL_ARRAY = false
 const DEBUG_BOUNDARY      = true
-const DEBUG_HEADING       = false
+const DEBUG_HEADING       = true
 const DEBUG_VISUAL_RANGES = false
 
-var boid_heading_color  = Color{r:  10/256.0, g: 240/256.0, b:  10/256.0, a: 1}
 var boid_boundary_color = Color{r: 240/256.0, g: 240/256.0, b: 240/256.0, a: 1}
 
 // TODO have some sort of view mode here, so we can 'move' the 'camera'
@@ -150,7 +149,7 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		if DEBUG_HEADING {
 			// Draw heading line
 			where_boid_will_be := Add(b.Position, b.Velocity)
-			Draw_Line(img, b.Position, where_boid_will_be, boid_heading_color)
+			Draw_Line(img, b.Position, where_boid_will_be, rgba(43, 231, 26, 1))
 		}
 	}
 

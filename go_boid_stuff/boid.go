@@ -751,7 +751,7 @@ func (boid_sim *Boid_simulation) get_boid_rays(boid Boid) []Line {
 	result := make([]Line, NUM_BOID_RAYS)
 
 	for i := range NUM_BOID_RAYS {
-		angle := Lerp(-VISUAL_CONE_RADIUS, VISUAL_CONE_RADIUS, Boid_Float(i) / NUM_BOID_RAYS)
+		angle := Lerp(-VISUAL_CONE_RADIUS, VISUAL_CONE_RADIUS, Boid_Float(i) / (NUM_BOID_RAYS - 1))
 		dir := Rotate(boid.Velocity, angle)
 
 		dir.SetMag(boid_sim.props.Visual_Range) // Visual_Range is the farthest it can see.
@@ -824,3 +824,5 @@ func (boid_sim *Boid_simulation) ray_collide_against_all_lines_and_find_smallest
 	return min_dist_sqr, hit_pos
 }
 
+
+// func (boid_sim *Boid_simulation) get_boid_
