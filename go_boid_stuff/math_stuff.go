@@ -2,7 +2,6 @@ package main
 
 import (
 	"math"
-	"math/rand"
 )
 
 // TODO just make it float32? i like the generics, but it might be a bit much.
@@ -105,7 +104,7 @@ const RAD_TO_DEG = 180 / math.Pi
 
 // in radians
 func Random_unit_vector[T Float]() Vec2[T] {
-	theta := rand.Float64() * 2 * math.Pi
+	theta := rand_f64() * 2 * math.Pi
 	sin, cos := math.Sincos(theta)
 	return Make_Vec2(T(cos), T(sin))
 }

@@ -2,7 +2,6 @@ package main
 
 import (
 	"math"
-	"math/rand"
 	"time"
 )
 
@@ -129,7 +128,7 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 		boid_sim.generators[i] = New_Random_Generator(true)
 		// offset the generators a bit.
 		// this doesn't have to be random. could just be 'i / NUM_RANDOM_GENERATORS'
-		boid_sim.generators[i].t = random_32()
+		boid_sim.generators[i].t = rand_f32()
 	}
 
 	// put the wall in the center
@@ -246,8 +245,8 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 
 				new_boid := Boid{
 					Position: Make_Vec2(
-						Boid_Float(rand.Float32()*float32(boid_sim.Width)),
-						Boid_Float(rand.Float32()*float32(boid_sim.Height)),
+						Boid_Float(rand_f32()*float32(boid_sim.Width)),
+						Boid_Float(rand_f32()*float32(boid_sim.Height)),
 					),
 					Velocity: Mult(Random_unit_vector[Boid_Float](), (boid_sim.props.Min_Speed + boid_sim.props.Max_Speed) / 2),
 				}
@@ -257,7 +256,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 				// remove 1 boid.
 				// do it randomly so its cooler.
 
-				random_index := rand.Intn(len(boid_sim.Boids))
+				random_index := rand_n(len(boid_sim.Boids))
 				Remove_Unordered(&boid_sim.Boids, random_index)
 			}
 		}

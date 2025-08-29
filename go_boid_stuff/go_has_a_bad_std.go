@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"math/rand"
 )
 
 // good old swap and remove
@@ -33,6 +34,17 @@ type Number interface { Int | Float }
 func Floor[T Number](x T) int { return int(math.Floor(float64(x))) }
 func Ceil[ T Number](x T) int { return int(math.Ceil( float64(x))) }
 
+// floating point mod, always returns a number [0, 1)
+// Modf but better.
+func mod1[T Float](x T) T {
+	_, a_f64 := math.Modf(float64(x))
+
+	// assert(abs(a) < 1)
+	a := T(a_f64)
+	// if the sign was negative, make it positive,
+	if a < 0 { return 1 + a
+	} else   { return a }
+}
 
 func Clamp[T Number](x, mini, maxi T) T {
 	if mini > maxi { panic("mini was bigger than maxi") }
@@ -86,3 +98,14 @@ func Square[T Number](x T) T {
 func Sqrt[T Float](x T) T {
 	return T(math.Sqrt(float64(x)))
 }
+
+
+
+
+// The random number generator function. [0, 1)
+func rand_f32() float32 { return rand.Float32() }
+// The random number generator function. [0, 1)
+func rand_f64() float64 { return rand.Float64() }
+
+func rand_n(n int) int { return rand.Intn(n) }
+

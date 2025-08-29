@@ -66,9 +66,7 @@ func New_Spacial_Array[T Number]() Spacial_Array[T] {
 }
 
 func (array *Spacial_Array[T]) Append_points(points []Vec2[T]) {
-	if array.inited {
-		panic("cannot append 2 sets of points, sorry")
-	}
+	if array.inited { panic("cannot append 2 sets of points, sorry") }
 	array.inited = true
 
 	{ // set the bounds of the array
@@ -146,9 +144,7 @@ func (array Spacial_Array[T]) Iter_Over_Near(point Vec2[T], radius T) iter.Seq2[
 						checking_point := box.Points[k]
 						if DistSqr(point, checking_point) < radius*radius {
 							point_index := box.Indexes[k]
-							if !yield(point_index, checking_point) {
-								return
-							}
+							if !yield(point_index, checking_point) { return }
 						}
 					}
 

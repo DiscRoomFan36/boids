@@ -243,9 +243,7 @@ func Draw_Line[T Number](img *Image, _p1, _p2 Vec2[T], c Color) {
 	dy := p2.y - p1.y
 
 	if dx == 0 {
-		if !(0 <= p1.x && p1.x < img.Width) {
-			return
-		}
+		if !(0 <= p1.x && p1.x < img.Width) { return }
 		// draw up down line
 		y1 := min(p1.y, p2.y)
 		y2 := max(p1.y, p2.y)
@@ -266,9 +264,7 @@ func Draw_Line[T Number](img *Image, _p1, _p2 Vec2[T], c Color) {
 		X_r := Round(X)
 		Y_r := Round(Y)
 
-		if img.point_within_bounds(X_r, Y_r) {
-			img.put_color(X_r, Y_r, c)
-		}
+		if img.point_within_bounds(X_r, Y_r) { img.put_color(X_r, Y_r, c) }
 
 		X += X_inc
 		Y += Y_inc
@@ -285,28 +281,13 @@ func Draw_Triangle[T Number](img *Image, p1, p2, p3 Vec2[T], color Color) {
 	v2 := Transform[T, int](p2)
 	v3 := Transform[T, int](p3)
 
-	sortVerticesAscendingByY := func() {
-		// bubble sort, i wish go had a better way to do this, like passing a function into the sort interface, (v1, v2, v3 used to be an array)
-		if v1.y > v2.y {
-			v1, v2 = v2, v1
-		}
-		if v2.y > v3.y {
-			v2, v3 = v3, v2
-		}
-		if v1.y > v2.y {
-			v1, v2 = v2, v1
-		}
-
-		if !(v1.y <= v2.y && v2.y <= v3.y) {
-			log.Fatalf("Did not sort vertex's correctly, got %v, %v, %v\n", v1, v2, v3)
-		}
-	}
-	sortVerticesAscendingByY()
+	// bubble sort, i wish go had a better way to do this, like passing a function into the sort interface, (v1, v2, v3 used to be an array)
+	if v1.y > v2.y { v1, v2 = v2, v1 }
+	if v2.y > v3.y { v2, v3 = v3, v2 }
+	if v1.y > v2.y { v1, v2 = v2, v1 }
 
 	draw_line := func(x0, x1, y int) {
-		if !(0 <= y && y < img.Height) {
-			return
-		}
+		if !(0 <= y && y < img.Height) { return }
 		for x := max(min(x0, x1), 0); x < min(max(x0, x1), img.Width); x++ {
 			img.put_color(x, y, color)
 		}
@@ -346,7 +327,7 @@ func Draw_Triangle[T Number](img *Image, p1, p2, p3 Vec2[T], color Color) {
 
 		// I did some rearranging here
 		v4 := Vec2[int]{
-			// X: int(float32(v1.X) + float32(v2.Y-v1.Y)/float32(v3.Y-v1.Y)*float32(v3.X-v1.X)),
+			// x: int(float32(v1.X) + float32(v2.Y-v1.Y)/float32(v3.Y-v1.Y)*float32(v3.X-v1.X)),
 			x: (((v2.y - v1.y) * (v3.x - v1.x)) + (v1.x * (v3.y - v1.y))) / (v3.y - v1.y),
 			y: v2.y,
 		}

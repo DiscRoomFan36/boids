@@ -1,10 +1,5 @@
 package main
 
-import (
-	"math"
-	"math/rand"
-)
-
 // generates a smoothened random noise,
 // sometimes wraps around 0 and 1, but it should do that smoothly,
 type Random_Generator struct {
@@ -29,12 +24,12 @@ type Random_Generator struct {
 
 func New_Random_Generator(wrapping bool) Random_Generator {
 	gen := Random_Generator{
-		curr:     random_32(),
-		next:     random_32(),
+		curr:     rand_f32(),
+		next:     rand_f32(),
 		t:        0,
 		wrapping: wrapping,
 		// only relevant when wrapping is true.
-		turning_direction: wrapping && (random_32() < 0.5),
+		turning_direction: wrapping && (rand_f32() < 0.5),
 	}
 
 	return gen
@@ -56,14 +51,13 @@ func (gen *Random_Generator) Next(dt float32) float32 {
 		} else {
 			// else just get a brand new set.
 			gen.t = mod1(gen.t)
-			gen.curr = random_32()
+			gen.curr = rand_f32()
 		}
 
-		gen.next = random_32()
+		gen.next = rand_f32()
 
 		if gen.wrapping {
-			// only relevant when wrapping is true.
-			gen.turning_direction = random_32() < 0.5
+			gen.turning_direction = rand_f32() < 0.5
 		}
 	}
 
@@ -71,9 +65,7 @@ func (gen *Random_Generator) Next(dt float32) float32 {
 	step := smoothstep(gen.t)
 
 	// skip the rest if not wrapping
-	if !gen.wrapping {
-		return Lerp(gen.curr, gen.next, step)
-	}
+	if !gen.wrapping { return Lerp(gen.curr, gen.next, step) }
 
 	if gen.turning_direction {
 		// t++, result++
@@ -115,26 +107,3 @@ func smoothstep(x float32) float32 {
 	return x * x * (3.0 - 2.0*x)
 }
 
-// ---------------------------
-//    Math library wrappers
-// ---------------------------
-
-// The random number generator function. [0, 1)
-func random_32() float32 {
-	return rand.Float32()
-}
-
-// floating point mod, always returns a number [0, 1)
-// Modf but better.
-func mod1[T Float](x T) T {
-	_, a_64 := math.Modf(float64(x))
-
-	// assert(abs(a) < 1)
-	a := T(a_64)
-	// if the sign was negative, make it positive,
-	if a < 0 {
-		return 1 + a
-	} else {
-		return a
-	}
-}

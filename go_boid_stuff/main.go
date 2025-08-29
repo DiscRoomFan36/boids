@@ -31,9 +31,7 @@ func GetProperties(this js.Value, args []js.Value) any {
 
 	// We have to do this because js.FuncOf() expects this function to return a map to any. (aka a javascript object.)
 	properties_to_any := make(map[string]any)
-	for k, v := range property_structs {
-		properties_to_any[k] = v.Tag_as_string
-	}
+	for k, v := range property_structs { properties_to_any[k] = v.Tag_as_string }
 	return properties_to_any
 }
 
@@ -55,17 +53,15 @@ func SetProperties(this js.Value, args []js.Value) any {
 	the_map := make(map[string]Union_Like)
 	for name, prop_struct := range Get_property_structs() {
 		value := obj.Get(name)
-		if value.IsUndefined() {
-			continue
-		}
+		if value.IsUndefined() { continue }
 
 		union := Union_Like{}
 
 		// the .Float() and others will panic is something is not right. Good behavior
 		switch prop_struct.Property_type {
 		case Property_Float: union.As_float = value.Float()
-		case Property_Int:   union.As_int   = value.Int()
-		case Property_Bool:  union.As_bool  = value.Bool()
+		case Property_Int  : union.As_int   = value.Int()
+		case Property_Bool : union.As_bool  = value.Bool()
 
 		default: log.Panicf("%v: unknown property in 'SetProperty()'", name)
 		}
