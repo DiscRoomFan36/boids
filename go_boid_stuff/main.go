@@ -112,12 +112,7 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 		mouse_pos,
 	)
 
-	// saves space
-	if len(img.Buffer) < width*height*NUM_COLOR_COMPONENTS {
-		img.Buffer = make([]byte, width*height*NUM_COLOR_COMPONENTS)
-	}
-	img.Width = width
-	img.Height = height
+	img.Resize_Image(width, height)
 
 	// TODO theres a bug here if you full screen a window...
 
@@ -145,7 +140,7 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	Draw_boids_into_image(&img, &boid_sim)
 
 	// copy the pixels, must be in RGBA format
-	copied_bytes := js.CopyBytesToJS(array, img.Buffer[:width*height*NUM_COLOR_COMPONENTS])
+	copied_bytes := js.CopyBytesToJS(array, img.To_RGBA_byte_array())
 	return copied_bytes
 }
 

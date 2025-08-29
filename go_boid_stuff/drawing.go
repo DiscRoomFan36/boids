@@ -15,14 +15,14 @@ const DEBUG_BOUNDARY      = true
 const DEBUG_HEADING       = false
 const DEBUG_VISUAL_RANGES = false
 
-var boid_boundary_color = Color{r: 240/256.0, g: 240/256.0, b: 240/256.0, a: 1}
 
 // TODO have some sort of view mode here, so we can 'move' the 'camera'
 //
 // go incorrectly reports this function as unused if it is not public...
 func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
+	boid_boundary_color := rgb(240, 240, 240)
 
-	img.Clear_background(Color_Data{r: 24, g: 24, b: 24, a: 255})
+	img.Clear_background(Color{r: 24, g: 24, b: 24, a: 255})
 
 	// we map the world-space to match the image space
 	scale_factor := Boid_Float(1) / BOID_SCALE
@@ -82,7 +82,7 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 			}
 
 			for i := range len(boundary_points) {
-				Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], Color_Red())
+				Draw_Line(img, boundary_points[i], boundary_points[(i+1)%len(boundary_points)], rgb(240, 14, 14))
 			}
 		}
 	}
@@ -92,7 +92,7 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 			p1, p2 := line.to_vec()
 			p1.Mult(scale_factor)
 			p2.Mult(scale_factor)
-			Draw_Line(img, p1, p2, Color_Red())
+			Draw_Line(img, p1, p2, rgb(240, 14, 14))
 		}
 	}
 
@@ -102,8 +102,8 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		p2 := input.Mouse_Pos
 		p1.Mult(scale_factor)
 		p2.Mult(scale_factor)
-		color := Color_Yellow()
-		if input.Middle_Held { color = Color_Green() }
+		color := rgb(236, 236, 10)
+		if input.Middle_Held { color = rgb(10, 245, 10) }
 		Draw_Line(img, p1, p2, color)
 	}
 
@@ -162,8 +162,8 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		secs := float32(now.Sub(time).Seconds())
 		percent := secs / CLICK_FADE_TIME
 
-		color := Color_Pure_White()
-		color.a = 1 - ease_in_out_quint(percent)
+		color := rgba(226, 226, 226, 0.77)
+		color.Set_Alpha(1 - ease_in_out_quint(percent))
 
 		// in image pixels
 		const SIZE_SCALE = 20
@@ -260,13 +260,13 @@ func draw_spacial_array_into_image[T Number](img *Image, sp_array Spacial_Array[
 				img,
 				bounding_box[i],
 				bounding_box[(i+1)%len(bounding_box)],
-				Color_Pure_White(),
+				rgb(223, 223, 223),
 			)
 		}
 	}
 
 	{ // now draw the inner lines.
-		inner_color := Color_Red()
+		inner_color := rgb(163, 21, 21)
 
 		// Vertical
 		for i := 1; i < sp_array.Boxes_wide; i++ {

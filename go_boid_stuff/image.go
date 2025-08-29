@@ -10,54 +10,31 @@ import (
 // DO NOT CHANGE UNLESS YOU WANNA DO A MASSIVE REFACTOR (AGAIN)
 const NUM_COLOR_COMPONENTS = 4
 
-type Color_Data struct {
+type Color struct {
 	r, g, b, a uint8
 }
 
-func New_Color_Data(r, g, b, a uint8) Color_Data {
-	return Color_Data{r: r, g: g, b: b, a: a}
-}
-
-func (c Color_Data) Splat() (uint8, uint8, uint8, uint8) {
+func (c Color) Splat() (uint8, uint8, uint8, uint8) {
 	return c.r, c.g, c.b, c.a
 }
 
-func (c Color_Data) Splat_f() (float32, float32, float32, float32) {
+func (c Color) Splat_f() (float32, float32, float32, float32) {
 	return float32(c.r), float32(c.g), float32(c.b), float32(c.a)
 }
 
-type Color struct {
-	r, g, b, a float32
+func (c *Color) Set_Alpha(a float32) {
+	c.a = uint8(Round(a * 255))
 }
 
 // my editor has a feature where if you put rgb(28, 110, 192),
 // it makes a color picker. this was probably intended for HTML/CSS,
 // but it works anywhere. Sick Hack.
 func rgb(r, g, b uint8) Color {
-	return Color{float32(r) / 255, float32(g) / 255, float32(b) / 255, 1}
+	return Color{r, g, b, 255}
 }
 func rgba(r, g, b uint8, a float32) Color {
-	return Color{float32(r) / 255, float32(g) / 255, float32(b) / 255, a}
+	return Color{r, g, b, uint8(Round(a) * 255)}
 }
-
-func Color_Black()      Color { return Color{0, 0, 0, 1} }
-func Color_Pure_White() Color { return Color{1, 1, 1, 1} }
-func Color_Red()        Color { return rgb(217,  36,  36) }
-func Color_Green()      Color { return rgb( 42, 217,  36) }
-func Color_Blue()       Color { return rgb( 50,  78, 255) }
-func Color_Yellow()     Color { return rgb(240, 255,  34) }
-func Color_Orange()     Color { return rgb(255, 146,  95) }
-
-/*
-func (c Color) to_data() Color_Data {
-	return Color_Data{
-		r: uint8(Round(c.r * 255)),
-		g: uint8(Round(c.g * 255)),
-		b: uint8(Round(c.b * 255)),
-		a: uint8(Round(c.a * 255)),
-	}
-}
-*/
 
 
 // https://en.wikipedia.org/wiki/HSL_and_HSV#HSL_to_RGB_alternative
@@ -72,12 +49,10 @@ func HSL_to_RGB[T Float](H, S, L T) Color {
 		return L - a*max(-1, min(k-3, 9-k, 1))
 	}
 
-	return Color{
-		r: float32(f(0)),
-		g: float32(f(8)),
-		b: float32(f(4)),
-		a: 1,
-	}
+	r := uint(f(0) * 255); r = min(r, 255)
+	g := uint(f(8) * 255); g = min(g, 255)
+	b := uint(f(4) * 255); b = min(b, 255)
+	return Color{uint8(r), uint8(g), uint8(b), 255}
 }
 
 type Image struct {
@@ -92,6 +67,21 @@ func New_image(width int, height int) Image {
 		Width:  width,
 		Height: height,
 	}
+}
+
+func (img *Image) Resize_Image(new_width, new_height int) {
+	if img.Width == new_width && img.Height == new_height { return }
+
+	// saves space by reusing memory
+	new_size := new_width*new_height*NUM_COLOR_COMPONENTS
+	if len(img.Buffer) < new_size {
+		img.Buffer = make([]byte, new_size)
+	}
+	img.Width, img.Height = new_width, new_height
+}
+
+func (img *Image) To_RGBA_byte_array() []byte {
+	return img.Buffer[:img.Width*img.Height*NUM_COLOR_COMPONENTS]
 }
 
 func (img *Image) To_RGB_byte_array() []byte {
@@ -123,31 +113,53 @@ func (img *Image) point_within_bounds(x, y int) bool {
 	return x >= 0 && x < img.Width && y >= 0 && y < img.Height
 }
 
-func (img *Image) put_color(x, y int, c Color) {
-	r_u8 := img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0]
-	g_u8 := img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1]
-	b_u8 := img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2]
-	// a_u8 := img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3]
-
-	r := float32(r_u8) / 255.0
-	g := float32(g_u8) / 255.0
-	b := float32(b_u8) / 255.0
-
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0] = uint8(Round(Lerp(r, c.r, c.a) * 255))
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1] = uint8(Round(Lerp(g, c.g, c.a) * 255))
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2] = uint8(Round(Lerp(b, c.b, c.a) * 255))
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3] = 255
-}
-
 /*
-func (img *Image) put_pixel(x, y int, c Color_Data) {
-	// TODO care more about Alpha
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0] = c.r
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1] = c.g
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2] = c.b
-	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3] = c.a
+func (img *Image) color_at(x, y int) Color {
+	return Color{
+		r: img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0],
+		g: img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1],
+		b: img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2],
+		a: img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3],
+	}
 }
 */
+
+// returned alpha is c1.a
+func blend_color(c1, c2 Color) Color {
+	r1, g1, b1, a1 := uint(c1.r), uint(c1.g), uint(c1.b), uint(c1.a)
+	r2, g2, b2, a2 := uint(c2.r), uint(c2.g), uint(c2.b), uint(c2.a)
+
+	r3 := (r1*(255 - a2) + r2*a2)/255; r3 = min(r3, 255)
+	g3 := (g1*(255 - a2) + g2*a2)/255; g3 = min(g3, 255)
+	b3 := (b1*(255 - a2) + b2*a2)/255; b3 = min(b3, 255)
+
+	return Color{uint8(r3), uint8(g3), uint8(b3), uint8(a1)}
+}
+
+
+func (img *Image) put_color(x, y int, c Color) {
+	if (c.a == 255) {
+		img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0] = c.r
+		img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1] = c.g
+		img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2] = c.b
+		// img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3] = 255
+	} else {
+
+		color := Color{
+			img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0],
+			img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1],
+			img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2],
+			img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3],
+		}
+
+		blended := blend_color(color, c)
+
+		img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0] = blended.r
+		img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1] = blended.g
+		img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2] = blended.b
+		// img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3] = blended.a
+	}
+}
 
 func Draw_Rect[T Number](img *Image, x, y, w, h T, c Color) {
 	_x := Round(x)
@@ -162,7 +174,7 @@ func Draw_Rect[T Number](img *Image, x, y, w, h T, c Color) {
 	}
 }
 
-func (img *Image) Clear_background(c Color_Data) {
+func (img *Image) Clear_background(c Color) {
 	bytes := [NUM_COLOR_COMPONENTS]byte{c.r, c.g, c.b, c.a}
 	for i := 0; i < img.Width*img.Height*NUM_COLOR_COMPONENTS; i += NUM_COLOR_COMPONENTS {
 		img.Buffer[i+0] = bytes[0]
