@@ -153,6 +153,9 @@ func main() {
 	js.Global().Set("SetProperties", js.FuncOf(SetProperties))
 	js.Global().Set("GetNextFrame",  js.FuncOf(GetNextFrame))
 
+	// something like this to do faster drawing.
+	// js.Global().Call("draw_triangles", tries)
+
 	// this stalls the go program, because go has a 'run time' that needs to be aware of everything. bleh
 	<-make(chan struct{})
 }

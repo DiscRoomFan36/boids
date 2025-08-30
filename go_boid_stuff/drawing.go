@@ -183,14 +183,15 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		combined_ray := Vec2[Boid_Float]{}
 
 		for _, ray := range rays {
-			_, pos := boid_sim.ray_collide_against_all_lines_and_find_smallest(ray)
+			dist_sqr, pos := boid_sim.ray_collide_against_all_lines_and_find_smallest(ray)
 
-			combined_ray.Add(Sub(pos, boid.Position))
+			// should be zero when it sees nothing, otherwise provides a push in the other direction.
+			new_force := Sub(pos, Vec2[Boid_Float]{ray.x2, ray.y2})
+			new_force.Mult(boid_sim.props.Visual_Range - Sqrt(dist_sqr))
 
-			ray.x1 *= scale_factor
-			ray.y1 *= scale_factor
-			ray.x2 *= scale_factor
-			ray.y2 *= scale_factor
+			combined_ray.Add(new_force)
+
+			ray = Scale(ray, scale_factor)
 			pos.Mult(scale_factor)
 
 			Draw_Line_l(img, ray, rgba(245, 130, 22, 0.5))
@@ -199,11 +200,12 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		}
 
 		combined_ray.Mult(1 / Boid_Float(boid_sim.props.Num_Boid_Rays))
+
 		combined_ray.Add(boid.Position)
 		combined_ray.Mult(scale_factor)
 
 		Draw_Line(img, Mult(boid.Position, scale_factor), combined_ray, rgba(165, 33, 143, 1))
-		Draw_Circle_v(img, combined_ray, 5, rgba(235, 41, 41, 0.25))
+		Draw_Circle_v(img, combined_ray, 5, rgba(235, 41, 41, 1))
 	}
 
 

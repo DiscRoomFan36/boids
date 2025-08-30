@@ -163,6 +163,14 @@ func (line Line) to_vec() (Vec2[Boid_Float], Vec2[Boid_Float]) {
 	return Vec2[Boid_Float]{line.x1, line.y1}, Vec2[Boid_Float]{line.x2, line.y2}
 }
 
+func Scale(line Line, s Boid_Float) Line {
+	line.x1 *= s
+	line.y1 *= s
+	line.x2 *= s
+	line.y2 *= s
+	return line
+}
+
 func rectangle_to_lines(x, y, w, h Boid_Float) [4]Line {
 	lines := [4]Line{}
 	lines[0] = Line{x,     y,     x + w, y    }
