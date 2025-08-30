@@ -52,9 +52,9 @@ type Properties struct {
 
 	Mouse_Draw_Factor Boid_Float `Property:"float" Range:"1;100" Default:"5"`
 
-	Num_Boid_Rays      int        `Property:"int" Range:"1;10" Default:"3"`
+	Num_Boid_Rays      int        `Property:"int" Range:"1;10" Default:"5"`
 	// in radians
-	Visual_Cone_Radius Boid_Float `Property:"float" Range:"0;360" Default:"90"`
+	Visual_Cone_Radius Boid_Float `Property:"float" Range:"0;360" Default:"140"`
 	Boid_Vision_Factor Boid_Float `Property:"float" Range:"0;5" Default:"1"`
 
 	Final_Acceleration_Boost Boid_Float `Property:"float" Range:"1;25" Default:"5"`

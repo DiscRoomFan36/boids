@@ -29,12 +29,11 @@ DONE
 * move everything into a single go module
 * have typescript control the walls, make more walls. with right click and drag?
 * use middle_held in boid make new walls
+* make boids see in front of them. (with rays?)
+* boids dodge obstacles, put a big rect in the middle of the screen.
 
 
 NEXT
-
-* make boids see in front of them. (with rays?)
-* boids dodge obstacles, put a big rect in the middle of the screen.
 
 * Make into my personal website, aka put my name and links to my stuff on it. boids path around name.
 
