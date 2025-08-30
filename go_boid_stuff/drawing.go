@@ -175,6 +175,11 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 	}
 
 
+	////////////////////////////////////////////////////////
+	//                 Debug Boid Vision
+	////////////////////////////////////////////////////////
+	// this is kinda Copypasta from the real code.
+	/*
 	// draw the boid rays, not all of them though
 	for i := range min(len(boid_sim.Boids), 10) {
 		boid := boid_sim.Boids[i]
@@ -207,6 +212,7 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		Draw_Line(img, Mult(boid.Position, scale_factor), combined_ray, rgba(165, 33, 143, 1))
 		Draw_Circle_v(img, combined_ray, 5, rgba(235, 41, 41, 1))
 	}
+	*/
 
 
 	// { // debug mouse pos

@@ -55,6 +55,7 @@ type Properties struct {
 	Num_Boid_Rays      int        `Property:"int" Range:"1;10" Default:"3"`
 	// in radians
 	Visual_Cone_Radius Boid_Float `Property:"float" Range:"0;360" Default:"90"`
+	Boid_Vision_Factor Boid_Float `Property:"float" Range:"0;5" Default:"1"`
 
 	Final_Acceleration_Boost Boid_Float `Property:"float" Range:"1;25" Default:"5"`
 	Final_Drag_Coefficient   Boid_Float `Property:"float" Range:"0;2" Default:"1"`
@@ -425,6 +426,46 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 			toward_mouse := Sub(input.Mouse_Pos, boid_sim.Boids[i].Position)
 			force := Mult(Normalized(toward_mouse), boid_sim.props.Mouse_Draw_Factor)
 			boid_sim.Boids[i].Acceleration.Add(force)
+		}
+	}
+
+
+	// ------------------------------------
+	//            Boid Vision
+	// ------------------------------------
+	//
+	// works by shooting rays that collide against everything in the scene
+	// if this is ever the slow part, there are tones of ways to make this faster.
+	//
+	// Im not saying that I want this to be slow, its just that the slow part right
+	// now is drawing and I wish that wasn't the slow part.
+	//
+	// Also this Sloppy_Equal is to stop this from running if the factor is zero,
+	// might apply this to other things as well, but this feels like it
+	// could maybe make a difference here
+	if !Sloppy_Equal(boid_sim.props.Boid_Vision_Factor, 0) {
+
+		for i := range len(boid_sim.Boids) {
+			rays := boid_sim.get_boid_rays(boid_sim.Boids[i])
+
+			combined_ray := Vec2[Boid_Float]{}
+
+			for _, ray := range rays {
+				dist_sqr, pos := boid_sim.ray_collide_against_all_lines_and_find_smallest(ray)
+
+				// should be zero when it sees nothing, otherwise provides a push in the other direction.
+				new_force := Sub(pos, Vec2[Boid_Float]{ray.x2, ray.y2})
+				new_force.Mult(boid_sim.props.Visual_Range - Sqrt(dist_sqr))
+
+				combined_ray.Add(new_force)
+			}
+
+			// reduce the total forces by the number of rays.
+			combined_ray.Mult(1 / Boid_Float(boid_sim.props.Num_Boid_Rays))
+
+			combined_ray.Mult(boid_sim.props.Boid_Vision_Factor)
+
+			boid_sim.Boids[i].Acceleration.Add(combined_ray)
 		}
 	}
 
