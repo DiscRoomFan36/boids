@@ -27,16 +27,16 @@ type Position_And_Time struct {
 type Properties struct {
 	// in rough order of when their used
 
-	Max_Boids          int `Property:"int" Range:"0;5000" Default:"100"`
+	Max_Boids          int `Property:"int" Range:"0;5000" Default:"500"`
 	// how many spawn / de-spawn per second.
 	Boid_Spawn_Rate    Boid_Float `Property:"float" Range:"10;1000" Default:"100"`
 
 	Visual_Range            Boid_Float `Property:"float" Range:"1;25" Default:"15"`
 	Separation_Min_Distance Boid_Float `Property:"float" Range:"0;20" Default:"8.5"`
 
-	Separation_Factor Boid_Float `Property:"float" Range:"0;1" Default:"0.15"`
-	Alignment_Factor  Boid_Float `Property:"float" Range:"0;1" Default:"0.15"`
-	Cohesion_Factor   Boid_Float `Property:"float" Range:"0;1" Default:"0.015"`
+	Separation_Factor Boid_Float `Property:"float" Range:"0;1" Default:"0.50"` // 0.15
+	Alignment_Factor  Boid_Float `Property:"float" Range:"0;1" Default:"0.30"` // 0.15
+	Cohesion_Factor   Boid_Float `Property:"float" Range:"0;1" Default:"0.15"` // 0.015
 
 	Margin             Boid_Float `Property:"float" Range:"0;100" Default:"50"`
 	Margin_Turn_Factor Boid_Float `Property:"float" Range:"0;20" Default:"4"`
@@ -57,11 +57,8 @@ type Properties struct {
 	Visual_Cone_Radius Boid_Float `Property:"float" Range:"0;360" Default:"140"`
 	Boid_Vision_Factor Boid_Float `Property:"float" Range:"0;5" Default:"1"`
 
-	Final_Acceleration_Boost Boid_Float `Property:"float" Range:"1;25" Default:"5"`
-	Final_Drag_Coefficient   Boid_Float `Property:"float" Range:"0;2" Default:"1"`
-
-	Max_Speed Boid_Float `Property:"float" Range:"1;500" Default:"100"`
-	Min_Speed Boid_Float `Property:"float" Range:"1;50" Default:"10"`
+	Final_Acceleration_Boost Boid_Float `Property:"float" Range:"1;25" Default:"10"` // 5
+	Final_Drag_Coefficient   Boid_Float `Property:"float" Range:"0;2" Default:"0.15"` // 1
 
 
 	Toggle_Wrapping bool `Property:"bool" Default:"true"`
@@ -148,19 +145,6 @@ func (boid_sim *Boid_simulation) bounds_as_rect() Rectangle {
 	}
 }
 
-func (boid_sim *Boid_simulation) adjust_speed(vel Vec2[Boid_Float]) Vec2[Boid_Float] {
-	speed := vel.Mag()
-	if speed > boid_sim.props.Max_Speed {
-		// we don't really need this now that we have drag
-		// fmt.Printf("boid is faster than max\n")
-		// vel.Mult(boid_sim.Max_Speed / speed)
-	} else if speed < boid_sim.props.Min_Speed {
-		vel.Mult(boid_sim.props.Min_Speed / speed)
-	}
-
-	return vel
-}
-
 
 // NOTE dt is in seconds
 func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
@@ -229,7 +213,9 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 						Boid_Float(rand_f32()*float32(boid_sim.Width)),
 						Boid_Float(rand_f32()*float32(boid_sim.Height)),
 					),
-					Velocity: Mult(Random_unit_vector[Boid_Float](), (boid_sim.props.Min_Speed + boid_sim.props.Max_Speed) / 2),
+					// just a bit of starting speed. these numbers mean nothing,
+					// I just wanted to finally remove Min and Max Speed
+					Velocity: Mult(Random_unit_vector[Boid_Float](), 20),
 				}
 
 				Append(&boid_sim.Boids, new_boid)
@@ -277,7 +263,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 		coh := Vec2[Boid_Float]{}
 
 		num_close_boids := 0
-		for j, near_pos := range boid_sim.Spacial_array.Iter_Over_Near(this_boid.Position, boid_sim.props.Visual_Range) {
+		for other_boid_index, near_pos := range boid_sim.Spacial_array.Iter_Over_Near(this_boid.Position, boid_sim.props.Visual_Range) {
 			num_close_boids += 1
 
 			// if the near guy is super close. move away
@@ -298,23 +284,27 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 			}
 
 			// make the velocity's match.
-			align.Add(boid_sim.Boids[j].Velocity)
-			// go to the center of the pack.
+			align.Add(boid_sim.Boids[other_boid_index].Velocity)
+			// go to the center of the pack. we subtract this_boid.position later
 			coh.Add(near_pos)
 		}
 
+		if num_close_boids == 0 { panic("dose this ever happen, or dose it see itself.") }
+
 		// divide by number of close boids.
 		if num_close_boids > 0 {
-			// TODO ? what was i doing here?
-			align.SetMag(boid_sim.props.Max_Speed)
-			align.Sub(this_boid.Velocity)
 			align.Mult(1 / Boid_Float(num_close_boids))
+			// because we want the difference between our
+			// velocity and the near ones. so we sub here to
+			// sub from every near one. probably be more clear
+			// to not do it here, i don't think this is the slow
+			// part of that loop.
 			align.Sub(this_boid.Velocity)
 
 			coh.Mult(1 / Boid_Float(num_close_boids))
+			// remove its own position from every near boid,
+			// faster than subtracting from every individual, probably
 			coh.Sub(this_boid.Position)
-			// coh.SetMag(boid_sim.props.Max_Speed)
-			// coh.Sub(this_boid.Velocity)
 		}
 
 		sep.Mult(boid_sim.props.Separation_Factor)
@@ -513,9 +503,22 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt_ float64) {
 		// v1 = a*t + v0
 		v1 := Add(Mult(a, dt), v0)
 
-		// adjust the velocity
-		// TODO do we even have to limit speed? drag dose that for us.
-		v1 = boid_sim.adjust_speed(v1)
+		{ // this Code is kinda Meh.
+			// this is kinda replacing Min_Speed, but i kinda don't want to think about it anymore.
+			// Also i already have to many properties. gotta cut down on them
+			//
+			// also for some reason i feal as if this code is doing nothing? huh?
+			const BOID_MIN_SPEED = 10
+			v1_mag := v1.Mag()
+			if v1_mag < BOID_MIN_SPEED {
+				if Sloppy_Equal(v1_mag, 0) {
+					// just move in a direction. probably should make this unique for each boid...
+					v1 = Vec2[Boid_Float]{-BOID_MIN_SPEED, -BOID_MIN_SPEED}
+				} else {
+					v1.SetMag(BOID_MIN_SPEED)
+				}
+			}
+		}
 
 		// a very nice way to calculate displacement.
 		// v_avg = (v0 + v1) / 2

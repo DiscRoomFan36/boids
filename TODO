@@ -31,15 +31,20 @@ DONE
 * use middle_held in boid make new walls
 * make boids see in front of them. (with rays?)
 * boids dodge obstacles, put a big rect in the middle of the screen.
+* fix alignment calculation, remove all traces of max_speed.
+* make the sim feel gooder.
 
 
 NEXT
 
 * Make into my personal website, aka put my name and links to my stuff on it. boids path around name.
 
-* fix alignment calculation, remove all traces of max_speed.
-* make the sim feel gooder.
-* fix boid vortex of death (when a bunch of boids get stuck in the corner)
+* make Vision respect boundary. also drawing.
+
+* fix boid mosh pit of death (when a bunch of boids get stuck in the corner)
+* fix boids getting stuck to the bottom of the bounds.
+
+* make clicking place a gravity vortex?
 
 * speed up the simulation, would like at least 3000 boids at once, the slow part is the rendering.
 * make the rendering a camera like, so you can scroll and what not.
