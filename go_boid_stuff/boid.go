@@ -355,7 +355,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 		// ..._Time_Dilation == seconds to switch generator.
 		time_advance := dt / float64(boid_sim.props.Random_Draw_Time_Dilation)
 
-		var force_vectors [NUM_RANDOM_GENERATORS]Vec2[Boid_Float]
+		force_vectors := [NUM_RANDOM_GENERATORS]Vec2[Boid_Float]{}
 		for i := range NUM_RANDOM_GENERATORS {
 			random_number := boid_sim.generators[i].Next(float32(time_advance))
 			theta := random_number * 2 * math.Pi
