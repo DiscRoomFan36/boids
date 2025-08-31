@@ -445,6 +445,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 
 				// should be zero when it sees nothing, otherwise provides a push in the other direction.
 				new_force := Sub(pos, Vec2[Boid_Float]{ray.x2, ray.y2})
+				// square the vector. yes this is squaring
 				new_force.Mult(boid_sim.props.Visual_Range - Sqrt(dist_sqr))
 
 				combined_ray.Add(new_force)
