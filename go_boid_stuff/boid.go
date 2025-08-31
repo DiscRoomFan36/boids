@@ -161,26 +161,6 @@ func (boid_sim *Boid_simulation) adjust_speed(vel Vec2[Boid_Float]) Vec2[Boid_Fl
 	return vel
 }
 
-func (boid_sim Boid_simulation) bounding_force(index int) Vec2[Boid_Float] {
-	vel := Vec2[Boid_Float]{}
-
-	if boid_sim.Boids[index].Position.x < boid_sim.props.Margin {
-		vel.x += 1
-	}
-	if boid_sim.Boids[index].Position.x > boid_sim.Width-boid_sim.props.Margin {
-		vel.x -= 1
-	}
-
-	if boid_sim.Boids[index].Position.y < boid_sim.props.Margin {
-		vel.y += 1
-	}
-	if boid_sim.Boids[index].Position.y > boid_sim.Height-boid_sim.props.Margin {
-		vel.y -= 1
-	}
-
-	return vel
-}
-
 
 // NOTE dt is in seconds
 func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
@@ -348,9 +328,19 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	//          Bounding forces
 	// ------------------------------------
 	if boid_sim.props.Toggle_Bounding {
+		rect := boid_sim.bounds_as_rect()
+
 		for i := range len(boid_sim.Boids) {
-			// TODO get rid of bounding force function, pull it in
-			bounding := Mult(boid_sim.bounding_force(i), boid_sim.props.Margin_Turn_Factor)
+			boid_pos := boid_sim.Boids[i].Position
+			vel := Vec2[Boid_Float]{}
+
+			if boid_pos.x < rect.x          { vel.x += 1 }
+			if boid_pos.x > rect.x + rect.w { vel.x -= 1 }
+
+			if boid_pos.y < rect.y          { vel.y += 1 }
+			if boid_pos.y > rect.y + rect.h { vel.y -= 1 }
+
+			bounding := Mult(vel, boid_sim.props.Margin_Turn_Factor)
 			boid_sim.Boids[i].Acceleration.Add(bounding)
 		}
 	}

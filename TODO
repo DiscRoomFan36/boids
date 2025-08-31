@@ -49,3 +49,5 @@ NEXT
 
 * unify the collision stuff. currently 3 different systems. maybe make a collisional interface?
 * boid.go: // TODO calculate position at moment of collision
+
+* make a conveyer like track, place it in a circle? maybe even use a curve.
