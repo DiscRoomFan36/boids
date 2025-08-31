@@ -31,7 +31,7 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		draw_spacial_array_into_image(img, boid_sim.Spacial_array, scale_factor)
 	}
 
-	if DEBUG_BOUNDARY {
+	if DEBUG_BOUNDARY && boid_sim.props.Toggle_Bounding {
 		margin := int(boid_sim.props.Margin * scale_factor)
 		boundary_points := [4]Vec2[int]{
 			{x: margin, y: margin},

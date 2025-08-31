@@ -33,13 +33,12 @@ DONE
 * boids dodge obstacles, put a big rect in the middle of the screen.
 * fix alignment calculation, remove all traces of max_speed.
 * make the sim feel gooder.
+* make Vision respect boundary. also drawing.
 
 
 NEXT
 
 * Make into my personal website, aka put my name and links to my stuff on it. boids path around name.
-
-* make Vision respect boundary. also drawing.
 
 * fix boid mosh pit of death (when a bunch of boids get stuck in the corner)
 

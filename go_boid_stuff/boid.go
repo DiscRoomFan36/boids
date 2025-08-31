@@ -549,19 +549,21 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt_ float64) {
 		// --------------------------------------
 		//     Margin bounding box collision
 		// --------------------------------------
-		if !hit_something {
-			// collide with outer wall
-			hit_in_x, maybe_new_x := bounce_point_between_two_walls(boid_x, boid_radius, vx, bounds_x1, bounds_x2)
-			hit_in_y, maybe_new_y := bounce_point_between_two_walls(boid_y, boid_radius, vy, bounds_y1, bounds_y2)
+		if boid_sim.props.Toggle_Bounding {
+			if !hit_something {
+				// collide with outer wall
+				hit_in_x, maybe_new_x := bounce_point_between_two_walls(boid_x, boid_radius, vx, bounds_x1, bounds_x2)
+				hit_in_y, maybe_new_y := bounce_point_between_two_walls(boid_y, boid_radius, vy, bounds_y1, bounds_y2)
 
-			if hit_in_x { new_vx *= -1 }
-			if hit_in_y { new_vy *= -1 }
+				if hit_in_x { new_vx *= -1 }
+				if hit_in_y { new_vy *= -1 }
 
-			hit_something = hit_in_x || hit_in_y
+				hit_something = hit_in_x || hit_in_y
 
-			if hit_something {
-				new_x = maybe_new_x
-				new_y = maybe_new_y
+				if hit_something {
+					new_x = maybe_new_x
+					new_y = maybe_new_y
+				}
 			}
 		}
 
@@ -682,12 +684,11 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt_ float64) {
 		boid.Velocity.x = new_vx
 		boid.Velocity.y = new_vy
 
-		// TODO is this needed?
-		// // makes them wrap around the screen
-		// if boid_sim.props.Toggle_Wrapping {
-		// 	boid_sim.Boids[i].Position.X = proper_mod(boid_sim.Boids[i].Position.X, boid_sim.Width)
-		// 	boid_sim.Boids[i].Position.Y = proper_mod(boid_sim.Boids[i].Position.Y, boid_sim.Height)
-		// }
+		// makes them wrap around the screen
+		if boid_sim.props.Toggle_Wrapping {
+			boid_sim.Boids[i].Position.x = Proper_Mod(boid_sim.Boids[i].Position.x, boid_sim.Width)
+			boid_sim.Boids[i].Position.y = Proper_Mod(boid_sim.Boids[i].Position.y, boid_sim.Height)
+		}
 	}
 }
 
@@ -847,19 +848,21 @@ func (boid_sim *Boid_simulation) ray_collide_against_all_lines_and_find_smallest
 		}
 	}
 
-	bounding_box := boid_sim.bounds_as_rect()
-	// if the start if outside of the bounding box, don't check
-	// TODO this will slightly fail if the boid is just outside and facing a different edge.
-	if point_rect_collision_vr(start, bounding_box) {
-		// @Copypasta!
-		for _, line := range rectangle_to_lines_r(bounding_box) {
-			hit, loc := line_line_intersection_l(ray, line)
-			if !hit { continue }
-
-			dist_sqr := DistSqr(start, loc)
-			if dist_sqr < min_dist_sqr {
-				min_dist_sqr = dist_sqr
-				hit_pos = loc
+	if boid_sim.props.Toggle_Bounding {
+		bounding_box := boid_sim.bounds_as_rect()
+		// if the start if outside of the bounding box, don't check
+		// TODO this will slightly fail if the boid is just outside and facing a different edge.
+		if point_rect_collision_vr(start, bounding_box) {
+			// @Copypasta!
+			for _, line := range rectangle_to_lines_r(bounding_box) {
+				hit, loc := line_line_intersection_l(ray, line)
+				if !hit { continue }
+				
+				dist_sqr := DistSqr(start, loc)
+				if dist_sqr < min_dist_sqr {
+					min_dist_sqr = dist_sqr
+					hit_pos = loc
+				}
 			}
 		}
 	}
