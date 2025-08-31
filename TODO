@@ -42,7 +42,6 @@ NEXT
 * make Vision respect boundary. also drawing.
 
 * fix boid mosh pit of death (when a bunch of boids get stuck in the corner)
-* fix boids getting stuck to the bottom of the bounds.
 
 * make clicking place a gravity vortex?
 

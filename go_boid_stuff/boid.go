@@ -264,6 +264,9 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 
 		num_close_boids := 0
 		for other_boid_index, near_pos := range boid_sim.Spacial_array.Iter_Over_Near(this_boid.Position, boid_sim.props.Visual_Range) {
+			// don't count it if it sees itself.
+			if int(other_boid_index) == i { continue }
+
 			num_close_boids += 1
 
 			// if the near guy is super close. move away
@@ -288,8 +291,6 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 			// go to the center of the pack. we subtract this_boid.position later
 			coh.Add(near_pos)
 		}
-
-		if num_close_boids == 0 { panic("dose this ever happen, or dose it see itself.") }
 
 		// divide by number of close boids.
 		if num_close_boids > 0 {

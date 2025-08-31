@@ -135,7 +135,10 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		}
 
 		// get cool color for boid
-		speed := b.Velocity.Mag() / boid_sim.props.Max_Speed
+		//
+		// 100 <- random number, no basis in reality
+		// used to be based on Max_Speed but we got rid of that
+		speed := b.Velocity.Mag() / 100
 
 		const SHIFT_FACTOR = 2
 		H := math.Mod(float64(Clamp(speed, 0, 1)*360)*SHIFT_FACTOR, 360)
