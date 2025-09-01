@@ -3,7 +3,7 @@ package main
 import "time"
 
 // how long until something is considered 'held', in seconds.
-const HELD_TIME = 0.15
+const HELD_TIME = 0.10
 
 type Input_Status struct {
 	Left_Down           bool

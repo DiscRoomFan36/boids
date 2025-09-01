@@ -7,17 +7,11 @@ import (
 // TODO just make it float32? i like the generics, but it might be a bit much.
 
 // The Classic Vector, i wouldn't do all this [T Number] stuff if go has a better math library... well... maybe i would
-type Vec2[T Number] struct {
-	x, y T
-}
+type Vec2[T Number] struct { x, y T }
 
-func Make_Vec2[T Number](x, y T) Vec2[T] {
-	return Vec2[T]{x, y}
-}
+func Make_Vec2[T Number](x, y T) Vec2[T] { return Vec2[T]{x, y} }
 
-func (a Vec2[Number]) Splat() (Number, Number) {
-	return a.x, a.y
-}
+func (a Vec2[Number]) Splat() (Number, Number) { return a.x, a.y }
 
 // Really useful helper, would recommend
 func Transform[T Number, U Number](v Vec2[T]) Vec2[U] {
@@ -37,8 +31,7 @@ func (a *Vec2[Number]) Add(vs ...Vec2[Number]) {
 	}
 }
 func Add[T Number](a Vec2[T], vs ...Vec2[T]) Vec2[T] {
-	// I hope the compiler knows what its doing
-	a.Add(vs...)
+	a.Add(vs...) // I hope the compiler knows what its doing
 	return a
 }
 
@@ -69,9 +62,7 @@ func (a Vec2[Number]) Mag() Number { return Number(math.Sqrt(float64(Dot(a, a)))
 
 func (a *Vec2[Number]) SetMag(new_mag Number) {
 	mag := a.Mag()
-	if mag == 0 {
-		mag = 1
-	}
+	if mag == 0 { mag = 1 }
 	a.Mult(new_mag / mag)
 }
 

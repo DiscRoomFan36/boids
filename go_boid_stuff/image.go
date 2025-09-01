@@ -336,3 +336,25 @@ func Draw_Triangle[T Number](img *Image, p1, p2, p3 Vec2[T], color Color) {
 		fillTopFlatTriangle(v2, v4, v3)
 	}
 }
+
+func Draw_Triangles_Circling[T Number](img *Image, pos Vec2[T], num_segments int, size, added_rotation T, color Color) {
+	num_points_around_the_circle := num_segments * 2
+	for i := range num_segments {
+		around_1 := 2 * math.Pi / float64(num_points_around_the_circle) * (float64(i) * 2)
+		around_2 := 2 * math.Pi / float64(num_points_around_the_circle) * (float64(i) * 2 + 1)
+
+		_p1 := Unit_Vector_With_Rotation(around_1 + float64(added_rotation))
+		_p2 := Unit_Vector_With_Rotation(around_2 + float64(added_rotation))
+
+		p1 := Transform[float64, T](_p1)
+		p2 := Transform[float64, T](_p2)
+
+		p1 = Add(pos, Mult(p1, size))
+		p2 = Add(pos, Mult(p2, size))
+		// the middle of all the points.
+		p3 := Add(pos, p1, p2)
+		p3.x /= 3; p3.y /= 3
+
+		Draw_Triangle(img, p1, p2, p3, color)
+	}
+}

@@ -38,6 +38,9 @@ DONE
 
 NEXT
 
+* draw a cool circling animation.
+* make lines be able to connect to each other.
+
 * Make into my personal website, aka put my name and links to my stuff on it. boids path around name.
 
 * fix boid mosh pit of death (when a bunch of boids get stuck in the corner)

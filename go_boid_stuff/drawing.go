@@ -5,11 +5,6 @@ import (
 	"time"
 )
 
-// I feel like go is guilt tripping me with this syntax.
-// Also this has to be here because go-static is dumb
-var input Input_Status
-
-
 const DEBUG_SPACIAL_ARRAY = false
 const DEBUG_BOUNDARY      = true
 const DEBUG_HEADING       = false
@@ -19,7 +14,7 @@ const DEBUG_VISUAL_RANGES = false
 // TODO have some sort of view mode here, so we can 'move' the 'camera'
 //
 // go incorrectly reports this function as unused if it is not public...
-func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
+func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input Input_Status) {
 	boid_boundary_color := rgb(240, 240, 240)
 
 	img.Clear_background(Color{r: 24, g: 24, b: 24, a: 255})
@@ -169,66 +164,28 @@ func Draw_boids_into_image(img *Image, boid_sim *Boid_simulation) {
 		color.Set_Alpha(1 - ease_in_out_quint(percent))
 
 		// in image pixels
-		const SIZE_SCALE = 20
+		const SIZE = 20
 		// in image pixels
 		const RING_WIDTH = 2
 
 		size_factor := ease_out_quint(percent)
-		Draw_Ring(img, pos.x, pos.y, Boid_Float(size_factor*SIZE_SCALE), Boid_Float(size_factor*SIZE_SCALE+RING_WIDTH), color)
+		Draw_Ring(img, pos.x, pos.y, Boid_Float(size_factor*SIZE), Boid_Float(size_factor*SIZE+RING_WIDTH), color)
 	}
 
+	{
+		center := Mult(input.Mouse_Pos, scale_factor)
 
-	////////////////////////////////////////////////////////
-	//                 Debug Boid Vision
-	////////////////////////////////////////////////////////
-	// this is kinda Copypasta from the real code.
-	/*
-	// draw the boid rays, not all of them though
-	for i := range min(len(boid_sim.Boids), 10) {
-		boid := boid_sim.Boids[i]
-		rays := boid_sim.get_boid_rays(boid)
+		const NUM_ROTATIONS_PER_SECOND = 0.25
+		t = math.Mod(t + dt, 10000) // advance t, also cool trick to 
+		added := 2 * math.Pi * Boid_Float(t) * NUM_ROTATIONS_PER_SECOND
 
-		combined_ray := Vec2[Boid_Float]{}
-
-		for _, ray := range rays {
-			dist_sqr, pos := boid_sim.ray_collide_against_all_lines_and_find_smallest(ray)
-
-			// should be zero when it sees nothing, otherwise provides a push in the other direction.
-			new_force := Sub(pos, Vec2[Boid_Float]{ray.x2, ray.y2})
-			new_force.Mult(boid_sim.props.Visual_Range - Sqrt(dist_sqr))
-
-			combined_ray.Add(new_force)
-
-			ray = Scale(ray, scale_factor)
-			pos.Mult(scale_factor)
-
-			Draw_Line_l(img, ray, rgba(245, 130, 22, 0.5))
-
-			Draw_Circle_v(img, pos, 5, rgba(20, 228, 228, 0.5))
-		}
-
-		combined_ray.Mult(1 / Boid_Float(boid_sim.props.Num_Boid_Rays))
-
-		combined_ray.Add(boid.Position)
-		combined_ray.Mult(scale_factor)
-
-		Draw_Line(img, Mult(boid.Position, scale_factor), combined_ray, rgba(165, 33, 143, 1))
-		Draw_Circle_v(img, combined_ray, 5, rgba(235, 41, 41, 1))
+		Draw_Triangles_Circling(img, center, 8, 20, added, rgba(30, 236, 202, 1))
 	}
-	*/
-
-
-	// { // debug mouse pos
-	// 	color := Color_Yellow()
-	// 	if mouse_state == Left_down { color = Color_Red() }
-
-	// 	Draw_Rect(
-	// 		img,
-	// 		mouse_pos.X, mouse_pos.Y, 10, 10,
-	// 		color,
-	// 	)
-	// }
 }
+
+var t float64 = 0
+
+
 
 // https://easings.net
 func ease_out_quint[T Float](x T) T {
@@ -337,6 +294,63 @@ func draw_spacial_array_into_image[T Number](img *Image, sp_array Spacial_Array[
 }
 
 
+
+///////////////////////////////////////////////////////////
+//                 Code Grave Yard
+///////////////////////////////////////////////////////////
+
+
+
+////////////////////////////////////////////////////////
+//                 Debug Boid Vision
+////////////////////////////////////////////////////////
+// this is kinda Copypasta from the real code.
+/*
+// draw the boid rays, not all of them though
+for i := range min(len(boid_sim.Boids), 10) {
+	boid := boid_sim.Boids[i]
+	rays := boid_sim.get_boid_rays(boid)
+
+	combined_ray := Vec2[Boid_Float]{}
+
+	for _, ray := range rays {
+		dist_sqr, pos := boid_sim.ray_collide_against_all_lines_and_find_smallest(ray)
+
+		// should be zero when it sees nothing, otherwise provides a push in the other direction.
+		new_force := Sub(pos, Vec2[Boid_Float]{ray.x2, ray.y2})
+		new_force.Mult(boid_sim.props.Visual_Range - Sqrt(dist_sqr))
+
+		combined_ray.Add(new_force)
+
+		ray = Scale(ray, scale_factor)
+		pos.Mult(scale_factor)
+
+		Draw_Line_l(img, ray, rgba(245, 130, 22, 0.5))
+
+		Draw_Circle_v(img, pos, 5, rgba(20, 228, 228, 0.5))
+	}
+
+	combined_ray.Mult(1 / Boid_Float(boid_sim.props.Num_Boid_Rays))
+
+	combined_ray.Add(boid.Position)
+	combined_ray.Mult(scale_factor)
+
+	Draw_Line(img, Mult(boid.Position, scale_factor), combined_ray, rgba(165, 33, 143, 1))
+	Draw_Circle_v(img, combined_ray, 5, rgba(235, 41, 41, 1))
+}
+*/
+
+
+// { // debug mouse pos
+// 	color := Color_Yellow()
+// 	if mouse_state == Left_down { color = Color_Red() }
+
+// 	Draw_Rect(
+// 		img,
+// 		mouse_pos.X, mouse_pos.Y, 10, 10,
+// 		color,
+// 	)
+// }
 
 // -----------------------------------------
 //   Code for testing Color interpolation.

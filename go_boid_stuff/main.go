@@ -11,6 +11,7 @@ import (
 var img Image
 
 var boid_sim Boid_simulation
+var input Input_Status
 
 var last_frame_time time.Time
 
@@ -133,7 +134,7 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 
 	// this might end up taking the most amount of time.
 	// TODO make a 'Draw a thing' file. (maybe in this module, stop boid from requiring Image...)
-	Draw_boids_into_image(&img, &boid_sim)
+	Draw_Everything(&img, &boid_sim, dt, input)
 
 	// copy the pixels, must be in RGBA format
 	copied_bytes := js.CopyBytesToJS(array, img.To_RGBA_byte_array())
