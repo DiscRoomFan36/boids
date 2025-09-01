@@ -3,6 +3,7 @@ package main
 import (
 	"math"
 	"math/rand"
+	"time"
 )
 
 // good old swap and remove
@@ -91,14 +92,8 @@ func Proper_Mod[T Float](a, b T) T {
 	return T(math.Mod(math.Mod(float64(a), float64(b))+float64(b), float64(b)))
 }
 
-func Square[T Number](x T) T {
-	return x * x
-}
-
-func Sqrt[T Float](x T) T {
-	return T(math.Sqrt(float64(x)))
-}
-
+func Square[T Number](x T) T { return x * x }
+func Sqrt  [T Float] (x T) T { return T(math.Sqrt(float64(x))) }
 
 
 
@@ -109,3 +104,11 @@ func rand_f64() float64 { return rand.Float64() }
 
 func rand_n(n int) int { return rand.Intn(n) }
 
+
+
+const NANOS_PER_SECOND = 1000*1000*1000
+// in seconds since unix epoch
+func Get_Time() float64 {
+	nanos := time.Now().UnixNano()
+	return float64(nanos) / NANOS_PER_SECOND
+}

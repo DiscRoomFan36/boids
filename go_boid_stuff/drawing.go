@@ -176,14 +176,12 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 		center := Mult(input.Mouse_Pos, scale_factor)
 
 		const NUM_ROTATIONS_PER_SECOND = 0.25
-		t = math.Mod(t + dt, 10000) // advance t, also cool trick to 
+		t := Proper_Mod(Get_Time(), 10000)
 		added := 2 * math.Pi * Boid_Float(t) * NUM_ROTATIONS_PER_SECOND
 
 		Draw_Triangles_Circling(img, center, 8, 20, added, rgba(30, 236, 202, 1))
 	}
 }
-
-var t float64 = 0
 
 
 
