@@ -44,6 +44,7 @@ NEXT
 * Make into my personal website, aka put my name and links to my stuff on it. boids path around name.
 
 * figure out why tinygo has frame rate hitches.
+* maybe don't store the wasm_exec's in the github? just get them from the respective compilers
 
 * make lines be able to connect to each other.
 

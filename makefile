@@ -17,6 +17,7 @@ npm-watch: boid.wasm
 	npm install
 	npm run watch
 
+# TODO we might as well just get these from there respective compilers
 supply_wasm_exec:
 	if [ $(GO_COMPILER) = go ]; then \
 		cp ./web_src/wasm_exec.js      ./dist/wasm_exec.js; \
