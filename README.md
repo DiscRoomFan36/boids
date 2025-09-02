@@ -2,6 +2,14 @@
 
 Check out the github site thing to see them in action
 
+## Requirements for Development
+
+* A **Go** Compiler
+* **python3** for html server
+* **npm** and **nodemon** for building and watching typescript
+
+* wasm2wat optional
+
 ## Quick Start
 
 ```sh
