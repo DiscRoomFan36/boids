@@ -133,7 +133,6 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	boid_sim.Update_boids(dt, input)
 
 	// this might end up taking the most amount of time.
-	// TODO make a 'Draw a thing' file. (maybe in this module, stop boid from requiring Image...)
 	Draw_Everything(&img, &boid_sim, dt, input)
 
 	// copy the pixels, must be in RGBA format

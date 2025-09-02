@@ -77,7 +77,8 @@ func (array *Spacial_Array[T]) Append_points(points []Vec2[T]) {
 		array.Max_y = max_y
 	}
 
-	if len(points) > int(^BOX_ID_TYPE(0)) {
+	const MAX_ID = ^BOX_ID_TYPE(0)
+	if int64(len(points)) > int64(MAX_ID) {
 		log.Fatalf("To many points to fit into BOX_ID_TYPE\n")
 	}
 
