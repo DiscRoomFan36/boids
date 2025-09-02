@@ -22,6 +22,7 @@ npm-watch: boid.wasm
 	npm run watch
 
 # TODO we might as well just get these from there respective compilers
+# TODO this is non exhaustive.
 supply_wasm_exec:
 	if [ $(GO_COMPILER) = go ]; then                             \
 		ln -fsr ./web_src/wasm_exec.js      ./dist/wasm_exec.js; \
@@ -33,4 +34,7 @@ serve:
 	python3 -m http.server 8080
 
 go-watch:
-	GOOS=js GOARCH=wasm nodemon --watch './go_boid_stuff/*.go' --signal SIGTERM -e 'go' --exec '$(GO_COMPILER) build -C ./go_boid_stuff/ -o ../dist/boid.wasm'
+	GOOS=js GOARCH=wasm                    \
+	nodemon --watch './go_boid_stuff/*.go' \
+	--signal SIGTERM -e 'go'               \
+	--exec '$(GO_COMPILER) build -C ./go_boid_stuff/ -o ../dist/boid.wasm'
