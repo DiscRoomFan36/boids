@@ -2,7 +2,11 @@
 
 GO_COMPILER ?= go # tinygo
 
-full_watch: boid.wasm
+# I would put this on the serve rule, but it doesn't
+# work if its part of a thread? for some reason?
+#
+# I swear im gonna move to nob.h at some point.
+full_watch: boid.wasm supply_wasm_exec
 	make -j 3 npm-watch serve go-watch
 
 
@@ -19,13 +23,13 @@ npm-watch: boid.wasm
 
 # TODO we might as well just get these from there respective compilers
 supply_wasm_exec:
-	if [ $(GO_COMPILER) = go ]; then \
-		cp ./web_src/wasm_exec.js      ./dist/wasm_exec.js; \
-	else \
-		cp ./web_src/wasm_exec_tiny.js ./dist/wasm_exec.js; \
+	if [ $(GO_COMPILER) = go ]; then                             \
+		ln -fsr ./web_src/wasm_exec.js      ./dist/wasm_exec.js; \
+	else                                                         \
+		ln -fsr ./web_src/wasm_exec_tiny.js ./dist/wasm_exec.js; \
 	fi
 
-serve: supply_wasm_exec
+serve:
 	python3 -m http.server 8080
 
 go-watch:
