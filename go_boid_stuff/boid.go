@@ -62,7 +62,7 @@ type Properties struct {
 
 
 	Toggle_Wrapping bool `Property:"bool" Default:"true"`
-	Toggle_Bounding bool `Property:"bool" Default:"true"`
+	Toggle_Bounding bool `Property:"bool" Default:"false"`
 
 
 	Boid_Radius Boid_Float `Property:"float" Range:"0;10" Default:"2.5"`
@@ -208,11 +208,25 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 			if len(boid_sim.Boids) < boid_sim.props.Max_Boids {
 				// add 1 boid.
 
-				new_boid := Boid{
-					Position: Make_Vec2(
-						Boid_Float(rand_f32()*float32(boid_sim.Width)),
+				var pos Vec2[Boid_Float]
+				for range 5 { // no inf loops here
+					pos = Make_Vec2(
+						Boid_Float(rand_f32()*float32(boid_sim.Width )),
 						Boid_Float(rand_f32()*float32(boid_sim.Height)),
-					),
+					)
+					is_blocked_from_spawning := boid_sim.props.Toggle_Bounding && !point_rect_collision_vr(pos, boid_sim.bounds_as_rect())
+					if !is_blocked_from_spawning {
+						for _, rect := range boid_sim.Rectangles {
+							if point_rect_collision_vr(pos, rect) {
+								is_blocked_from_spawning = true; break
+							}
+						}
+					}
+					if !is_blocked_from_spawning { break }
+				}
+
+				new_boid := Boid{
+					Position: pos,
 					// just a bit of starting speed. these numbers mean nothing,
 					// I just wanted to finally remove Min and Max Speed
 					Velocity: Mult(Random_unit_vector[Boid_Float](), 20),

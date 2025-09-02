@@ -92,11 +92,16 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 	}
 
 	if boid_sim.making_new_wall {
-		p1 := boid_sim.new_wall_start
-		// get a better static analyzer.
-		p2 := input.Mouse_Pos
-		p1.Mult(scale_factor)
-		p2.Mult(scale_factor)
+		p1 := Mult(boid_sim.new_wall_start, scale_factor)
+		p2 := Mult(input.Mouse_Pos, scale_factor)
+
+		const NUM_ROTATIONS_PER_SECOND = 0.25
+		t := Proper_Mod(Get_Time(), 10000)
+		added := 2 * math.Pi * Boid_Float(t) * NUM_ROTATIONS_PER_SECOND
+
+		Draw_Triangles_Circling(img, p1, 8, 20, added, rgba(30, 236, 202, 1))
+		Draw_Triangles_Circling(img, p2, 8, 20, added, rgba(30, 236, 202, 1))
+
 		color := rgb(236, 236, 10)
 		if input.Middle_Held { color = rgb(10, 245, 10) }
 		Draw_Line(img, p1, p2, color)
@@ -172,15 +177,15 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 		Draw_Ring(img, pos.x, pos.y, Boid_Float(size_factor*SIZE), Boid_Float(size_factor*SIZE+RING_WIDTH), color)
 	}
 
-	{
-		center := Mult(input.Mouse_Pos, scale_factor)
+	// {
+	// 	center := Mult(input.Mouse_Pos, scale_factor)
 
-		const NUM_ROTATIONS_PER_SECOND = 0.25
-		t := Proper_Mod(Get_Time(), 10000)
-		added := 2 * math.Pi * Boid_Float(t) * NUM_ROTATIONS_PER_SECOND
+	// 	const NUM_ROTATIONS_PER_SECOND = 0.25
+	// 	t := Proper_Mod(Get_Time(), 10000)
+	// 	added := 2 * math.Pi * Boid_Float(t) * NUM_ROTATIONS_PER_SECOND
 
-		Draw_Triangles_Circling(img, center, 8, 20, added, rgba(30, 236, 202, 1))
-	}
+	// 	Draw_Triangles_Circling(img, center, 8, 20, added, rgba(30, 236, 202, 1))
+	// }
 }
 
 
