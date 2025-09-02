@@ -34,14 +34,18 @@ DONE
 * fix alignment calculation, remove all traces of max_speed.
 * make the sim feel gooder.
 * make Vision respect boundary. also drawing.
+* draw a cool circling animation.
+
 
 
 NEXT
 
-* draw a cool circling animation.
-* make lines be able to connect to each other.
 
 * Make into my personal website, aka put my name and links to my stuff on it. boids path around name.
+
+* figure out why tinygo has frame rate hitches.
+
+* make lines be able to connect to each other.
 
 * fix boid mosh pit of death (when a bunch of boids get stuck in the corner)
 

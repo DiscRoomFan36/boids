@@ -9,7 +9,8 @@
 		"nodemon",
 		"offscreencanvas",
 		"slidecontainer",
-		"spacialarray"
+		"spacialarray",
+		"tinygo"
 	],
 	"[go]": {
 		"editor.formatOnSave": false

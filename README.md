@@ -8,6 +8,7 @@ Check out the github site thing to see them in action
 * **python3** for html server
 * **npm** and **nodemon** for building and watching typescript
 
+* **tinygo** as a separate go compiler (optional)
 * wasm2wat optional
 
 ## Quick Start
@@ -15,6 +16,9 @@ Check out the github site thing to see them in action
 ```sh
 # start a full development build. (uses threads to start running everything)
 make full_watch
+
+# will compile with tinygo, (way slower compile times)
+make GO_COMPILER=tinygo full_watch
 ```
 
 ## License
