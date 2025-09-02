@@ -186,6 +186,7 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
     }
 
 
+    // const canvas_container = document.getElementById("canvas_div") as HTMLCanvasElement | null
     const boidCanvas = document.getElementById("boid_canvas") as HTMLCanvasElement | null
     if (boidCanvas === null) throw new Error("No canvas with id `boid_canvas` is found")
 
@@ -196,15 +197,18 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
         MOUSE_RIGHT     = 2,
     }
 
+
+    const root = document.getRootNode() as HTMLHtmlElement
+
     // NOTE should this be on the canvas or on the root?
-    boidCanvas.addEventListener('mousemove', (ev) => { mouse.pos = {x: ev.x, y: ev.y} })
+    root.addEventListener('mousemove', (ev) => { mouse.pos = {x: ev.x, y: ev.y} })
     // this will break if the user slides there mouse outside of the screen while clicking, but this is the web, people expect it to suck.
-    boidCanvas.addEventListener('mousedown', (ev) => {
+    root.addEventListener('mousedown', (ev) => {
         if (ev.button == mouse_buttons.MOUSE_LEFT)      mouse.left_down   = true;
         if (ev.button == mouse_buttons.MOUSE_MIDDLE)    mouse.middle_down = true;
         if (ev.button == mouse_buttons.MOUSE_RIGHT)     mouse.right_down  = true;
     });
-    boidCanvas.addEventListener('mouseup',   (ev) => {
+    root.addEventListener('mouseup',   (ev) => {
         if (ev.button == mouse_buttons.MOUSE_LEFT)      mouse.left_down   = false;
         if (ev.button == mouse_buttons.MOUSE_MIDDLE)    mouse.middle_down = false;
         if (ev.button == mouse_buttons.MOUSE_RIGHT)     mouse.right_down  = false;

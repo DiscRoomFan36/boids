@@ -1,0 +1,114 @@
+
+
+html {
+    height: 100%;
+    background-color: rgb(30, 53, 30);
+}
+
+body {
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    /* NOTE for some reason the canvas doesn't extend to the bottom of the page... */
+    background-color: #181818;
+}
+
+div#canvas_div {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+
+    background-color: green;
+}
+canvas {
+    width: 100%;
+    height: 100%;
+}
+
+
+#the_rest {
+    position: absolute;
+    /* width: 0;
+    height: 0; */
+}
+
+#heading {
+    width: 1000;
+    position: center;
+}
+
+
+summary {
+    background-color: #151515;
+    color: lightgoldenrodyellow;
+    opacity: 0.7;
+    padding: 0.5rem;
+    font-size: 1.5rem;
+}
+
+/* https://www.w3schools.com/howto/howto_js_rangeslider.asp */
+#slideContainer {
+    position: absolute;
+
+    display: grid;
+    grid-template-columns: 10rem 10rem;
+}
+
+.rangeHolder {
+    background-color: #151515;
+
+    width: 90%;
+
+    justify-self: center;
+
+    padding: 0.2rem;
+    border-radius: 0.2rem;
+
+    display: flex;
+    flex-direction: column;
+    opacity: 0.7;
+    align-items: center;
+
+    margin: 0.1rem;
+}
+.rangeHolder:hover { opacity: 1; }
+
+.checkbox_toggle { margin-top: 10px; }
+.checkbox_toggle_label {
+    padding: 1rem;
+    color: lightgoldenrodyellow;
+}
+
+.sliderKey { color: lightgoldenrodyellow; }
+.slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 10px;
+    border-radius: 5px;  
+    background: #d3d3d3;
+    outline: none;
+    opacity: 0.7;
+    -webkit-transition: .2s;
+    transition: opacity .2s;
+}
+/* Mouse-over effects */
+.slider:hover { opacity: 1; }
+.slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%; 
+    background: #04AA6D;
+    cursor: pointer;
+}
+.slider::-moz-range-thumb {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background: #04AA6D;
+    cursor: pointer;
+}
