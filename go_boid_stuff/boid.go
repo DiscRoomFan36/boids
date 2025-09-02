@@ -797,11 +797,14 @@ func bounce_1d[T Number](x, r, v, w T) T {
 }
 
 
+var static_rays_storage [32]Line
+
 func (boid_sim *Boid_simulation) get_boid_rays(boid Boid) []Line {
 	num_rays    := boid_sim.props.Num_Boid_Rays
 	cone_radius := boid_sim.props.Visual_Cone_Radius
 
-	result := make([]Line, num_rays)
+	if num_rays > len(static_rays_storage) { panic("Why are there this many rays") }
+	result := static_rays_storage[:num_rays]
 
 	cone_radians := (cone_radius * DEG_TO_RAD) / 2
 
