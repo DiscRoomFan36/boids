@@ -43,6 +43,8 @@ NEXT
 
 * Make into my personal website, aka put my name and links to my stuff on it. boids path around name.
 
+* figure out why the numbers going into go from the typescript are slightly off?
+
 * fix boid mosh pit of death (when a bunch of boids get stuck in the corner)
 
 * speed up the simulation, would like at least 3000 boids at once, the slow part is the rendering.

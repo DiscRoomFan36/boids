@@ -86,7 +86,15 @@ func js_to_Vector(obj js.Value) Vec2[Boid_Float] {
 	}
 	return Transform[float64, Boid_Float](result)
 }
-
+func js_to_Rectangle(obj js.Value) Rectangle {
+	result := Rectangle{
+		x: Boid_Float(obj.Get("x").Float()),
+		y: Boid_Float(obj.Get("y").Float()),
+		w: Boid_Float(obj.Get("width").Float()),
+		h: Boid_Float(obj.Get("height").Float()),
+	}
+	return result
+}
 
 // Javascript function
 //
@@ -100,6 +108,18 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 
 	mouse_pos := js_to_Vector(mouse.Get("pos"))
 	mouse_pos = World_to_boid_vec(mouse_pos)
+
+	header_rect         := js_to_Rectangle(args[0].Get("header_rect"))
+	header_rect          = World_to_boid_rect(header_rect)
+	not_my_passion_rect := js_to_Rectangle(args[0].Get("not_my_passion_rect"))
+	not_my_passion_rect  = World_to_boid_rect(not_my_passion_rect)
+
+	// TODO make this better please.
+	if len(boid_sim.Rectangles) < 2 { boid_sim.Rectangles = make([]Rectangle, 2) }
+
+	boid_sim.Rectangles[0] = header_rect
+	boid_sim.Rectangles[1] = not_my_passion_rect
+
 
 	input = Update_Input(
 		input,

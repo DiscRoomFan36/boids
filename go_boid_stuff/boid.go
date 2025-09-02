@@ -190,7 +190,7 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	}
 
 	// update the position of the middle rectangle, to move with the screen.
-	boid_sim.Rectangles[0] = make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)
+	// boid_sim.Rectangles[0] = make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)
 
 
 

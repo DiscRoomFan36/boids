@@ -9,6 +9,10 @@ interface Arguments {
     buffer: Uint8ClampedArray,
 
     mouse: Mouse,
+
+    // TODO make this an array.
+    header_rect: Rect,
+    not_my_passion_rect: Rect,
 }
 
 interface GoFunctions {
@@ -61,6 +65,13 @@ interface Vec2 {
     y: number,
 };
 
+interface Rect {
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+}
+
 interface Mouse {
     pos:            Vec2,
     left_down:      boolean,
@@ -76,8 +87,29 @@ const mouse: Mouse = {
 };
 
 
+function get_header_rect_from_id(id: string): Rect {
+    const header = document.getElementById(id) as HTMLHeadingElement | null
+    if (header === null) throw new Error("no header text has been found (my name in the middle)")
+
+    const dom_rect = header.getBoundingClientRect()
+    return {
+        x:      dom_rect.x,
+        y:      dom_rect.y,
+        width:  dom_rect.width,
+        height: dom_rect.height,
+    }
+}
+
 
 function renderBoids(display: Display, go: GoFunctions) {
+
+    // get the position of the title text on screen
+    const header_rect         = get_header_rect_from_id("my_name_in_the_middle")
+    const not_my_passion_rect = get_header_rect_from_id("not_my_passion")
+    // const rect = get_header_rect("my_name_in_the_middle")
+    // console.log("rect", rect.x, rect.y, rect.width, rect.height);
+
+
     const width  = Math.floor(display.ctx.canvas.width  / SQUISH_FACTOR);
     const height = Math.floor(display.ctx.canvas.height / SQUISH_FACTOR);
 
@@ -113,6 +145,9 @@ function renderBoids(display: Display, go: GoFunctions) {
         buffer: buffer,
 
         mouse: mouse,
+
+        header_rect: header_rect,
+        not_my_passion_rect: not_my_passion_rect,
     };
 
     const numFilled = go.GetNextFrame(args);
@@ -186,41 +221,39 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
     }
 
 
-    // const canvas_container = document.getElementById("canvas_div") as HTMLCanvasElement | null
-    const boidCanvas = document.getElementById("boid_canvas") as HTMLCanvasElement | null
-    if (boidCanvas === null) throw new Error("No canvas with id `boid_canvas` is found")
+    { // setup input handling.
+        // why doesn't typescript have an enum for this?
+        enum mouse_buttons {
+            MOUSE_LEFT      = 0,
+            MOUSE_MIDDLE    = 1,
+            MOUSE_RIGHT     = 2,
+        }
 
-    // why doesn't typescript have an enum for this?
-    enum mouse_buttons {
-        MOUSE_LEFT      = 0,
-        MOUSE_MIDDLE    = 1,
-        MOUSE_RIGHT     = 2,
+        const root = document.getRootNode() as HTMLHtmlElement
+        root.addEventListener('mousemove', (ev) => { mouse.pos = {x: ev.x, y: ev.y} })
+        // this will break if the user slides there mouse outside of the screen while clicking, but this is the web, people expect it to suck.
+        root.addEventListener('mousedown', (ev) => {
+            if (ev.button == mouse_buttons.MOUSE_LEFT)      mouse.left_down   = true;
+            if (ev.button == mouse_buttons.MOUSE_MIDDLE)    mouse.middle_down = true;
+            if (ev.button == mouse_buttons.MOUSE_RIGHT)     mouse.right_down  = true;
+        });
+        root.addEventListener('mouseup',   (ev) => {
+            if (ev.button == mouse_buttons.MOUSE_LEFT)      mouse.left_down   = false;
+            if (ev.button == mouse_buttons.MOUSE_MIDDLE)    mouse.middle_down = false;
+            if (ev.button == mouse_buttons.MOUSE_RIGHT)     mouse.right_down  = false;
+        });
     }
 
 
-    const root = document.getRootNode() as HTMLHtmlElement
-
-    // NOTE should this be on the canvas or on the root?
-    root.addEventListener('mousemove', (ev) => { mouse.pos = {x: ev.x, y: ev.y} })
-    // this will break if the user slides there mouse outside of the screen while clicking, but this is the web, people expect it to suck.
-    root.addEventListener('mousedown', (ev) => {
-        if (ev.button == mouse_buttons.MOUSE_LEFT)      mouse.left_down   = true;
-        if (ev.button == mouse_buttons.MOUSE_MIDDLE)    mouse.middle_down = true;
-        if (ev.button == mouse_buttons.MOUSE_RIGHT)     mouse.right_down  = true;
-    });
-    root.addEventListener('mouseup',   (ev) => {
-        if (ev.button == mouse_buttons.MOUSE_LEFT)      mouse.left_down   = false;
-        if (ev.button == mouse_buttons.MOUSE_MIDDLE)    mouse.middle_down = false;
-        if (ev.button == mouse_buttons.MOUSE_RIGHT)     mouse.right_down  = false;
-    });
-
+    // const canvas_container = document.getElementById("canvas_div") as HTMLCanvasElement | null
+    const boidCanvas = document.getElementById("boid_canvas") as HTMLCanvasElement | null
+    if (boidCanvas === null) throw new Error("No canvas with id `boid_canvas` is found")
 
     const ctx = boidCanvas.getContext("2d")
     if (ctx === null) throw new Error("2D context is not supported")
     ctx.imageSmoothingEnabled = false
 
     const [backImageWidth, backImageHeight] = [ctx.canvas.width, ctx.canvas.height]
-
     const backCanvas = new OffscreenCanvas(backImageWidth, backImageHeight)
 
     const backCtx = backCanvas.getContext("2d")

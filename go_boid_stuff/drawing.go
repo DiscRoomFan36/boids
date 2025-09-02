@@ -9,6 +9,7 @@ const DEBUG_SPACIAL_ARRAY = false
 const DEBUG_BOUNDARY      = true
 const DEBUG_HEADING       = false
 const DEBUG_VISUAL_RANGES = false
+const DEBUG_RECTANGLES    = false
 
 
 // TODO have some sort of view mode here, so we can 'move' the 'camera'
@@ -60,7 +61,7 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 		}
 	}
 
-	{ // draw the rectangles
+	if DEBUG_RECTANGLES {
 		for _, wall := range boid_sim.Rectangles {
 			x, y, w, h := wall.Splat()
 			boundary_points := [4]Vec2[Boid_Float]{
