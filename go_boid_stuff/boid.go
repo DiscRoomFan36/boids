@@ -129,10 +129,6 @@ func New_boid_simulation(width, height Boid_Float) Boid_simulation {
 		boid_sim.generators[i].t = rand_f32()
 	}
 
-	// put the wall in the center
-	// Append(&boid_sim.Walls1, rectangle_to_lines(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)...)
-	Append(&boid_sim.Rectangles, make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100))
-
 	return boid_sim
 }
 
@@ -188,10 +184,6 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 			}
 		}
 	}
-
-	// update the position of the middle rectangle, to move with the screen.
-	// boid_sim.Rectangles[0] = make_rectangle(boid_sim.Width/2-50, boid_sim.Height/2-50, 100, 100)
-
 
 
 	{ // spawn / despawn boids.
@@ -250,12 +242,10 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 		boid_sim.Spacial_array.Clear()
 
 		// TODO make this just how we store boid positions or something.
-		boid_positions := make([]Vec2[Boid_Float], 0, len(boid_sim.Boids))
-		for _, b := range boid_sim.Boids {
-			Append(&boid_positions, b.Position)
-		}
+		boid_positions := make([]Vec2[Boid_Float], len(boid_sim.Boids))
+		for i, b := range boid_sim.Boids { boid_positions[i] = b.Position }
 
-		boid_sim.Spacial_array.Append_points(boid_positions)
+		boid_sim.Spacial_array.Append_points(boid_positions, 0, 0, boid_sim.Width, boid_sim.Height)
 	}
 
 

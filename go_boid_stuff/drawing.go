@@ -12,23 +12,24 @@ const DEBUG_VISUAL_RANGES = false
 const DEBUG_RECTANGLES    = false
 
 
+// multiply by this to map boid space into image space.
+const SCALE_FACTOR = 1 / BOID_SCALE
+
+
 // TODO have some sort of view mode here, so we can 'move' the 'camera'
 //
 // go incorrectly reports this function as unused if it is not public...
 func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input Input_Status) {
-	boid_boundary_color := rgb(240, 240, 240)
-
 	img.Clear_background(Color{r: 24, g: 24, b: 24, a: 255})
 
-	// we map the world-space to match the image space
-	scale_factor := Boid_Float(1) / BOID_SCALE
-
 	if DEBUG_SPACIAL_ARRAY {
-		draw_spacial_array_into_image(img, boid_sim.Spacial_array, scale_factor)
+		draw_spacial_array_into_image(img, boid_sim.Spacial_array, SCALE_FACTOR)
 	}
 
 	if DEBUG_BOUNDARY && boid_sim.props.Toggle_Bounding {
-		margin := int(boid_sim.props.Margin * scale_factor)
+		boid_boundary_color := rgb(240, 240, 240)
+
+		margin := int(boid_sim.props.Margin * SCALE_FACTOR)
 		boundary_points := [4]Vec2[int]{
 			{x: margin, y: margin},
 			{x: img.Width - margin, y: margin},
@@ -45,18 +46,18 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 		// Draw visual radius.
 		visual_radius_color := HSL_to_RGB(50, 0.7, 0.9)
 		for _, b := range boid_sim.Boids {
-			x := b.Position.x * scale_factor
-			y := b.Position.y * scale_factor
-			r := boid_sim.props.Visual_Range * scale_factor
+			x := b.Position.x * SCALE_FACTOR
+			y := b.Position.y * SCALE_FACTOR
+			r := boid_sim.props.Visual_Range * SCALE_FACTOR
 			Draw_Circle(img, x, y, r, visual_radius_color)
 		}
 
 		// Draw minimum visual radius. (for separation.)
 		minimum_radius_color := HSL_to_RGB(270, 0.7, 0.7)
 		for _, b := range boid_sim.Boids {
-			x := b.Position.x * scale_factor
-			y := b.Position.y * scale_factor
-			r := boid_sim.props.Separation_Min_Distance * scale_factor
+			x := b.Position.x * SCALE_FACTOR
+			y := b.Position.y * SCALE_FACTOR
+			r := boid_sim.props.Separation_Min_Distance * SCALE_FACTOR
 			Draw_Circle(img, x, y, r, minimum_radius_color)
 		}
 	}
@@ -73,8 +74,8 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 
 			// scale the points
 			for i := range len(boundary_points) {
-				boundary_points[i].x *= scale_factor
-				boundary_points[i].y *= scale_factor
+				boundary_points[i].x *= SCALE_FACTOR
+				boundary_points[i].y *= SCALE_FACTOR
 			}
 
 			for i := range len(boundary_points) {
@@ -86,15 +87,15 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 	{ // Walls / Lines
 		for _, line := range boid_sim.Walls {
 			p1, p2 := line.to_vec()
-			p1.Mult(scale_factor)
-			p2.Mult(scale_factor)
+			p1.Mult(SCALE_FACTOR)
+			p2.Mult(SCALE_FACTOR)
 			Draw_Line(img, p1, p2, rgb(240, 14, 14))
 		}
 	}
 
 	if boid_sim.making_new_wall {
-		p1 := Mult(boid_sim.new_wall_start, scale_factor)
-		p2 := Mult(input.Mouse_Pos, scale_factor)
+		p1 := Mult(boid_sim.new_wall_start, SCALE_FACTOR)
+		p2 := Mult(input.Mouse_Pos, SCALE_FACTOR)
 
 		const NUM_ROTATIONS_PER_SECOND = 0.25
 		t := Proper_Mod(Get_Time(), 10000)
@@ -113,7 +114,7 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 		// img.Draw_Circle(int(b.Position.X*scale_factor), int(b.Position.Y*scale_factor), BOID_DRAW_RADIUS, boid_color2)
 
 		// put them in img space
-		b.Position.Mult(scale_factor)
+		b.Position.Mult(SCALE_FACTOR)
 
 		// Draw boid body
 		// TODO maybe some LOD shit, where its just a triangle? 2x speed?
@@ -131,7 +132,7 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 			// someone who knows math explain this
 			boid_shape[i] = Rotate(boid_shape[i], theta)
 
-			boid_shape[i].Mult(boid_sim.props.Boid_Radius * scale_factor)
+			boid_shape[i].Mult(boid_sim.props.Boid_Radius * SCALE_FACTOR)
 			boid_shape[i].Add(b.Position)
 		}
 
@@ -160,7 +161,7 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 	now := time.Now()
 	for _, pos_and_time := range boid_sim.Click_Positions_And_Times {
 		pos := pos_and_time.Pos
-		pos.Mult(scale_factor) // into world co-ord's
+		pos.Mult(SCALE_FACTOR) // into world co-ord's
 
 		time := pos_and_time.Time
 		secs := float32(now.Sub(time).Seconds())

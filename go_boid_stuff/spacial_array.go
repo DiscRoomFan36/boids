@@ -65,16 +65,17 @@ func New_Spacial_Array[T Number]() Spacial_Array[T] {
 	return result
 }
 
-func (array *Spacial_Array[T]) Append_points(points []Vec2[T]) {
+// you can also pass in defaults, sets a min size.
+func (array *Spacial_Array[T]) Append_points(points []Vec2[T], x_min_def, y_min_def, x_max_def, y_max_def T) {
 	if array.inited { panic("cannot append 2 sets of points, sorry") }
 	array.inited = true
 
 	{ // set the bounds of the array
 		min_x, min_y, max_x, max_y := find_mins_and_maxs(points)
-		array.Min_x = min_x
-		array.Min_y = min_y
-		array.Max_x = max_x
-		array.Max_y = max_y
+		array.Min_x = min(min_x, x_min_def)
+		array.Min_y = min(min_y, y_min_def)
+		array.Max_x = max(max_x, x_max_def)
+		array.Max_y = max(max_y, y_max_def)
 	}
 
 	const MAX_ID = ^BOX_ID_TYPE(0)
