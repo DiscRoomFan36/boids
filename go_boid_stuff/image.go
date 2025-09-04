@@ -33,7 +33,7 @@ func rgb(r, g, b uint8) Color {
 	return Color{r, g, b, 255}
 }
 func rgba(r, g, b uint8, a float32) Color {
-	return Color{r, g, b, uint8(Round(a) * 255)}
+	return Color{r, g, b, uint8(Round(a * 255))}
 }
 
 
@@ -136,13 +136,16 @@ func blend_color(c1, c2 Color) Color {
 	return Color{uint8(r3), uint8(g3), uint8(b3), uint8(a1)}
 }
 
+func (img *Image) put_color_no_blend(x, y int, c Color) {
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0] = c.r
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1] = c.g
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2] = c.b
+	img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3] = c.a
+}
 
 func (img *Image) put_color(x, y int, c Color) {
 	if (c.a == 255) {
-		img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0] = c.r
-		img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1] = c.g
-		img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2] = c.b
-		// img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3] = 255
+		img.put_color_no_blend(x, y, c)
 	} else {
 
 		color := Color{
@@ -161,18 +164,63 @@ func (img *Image) put_color(x, y int, c Color) {
 	}
 }
 
+
+// i wish go had macros or something so i didn't have to make this function twice.
+func Draw_Rect_int(img *Image, x, y, w, h int, c Color) {
+	for j := max(y, 0); j < min(y+h, img.Height); j++ {
+		for i := max(x, 0); i < min(x+w, img.Width); i++ {
+			img.put_color(i, j, c)
+		}
+	}
+}
+func Draw_Rect_int_no_blend(img *Image, x, y, w, h int, c Color) {
+	min_i, max_i := max(x, 0), min(x+w, img.Width)
+	min_j, max_j := max(y, 0), min(y+h, img.Height)
+	for j := min_j; j < max_j; j++ {
+		for i := min_i; i < max_i; i++ {
+			img.Buffer[(j*img.Width+i)*NUM_COLOR_COMPONENTS+0] = c.r
+			img.Buffer[(j*img.Width+i)*NUM_COLOR_COMPONENTS+1] = c.g
+			img.Buffer[(j*img.Width+i)*NUM_COLOR_COMPONENTS+2] = c.b
+			img.Buffer[(j*img.Width+i)*NUM_COLOR_COMPONENTS+3] = c.a
+			// img.put_color_no_blend(i, j, c)
+		}
+	}
+	
+	// for j := max(y, 0); j < min(y+h, img.Height); j++ {
+	// 	for i := max(x, 0); i < min(x+w, img.Width); i++ {
+	// 		img.put_color_no_blend(i, j, c)
+	// 	}
+	// }
+	
+}
+
 func Draw_Rect[T Number](img *Image, x, y, w, h T, c Color) {
 	_x := Round(x)
 	_y := Round(y)
 	_w := Round(w)
 	_h := Round(h)
 
-	for j := max(_y, 0); j < min(_y+_h, img.Height); j++ {
-		for i := max(_x, 0); i < min(_x+_w, img.Width); i++ {
-			img.put_color(i, j, c)
-		}
-	}
+	Draw_Rect_int(img, _x, _y, _w, _h, c)
 }
+
+// TODO this function is slow... how do we speed it up?
+func Draw_Rect_Outline[T Number](img *Image, _x, _y, _w, _h T, _inner_padding T, outer_color Color) {
+	x := Round(_x)
+	y := Round(_y)
+	w := Round(_w)
+	h := Round(_h)
+	inner_padding := Round(_inner_padding)
+
+	// do bounds out here for speed.
+	if (x + w <= 0) || (y + h <= 0) || (x >= img.Width) || (y >= img.Height) { return }
+
+	// todo round these numbers up front?
+	Draw_Rect_int_no_blend(img, x,                 y,                 w,             inner_padding,     outer_color) // top edge
+	Draw_Rect_int_no_blend(img, x,                 y+h-inner_padding, w,             inner_padding,     outer_color) // bottom edge
+	Draw_Rect_int_no_blend(img, x,                 y+inner_padding,   inner_padding, h-inner_padding*2, outer_color) // left edge
+	Draw_Rect_int_no_blend(img, x+w-inner_padding, y+inner_padding,   inner_padding, h-inner_padding*2, outer_color) // right edge
+}
+
 
 func (img *Image) Clear_background(c Color) {
 	bytes := [NUM_COLOR_COMPONENTS]byte{c.r, c.g, c.b, c.a}

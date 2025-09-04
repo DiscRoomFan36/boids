@@ -35,11 +35,12 @@ DONE
 * make the sim feel gooder.
 * make Vision respect boundary. also drawing.
 * draw a cool circling animation.
-
+* make a cool background
 
 
 NEXT
 
+* make the cool background performant (something about sin?)
 
 * Make into my personal website, aka put my name and links to my stuff on it. boids path around name.
 

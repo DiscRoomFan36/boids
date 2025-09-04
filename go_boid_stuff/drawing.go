@@ -20,7 +20,7 @@ const SCALE_FACTOR = 1 / BOID_SCALE
 //
 // go incorrectly reports this function as unused if it is not public...
 func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input Input_Status) {
-	img.Clear_background(Color{r: 24, g: 24, b: 24, a: 255})
+	Draw_Cool_Background(img, boid_sim, dt, input)
 
 	if DEBUG_SPACIAL_ARRAY {
 		draw_spacial_array_into_image(img, boid_sim.Spacial_array, SCALE_FACTOR)
@@ -297,6 +297,78 @@ func draw_spacial_array_into_image[T Number](img *Image, sp_array Spacial_Array[
 		}
 	}
 }
+
+
+
+const (
+	NUM_BOX_WIDE  = 256
+	NUM_BOX_HIGH  = 256
+	BOX_WIDTH     = 25
+	BOX_HEIGHT    = BOX_WIDTH
+
+	BOX_MARGIN    = 3
+	BOX_INNER_PAD = 3
+
+	// in bob's per second
+	BOX_BOB_SPEED = 0.25
+	BOX_BOB_MAX_OFFSET = 10
+)
+
+type box_thing struct {
+	offset_y float64
+}
+
+var boxes [NUM_BOX_WIDE * NUM_BOX_HIGH]box_thing
+
+func init() {
+	for j := range NUM_BOX_HIGH {
+		for i := range NUM_BOX_WIDE {
+			box := &boxes[j * NUM_BOX_WIDE + i]
+
+			// box.offset_y = rand_f64() * 10
+			box.offset_y = float64(i) * 0.5 + float64(j) * 0.5
+		}
+	}
+}
+
+func Draw_Cool_Background(img *Image, boid_sim *Boid_simulation, dt float64, input Input_Status) {
+	img.Clear_background(rgb(29, 29, 29))
+
+	t := Get_Time_Repeating()
+
+	j_loop:
+	for j := range NUM_BOX_HIGH {
+		i_loop:
+		for i := range NUM_BOX_WIDE {
+			box := &boxes[j * NUM_BOX_WIDE + i]
+
+			// starting positions
+			//
+			// -1 is so it appears offscreen as well.
+			x := (i-1) * BOX_WIDTH
+			y := (j-1) * BOX_HEIGHT
+			w, h := BOX_WIDTH, BOX_HEIGHT
+
+			if x >= img.Width                       { break i_loop } // early out
+			if y >= img.Height + BOX_BOB_MAX_OFFSET { break j_loop } // early out
+
+			// TODO this might be slow as balls.
+			y_offset := math.Sin(math.Pi * 2 * (t + box.offset_y) * BOX_BOB_SPEED) * BOX_BOB_MAX_OFFSET
+
+			y += int(y_offset)
+
+
+			Draw_Rect_Outline(
+				img,
+				x + BOX_MARGIN, y + BOX_MARGIN,
+				w - BOX_MARGIN*2, h - BOX_MARGIN*2,
+				BOX_INNER_PAD,
+				rgb(51, 51, 51),
+			)
+		}
+	}
+}
+
 
 
 

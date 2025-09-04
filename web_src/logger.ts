@@ -2,7 +2,7 @@
 // is it correct to have these here? this one effects
 // drawing on the screen, not just logging? although we
 // could make all logs appear on screen...
-export const DEBUG_DISPLAY = false;
+export const DEBUG_DISPLAY = true;
 export const DEBUG_SLIDERS = false;
 
 export enum Log_Type {

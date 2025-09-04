@@ -112,3 +112,9 @@ func Get_Time() float64 {
 	nanos := time.Now().UnixNano()
 	return float64(nanos) / NANOS_PER_SECOND
 }
+
+const REPEAT_TIME = 10000
+// a time between 0 and REPEAT_TIME
+func Get_Time_Repeating() float64 {
+	return math.Mod(Get_Time(), REPEAT_TIME)
+}
