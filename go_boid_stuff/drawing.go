@@ -312,6 +312,8 @@ const (
 	// in bob's per second
 	BOX_BOB_SPEED = 0.25
 	BOX_BOB_MAX_OFFSET = 10
+
+	PI = math.Pi
 )
 
 type box_thing struct {
@@ -326,7 +328,8 @@ func init() {
 			box := &boxes[j * NUM_BOX_WIDE + i]
 
 			// box.offset_y = rand_f64() * 10
-			box.offset_y = float64(i) * 0.5 + float64(j) * 0.5
+			const INDEX_OFFSET = 2 * PI / 10
+			box.offset_y = float64(i) * INDEX_OFFSET + float64(j) * INDEX_OFFSET
 		}
 	}
 }
@@ -335,6 +338,7 @@ func Draw_Cool_Background(img *Image, boid_sim *Boid_simulation, dt float64, inp
 	img.Clear_background(rgb(29, 29, 29))
 
 	t := Get_Time_Repeating()
+	time_base := PI * 2 * BOX_BOB_SPEED * t
 
 	j_loop:
 	for j := range NUM_BOX_HIGH {
@@ -353,7 +357,7 @@ func Draw_Cool_Background(img *Image, boid_sim *Boid_simulation, dt float64, inp
 			if y >= img.Height + BOX_BOB_MAX_OFFSET { break j_loop } // early out
 
 			// TODO this might be slow as balls.
-			y_offset := math.Sin(math.Pi * 2 * (t + box.offset_y) * BOX_BOB_SPEED) * BOX_BOB_MAX_OFFSET
+			y_offset := math.Sin(time_base + box.offset_y) * BOX_BOB_MAX_OFFSET
 
 			y += int(y_offset)
 
