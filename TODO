@@ -36,13 +36,14 @@ DONE
 * make Vision respect boundary. also drawing.
 * draw a cool circling animation.
 * make a cool background
-
+* make the cool background performant (something about sin?)
+* give the background cool colors.
 
 NEXT
 
-* make the cool background performant (something about sin?)
-
 * Make into my personal website, aka put my name and links to my stuff on it. boids path around name.
+
+* threading in the boid update, because it somehow did something the last time i did that.
 
 * figure out why the numbers going into go from the typescript are slightly off?
 
@@ -60,6 +61,7 @@ NEXT
 * make clicking place a gravity vortex?
 * make lines be able to connect to each other.
 * make a conveyer like track, place it in a circle? maybe even use a curve.
+* a sequence of predefined movements, to make them dance
 
 * figure out why tinygo has frame rate hitches.
 * maybe don't store the wasm_exec's in the github? just get them from the respective compilers
