@@ -141,9 +141,10 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 		//
 		// 100 <- random number, no basis in reality
 		// used to be based on Max_Speed but we got rid of that
-		speed := b.Velocity.Mag() / 100
+		// speed := b.Velocity.Mag() / 100
+		speed := b.Velocity.Mag() / 40
 
-		const SHIFT_FACTOR = 2
+		const SHIFT_FACTOR = 1
 		H := math.Mod(float64(Clamp(speed, 0, 1)*360)*SHIFT_FACTOR, 360)
 
 		boid_color := HSL_to_RGB(H, 0.75, 0.6)
@@ -319,7 +320,8 @@ const (
 
 type box_thing struct {
 	offset_y float64
-	// TODO add color, but make it super muted...
+
+	color Color
 }
 
 var boxes [NUM_BOX_WIDE * NUM_BOX_HIGH]box_thing
@@ -333,6 +335,10 @@ func init() {
 			const PATTERNS_REPEAT_EVERY = 10
 			const INDEX_OFFSET = 2 * PI / PATTERNS_REPEAT_EVERY
 			box.offset_y = float64(i) * INDEX_OFFSET + float64(j) * INDEX_OFFSET
+
+			// a very muted rainbow color.
+			box.color = HSL_to_RGB(rand_f32() * 360, 0.35, 0.05)
+			// box.color = rgb(51, 51, 51)
 		}
 	}
 }
@@ -355,6 +361,7 @@ func get_y_offset(t float64) int {
 	index := int(t * T_MULT) % PRECOMPUTED_OFFSET_TABLE_SIZE
 	return precomputed_offset_table[index]
 }
+
 
 func Draw_Cool_Background(img *Image, boid_sim *Boid_simulation, dt float64, input Input_Status) {
 	img.Clear_background(rgb(29, 29, 29))
@@ -397,7 +404,7 @@ func Draw_Cool_Background(img *Image, boid_sim *Boid_simulation, dt float64, inp
 					x + BOX_MARGIN, y + BOX_MARGIN,
 					w - BOX_MARGIN*2, h - BOX_MARGIN*2,
 					BOX_INNER_PAD,
-					rgb(51, 51, 51),
+					box.color,
 				)
 			}
 		}(i)
