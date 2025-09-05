@@ -223,12 +223,12 @@ func Draw_Rect_Outline[T Number](img *Image, _x, _y, _w, _h T, _inner_padding T,
 
 
 func (img *Image) Clear_background(c Color) {
-	bytes := [NUM_COLOR_COMPONENTS]byte{c.r, c.g, c.b, c.a}
-	for i := 0; i < img.Width*img.Height*NUM_COLOR_COMPONENTS; i += NUM_COLOR_COMPONENTS {
-		img.Buffer[i+0] = bytes[0]
-		img.Buffer[i+1] = bytes[1]
-		img.Buffer[i+2] = bytes[2]
-		img.Buffer[i+3] = bytes[3]
+	// i hope this gets optimized into a memcpy or something...
+	for i := range img.Width*img.Height {
+		img.Buffer[i * NUM_COLOR_COMPONENTS + 0] = c.r
+		img.Buffer[i * NUM_COLOR_COMPONENTS + 1] = c.g
+		img.Buffer[i * NUM_COLOR_COMPONENTS + 2] = c.b
+		img.Buffer[i * NUM_COLOR_COMPONENTS + 3] = c.a
 	}
 }
 

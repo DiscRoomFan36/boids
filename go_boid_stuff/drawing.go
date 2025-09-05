@@ -2,6 +2,7 @@ package main
 
 import (
 	"math"
+	"sync"
 	"time"
 )
 
@@ -318,6 +319,7 @@ const (
 
 type box_thing struct {
 	offset_y float64
+	// TODO add color, but make it super muted...
 }
 
 var boxes [NUM_BOX_WIDE * NUM_BOX_HIGH]box_thing
@@ -328,10 +330,30 @@ func init() {
 			box := &boxes[j * NUM_BOX_WIDE + i]
 
 			// box.offset_y = rand_f64() * 10
-			const INDEX_OFFSET = 2 * PI / 10
+			const PATTERNS_REPEAT_EVERY = 10
+			const INDEX_OFFSET = 2 * PI / PATTERNS_REPEAT_EVERY
 			box.offset_y = float64(i) * INDEX_OFFSET + float64(j) * INDEX_OFFSET
 		}
 	}
+}
+
+
+// so we don't have to call the sin function for every box.
+const PRECOMPUTED_OFFSET_TABLE_SIZE = 64
+var precomputed_offset_table [PRECOMPUTED_OFFSET_TABLE_SIZE]int
+
+func init() {
+	for i := range PRECOMPUTED_OFFSET_TABLE_SIZE {
+		x := float64(i) / PRECOMPUTED_OFFSET_TABLE_SIZE * 2 * PI
+		precomputed_offset_table[i] = Round(math.Sin(x) * BOX_BOB_MAX_OFFSET)
+	}
+}
+
+// t should not be negative.
+func get_y_offset(t float64) int {
+	const T_MULT = PRECOMPUTED_OFFSET_TABLE_SIZE / (2 * PI)
+	index := int(t * T_MULT) % PRECOMPUTED_OFFSET_TABLE_SIZE
+	return precomputed_offset_table[index]
 }
 
 func Draw_Cool_Background(img *Image, boid_sim *Boid_simulation, dt float64, input Input_Status) {
@@ -340,37 +362,48 @@ func Draw_Cool_Background(img *Image, boid_sim *Boid_simulation, dt float64, inp
 	t := Get_Time_Repeating()
 	time_base := PI * 2 * BOX_BOB_SPEED * t
 
-	j_loop:
-	for j := range NUM_BOX_HIGH {
-		i_loop:
-		for i := range NUM_BOX_WIDE {
-			box := &boxes[j * NUM_BOX_WIDE + i]
+	// +1 and +2 here to get the ones that are offscreen as well.
+	height_to_check := Div_Ceil(img.Height, BOX_HEIGHT) + 2
+	width_to_check := Div_Ceil(img.Width, BOX_WIDTH) + 1
 
-			// starting positions
-			//
-			// -1 is so it appears offscreen as well.
-			x := (i-1) * BOX_WIDTH
-			y := (j-1) * BOX_HEIGHT
-			w, h := BOX_WIDTH, BOX_HEIGHT
+	// little bit of multithreading, even though wasm doesn't have that I think...
+	// still, this makes it faster...
+	//
+	// we're iterating by 'i' in the outer loop bc, only the ones on the y axis
+	// could overlap for now. if we were ever to add some swaying back and forth
+	// in the x axis, this could lead to a race condition.
+	wg := sync.WaitGroup{}
+	wg.Add(width_to_check)
 
-			if x >= img.Width                       { break i_loop } // early out
-			if y >= img.Height + BOX_BOB_MAX_OFFSET { break j_loop } // early out
+	for i := range width_to_check {
+		go func(i int) {
+			defer wg.Done()
 
-			// TODO this might be slow as balls.
-			y_offset := math.Sin(time_base + box.offset_y) * BOX_BOB_MAX_OFFSET
+			// doing more than one thing per 'thread' because im a good citizen
+			for j := range height_to_check {
+				box := &boxes[j * NUM_BOX_WIDE + i]
 
-			y += int(y_offset)
+				// starting positions
+				//
+				// -1 is so it appears offscreen as well.
+				x := (i-1) * BOX_WIDTH
+				y := (j-1) * BOX_HEIGHT
+				w, h := BOX_WIDTH, BOX_HEIGHT
 
+				y += get_y_offset(time_base + box.offset_y)
 
-			Draw_Rect_Outline(
-				img,
-				x + BOX_MARGIN, y + BOX_MARGIN,
-				w - BOX_MARGIN*2, h - BOX_MARGIN*2,
-				BOX_INNER_PAD,
-				rgb(51, 51, 51),
-			)
-		}
+				Draw_Rect_Outline(
+					img,
+					x + BOX_MARGIN, y + BOX_MARGIN,
+					w - BOX_MARGIN*2, h - BOX_MARGIN*2,
+					BOX_INNER_PAD,
+					rgb(51, 51, 51),
+				)
+			}
+		}(i)
 	}
+
+	wg.Wait()
 }
 
 

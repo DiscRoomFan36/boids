@@ -35,6 +35,8 @@ type Number interface { Int | Float }
 func Floor[T Number](x T) int { return int(math.Floor(float64(x))) }
 func Ceil[ T Number](x T) int { return int(math.Ceil( float64(x))) }
 
+func Div_Ceil[T Int](x, y T) T { return (x + y - 1) / y }
+
 // floating point mod, always returns a number [0, 1)
 // Modf but better.
 func mod1[T Float](x T) T {
