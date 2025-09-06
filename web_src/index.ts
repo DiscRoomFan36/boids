@@ -102,8 +102,29 @@ function get_header_rect_from_id(id: string): Rect {
     }
 }
 
+function get_all_collide_able_rects(): Rect[] {
+    const CLASS = "collide"
+    const elements = document.getElementsByClassName(CLASS)
+
+    const result: Rect[] = []
+    for (let i = 0; i < elements.length; ++i) {
+        const element = elements[i];
+        const dom_rect = element.getBoundingClientRect()
+
+        result.push({
+            x:      dom_rect.x,
+            y:      dom_rect.y,
+            width:  dom_rect.width,
+            height: dom_rect.height,
+        })
+    }
+    return result
+}
 
 function renderBoids(display: Display, go: GoFunctions) {
+
+    // TODO use these
+    const rects = get_all_collide_able_rects()
 
     // get the position of the title text on screen
     const header_rect         = get_header_rect_from_id("my_name_in_the_middle")

@@ -1,4 +1,7 @@
 
+:root {
+    --text-color: rgb(109, 98, 238);
+}
 
 html {
     height: 100%;
@@ -34,6 +37,17 @@ canvas {
     position: absolute;
 }
 
+/* https://stackoverflow.com/questions/826782/how-to-disable-text-selection-highlighting */
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none; /* Safari */
+     -khtml-user-select: none; /* Konqueror HTML */
+       -moz-user-select: none; /* Old versions of Firefox */
+        -ms-user-select: none; /* Internet Explorer/Edge */
+            user-select: none; /* Non-prefixed version, currently
+                                  supported by Chrome, Edge, Opera and Firefox */
+}
+
 #the_part_that_contains_all_the_text {
     position: absolute;
     text-align: center;
@@ -53,22 +67,37 @@ canvas {
      * the collision box font fit the text.
      */
     width: 33rem;
-    color: rgb(109, 98, 238);
+    color: var(--text-color);
+}
+
+p {
+    margin: auto;
+
+    color: var(--text-color);
 }
 
 #not_my_passion {
-    margin: auto;
-
     /* Ditto reason in #my_name_in_the_middle */
     width: 32rem;
-
-    color: rgb(109, 98, 238);
 }
 
 #NOT {
     text-shadow: rgb(188, 255, 244) 0rem 0rem 0.5rem;
 }
 
+#links {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+}
+
+a {
+    color: var(--text-color);
+}
+
+a:hover {
+    color: rgb(185, 82, 134);
+}
 
 
 
