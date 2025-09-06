@@ -3,6 +3,8 @@
 import { Log_Type, log, DEBUG_DISPLAY } from "./logger";
 import { setup_sliders } from "./setup_sliders";
 
+const IN_DEV_MODE = (window.location.hostname == "localhost")
+
 interface Arguments {
     width:  number,
     height: number,
@@ -204,6 +206,8 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
 }
 
 (async () => {
+    if (IN_DEV_MODE) console.log("In Dev Mode")
+
     const go = await GetGoFunctions()
 
     { // Handle slider stuff
@@ -217,6 +221,8 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
             go.SetProperties(obj);
         }
 
+        // TODO maybe make this dev mode only...
+        // it also has to remove the Settings thing...
         setup_sliders(properties, set_property)
     }
 
@@ -289,7 +295,7 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
         // In ms
         const renderTime = endTime - startTime;
 
-        if (DEBUG_DISPLAY) renderDebugInfo(display, renderTime, deltaTime)
+        if (DEBUG_DISPLAY && IN_DEV_MODE) renderDebugInfo(display, renderTime, deltaTime)
 
         window.requestAnimationFrame(frame)
     }
