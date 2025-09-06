@@ -45,6 +45,8 @@ NEXT
 
 * threading in the boid update, because it somehow did something the last time i did that.
 
+* add mouse delta to input, test if it works.
+
 * figure out why the numbers going into go from the typescript are slightly off?
 
 * fix boid mosh pit of death (when a bunch of boids get stuck in the corner)
