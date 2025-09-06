@@ -9,7 +9,7 @@ Check out the github site thing to see them in action
 * **npm** and **nodemon** for building and watching typescript
 
 * **tinygo** as a separate go compiler (optional)
-* wasm2wat optional
+* **wasm2wat** (optional)
 
 ## Quick Start
 
