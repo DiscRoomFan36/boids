@@ -181,6 +181,41 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 		Draw_Ring(img, pos.x, pos.y, Boid_Float(size_factor*SIZE), Boid_Float(size_factor*SIZE+RING_WIDTH), color)
 	}
 
+
+	// { // debug mouse pos
+	// 	center   := Mult(input.Mouse_Pos, SCALE_FACTOR)
+	// 	// adjusted := center
+	// 	// adjusted.x *= 1.01
+
+	// 	const LEN = 10
+
+	// 	Draw_Line(
+	// 		img,
+	// 		Add(center, Vec2[Boid_Float]{0, -LEN}),
+	// 		Add(center, Vec2[Boid_Float]{0,  LEN}),
+	// 		rgba(76, 114, 240, 1),
+	// 	)
+	// 	Draw_Line(
+	// 		img,
+	// 		Add(center, Vec2[Boid_Float]{-LEN, 0}),
+	// 		Add(center, Vec2[Boid_Float]{ LEN, 0}),
+	// 		rgba(76, 114, 240, 1),
+	// 	)
+
+	// 	// Draw_Line(
+	// 	// 	img,
+	// 	// 	Add(adjusted, Vec2[Boid_Float]{0, -LEN}),
+	// 	// 	Add(adjusted, Vec2[Boid_Float]{0,  LEN}),
+	// 	// 	rgba(235, 126, 83, 1),
+	// 	// )
+	// 	// Draw_Line(
+	// 	// 	img,
+	// 	// 	Add(adjusted, Vec2[Boid_Float]{-LEN, 0}),
+	// 	// 	Add(adjusted, Vec2[Boid_Float]{ LEN, 0}),
+	// 	// 	rgba(235, 126, 83, 1),
+	// 	// )
+	// }
+
 	// {
 	// 	center := Mult(input.Mouse_Pos, scale_factor)
 

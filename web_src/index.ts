@@ -12,9 +12,7 @@ interface Arguments {
 
     mouse: Mouse,
 
-    // TODO make this an array.
-    header_rect: Rect,
-    not_my_passion_rect: Rect,
+    rects: Rect[],
 }
 
 interface GoFunctions {
@@ -88,17 +86,18 @@ const mouse: Mouse = {
     right_down:     false,
 };
 
+function adjust_x_coord(x: number): number {
+    // This is not exactly correct, but it reduces the total error.
+    return x * 1.02
+}
 
-function get_header_rect_from_id(id: string): Rect {
-    const header = document.getElementById(id) as HTMLHeadingElement | null
-    if (header === null) throw new Error("no header text has been found (my name in the middle)")
-
-    const dom_rect = header.getBoundingClientRect()
+function dom_rect_to_rect(dom_rect: DOMRect): Rect {
     return {
         x:      dom_rect.x,
         y:      dom_rect.y,
-        width:  dom_rect.width,
-        height: dom_rect.height,
+        // give it a little room...
+        width:  adjust_x_coord(dom_rect.width) + 15,
+        height: dom_rect.height + 5,
     }
 }
 
@@ -111,27 +110,13 @@ function get_all_collide_able_rects(): Rect[] {
         const element = elements[i];
         const dom_rect = element.getBoundingClientRect()
 
-        result.push({
-            x:      dom_rect.x,
-            y:      dom_rect.y,
-            width:  dom_rect.width,
-            height: dom_rect.height,
-        })
+        result.push(dom_rect_to_rect(dom_rect))
     }
     return result
 }
 
 function renderBoids(display: Display, go: GoFunctions) {
-
-    // TODO use these
     const rects = get_all_collide_able_rects()
-
-    // get the position of the title text on screen
-    const header_rect         = get_header_rect_from_id("my_name_in_the_middle")
-    const not_my_passion_rect = get_header_rect_from_id("not_my_passion")
-    // const rect = get_header_rect("my_name_in_the_middle")
-    // console.log("rect", rect.x, rect.y, rect.width, rect.height);
-
 
     const width  = Math.floor(display.ctx.canvas.width  / SQUISH_FACTOR);
     const height = Math.floor(display.ctx.canvas.height / SQUISH_FACTOR);
@@ -169,8 +154,7 @@ function renderBoids(display: Display, go: GoFunctions) {
 
         mouse: mouse,
 
-        header_rect: header_rect,
-        not_my_passion_rect: not_my_passion_rect,
+        rects: rects,
     };
 
     const numFilled = go.GetNextFrame(args);
@@ -257,7 +241,9 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
         }
 
         const root = document.getRootNode() as HTMLHtmlElement
-        root.addEventListener('mousemove', (ev) => { mouse.pos = {x: ev.x, y: ev.y} })
+        root.addEventListener('mousemove', (ev) => {
+            mouse.pos = {x: adjust_x_coord(ev.x), y: ev.y}
+        })
         // this will break if the user slides there mouse outside of the screen while clicking, but this is the web, people expect it to suck.
         root.addEventListener('mousedown', (ev) => {
             if (ev.button == mouse_buttons.MOUSE_LEFT)      mouse.left_down   = true;

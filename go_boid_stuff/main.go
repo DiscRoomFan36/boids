@@ -107,18 +107,20 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 	mouse := args[0].Get("mouse")
 
 	mouse_pos := js_to_Vector(mouse.Get("pos"))
-	mouse_pos = World_to_boid_vec(mouse_pos)
+	mouse_pos = Mult(mouse_pos, BOID_SCALE)
 
-	header_rect         := js_to_Rectangle(args[0].Get("header_rect"))
-	header_rect          = World_to_boid_rect(header_rect)
-	not_my_passion_rect := js_to_Rectangle(args[0].Get("not_my_passion_rect"))
-	not_my_passion_rect  = World_to_boid_rect(not_my_passion_rect)
+	rect_array := args[0].Get("rects")
+	rect_array_length := rect_array.Length()
 
-	// TODO make this better please.
-	if len(boid_sim.Rectangles) < 2 { boid_sim.Rectangles = make([]Rectangle, 2) }
+	// TODO this is kinda fragile.
+	if len(boid_sim.Rectangles) < rect_array_length {
+		boid_sim.Rectangles = make([]Rectangle, rect_array_length)
+	}
 
-	boid_sim.Rectangles[0] = header_rect
-	boid_sim.Rectangles[1] = not_my_passion_rect
+	for i := range rect_array.Length() {
+		rect := js_to_Rectangle(rect_array.Index(i))
+		boid_sim.Rectangles[i] = World_to_boid_rect(rect)
+	}
 
 
 	input = Update_Input(

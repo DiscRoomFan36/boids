@@ -38,16 +38,20 @@ DONE
 * make a cool background
 * make the cool background performant (something about sin?)
 * give the background cool colors.
+* boids path around name.
+* figure out why the numbers going into go from the typescript are slightly off?
+* Make into my personal website, aka put my name and links to my stuff on it.
+
 
 NEXT
 
-* Make into my personal website, aka put my name and links to my stuff on it. boids path around name.
+* put more personal stuff on the website. (email, maybe phone, ask somewhat what i should put there)
 
 * threading in the boid update, because it somehow did something the last time i did that.
 
 * add mouse delta to input, test if it works.
 
-* figure out why the numbers going into go from the typescript are slightly off?
+* figure out the real reason the input numbers are off by 2%
 
 * fix boid mosh pit of death (when a bunch of boids get stuck in the corner)
 

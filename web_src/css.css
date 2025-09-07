@@ -66,19 +66,22 @@ canvas {
      * typescript to wasm, and if the box i too small,
      * the collision box font fit the text.
      */
-    width: 33rem;
+    /* width: 33rem; */
+    width: fit-content;
     color: var(--text-color);
 }
 
 p {
     margin: auto;
+    width: fit-content;
 
     color: var(--text-color);
 }
 
 #not_my_passion {
     /* Ditto reason in #my_name_in_the_middle */
-    width: 32rem;
+    width: fit-content;
+    /* width: 32rem; */
 }
 
 #NOT {
