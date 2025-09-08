@@ -61,6 +61,8 @@ canvas {
 
 #my_name_in_the_middle {
     margin: auto;
+    margin-top: 2.5rem;
+    margin-bottom: 2.5rem;
     /* must set this manually because something
      * is weird with transferring coordinates from
      * typescript to wasm, and if the box i too small,
@@ -71,9 +73,20 @@ canvas {
     color: var(--text-color);
 }
 
+#random_statements {
+    margin: auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-evenly;
+    align-content: space-around;
+}
+
 p {
     margin: auto;
+    margin: 2.5rem;
     width: fit-content;
+    /* padding: 2.5rem; */
 
     color: var(--text-color);
 }
@@ -92,6 +105,10 @@ p {
     width: 100%;
     display: flex;
     justify-content: space-around;
+}
+
+#email {
+    color: var(--text-color);
 }
 
 a {
