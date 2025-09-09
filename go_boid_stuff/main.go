@@ -165,6 +165,8 @@ func GetNextFrame(this js.Value, args []js.Value) any {
 func main() {
 	println("Hello From Boid.go")
 
+	// println("num cpu's", runtime.NumCPU())
+
 	// set img to screen size, and shrink
 	img = New_image(1920, 1080)
 	boid_sim = New_boid_simulation(BOID_BOUNDS_WIDTH, BOID_BOUNDS_HEIGHT)

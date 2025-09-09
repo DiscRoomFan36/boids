@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"unsafe"
 )
 
 // DO NOT CHANGE UNLESS YOU WANNA DO A MASSIVE REFACTOR (AGAIN)
@@ -230,6 +231,34 @@ func (img *Image) Clear_background(c Color) {
 		img.Buffer[i * NUM_COLOR_COMPONENTS + 2] = c.b
 		img.Buffer[i * NUM_COLOR_COMPONENTS + 3] = c.a
 	}
+}
+
+func (c Color) to_uint32() uint32 {
+	// this is the correct endian for this project,
+	// i'm not gonna use encoding, don't @ me.
+	return (uint32(c.r) << (8*0)) |
+	       (uint32(c.g) << (8*1)) |
+	       (uint32(c.b) << (8*2)) |
+	       (uint32(c.a) << (8*3))
+}
+
+//go:noinline
+func (img *Image) Clear_background_2(c Color) {
+	color_as_int := c.to_uint32()
+
+	// cool reinterpret to uint32,
+	// much faster than anything go can do on its own.
+	buf_data := unsafe.Pointer(unsafe.SliceData(img.Buffer))
+	// the underlying slice probably has more space,
+	// but we only need the stuff thats going to be
+	// sent to the typescript
+	slice := unsafe.Slice((*uint32)(buf_data), img.Width*img.Height)
+
+	for i := range slice { slice[i] = color_as_int }
+
+	// Yes, this is slower.
+	// slice := unsafe.Slice((*Color)(buf_data), img.Width*img.Height)
+	// for i := range slice { slice[i] = c }
 }
 
 func Draw_Circle[T Number](img *Image, x, y, r T, c Color) {

@@ -4,6 +4,7 @@ import (
 	"math"
 	"math/rand"
 	"time"
+	"unsafe"
 )
 
 // good old swap and remove
@@ -119,4 +120,22 @@ const REPEAT_TIME = 10000
 // a time between 0 and REPEAT_TIME
 func Get_Time_Repeating() float64 {
 	return math.Mod(Get_Time(), REPEAT_TIME)
+}
+
+
+
+// great function to have.
+func Unsafe_Slice_Transmute[T any, U any](slice []T) []U {
+	var x T; var y U
+	T_size := unsafe.Sizeof(x)
+	U_size := unsafe.Sizeof(y)
+
+	flag := false
+	if U_size >= T_size { flag = (U_size % T_size != 0)
+	} else {              flag = (T_size % U_size != 0) }
+	if flag { panic("T and U must have sizes that are multiples of each other") }
+
+	data := unsafe.Pointer(unsafe.SliceData(slice))
+	size := uintptr(len(slice)) * T_size / U_size
+	return unsafe.Slice((*U)(data), size)
 }
