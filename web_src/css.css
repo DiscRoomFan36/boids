@@ -148,7 +148,7 @@ summary {
 
     justify-self: center;
 
-    padding: 0.2rem;
+    padding: 1rem;
     border-radius: 0.2rem;
 
     display: flex;
@@ -166,7 +166,10 @@ summary {
     color: lightgoldenrodyellow;
 }
 
-.sliderKey { color: lightgoldenrodyellow; }
+.sliderKey {
+    color: lightgoldenrodyellow;
+    margin: 0.2rem;
+}
 .slider {
     -webkit-appearance: none;
     appearance: none;
