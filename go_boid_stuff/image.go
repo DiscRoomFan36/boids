@@ -116,7 +116,7 @@ func (img *Image) To_ppm(filename string) {
 */
 
 func (img *Image) point_within_bounds(x, y int) bool {
-	return x >= 0 && x < img.Width && y >= 0 && y < img.Height
+	return 0 <= x && x < img.Width && 0 <= y && y < img.Height
 }
 
 /*
