@@ -41,6 +41,7 @@ DONE
 * boids path around name.
 * figure out why the numbers going into go from the typescript are slightly off?
 * Make into my personal website, aka put my name and links to my stuff on it.
+* Make colors just be uint32
 
 
 NEXT
