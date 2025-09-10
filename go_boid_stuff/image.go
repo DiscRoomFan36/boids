@@ -59,14 +59,14 @@ func HSL_to_RGB[T Float](H, S, L T) Color {
 }
 
 type Image struct {
-	Buffer3 []Color // [RGBA][RGBA][RGBA]...
+	Buffer []Color // [RGBA][RGBA][RGBA]...
 	Width  int
 	Height int
 }
 
 func New_image(width int, height int) Image {
 	return Image{
-		Buffer3: make([]Color, width*height),
+		Buffer: make([]Color, width*height),
 		Width:  width,
 		Height: height,
 	}
@@ -77,15 +77,15 @@ func (img *Image) Resize_Image(new_width, new_height int) {
 
 	// saves space by reusing memory
 	new_size := new_width*new_height
-	if len(img.Buffer3) < new_size {
-		img.Buffer3 = make([]Color, new_size)
+	if len(img.Buffer) < new_size {
+		img.Buffer = make([]Color, new_size)
 	}
 	img.Width, img.Height = new_width, new_height
 }
 
 func (img *Image) To_RGBA_byte_array() []byte {
 	// sick tricks for speed. much faster than filling an array of bytes.
-	return Unsafe_Slice_Transmute[Color, byte](img.Buffer3[:img.Width*img.Height])
+	return Unsafe_Slice_Transmute[Color, byte](img.Buffer[:img.Width*img.Height])
 }
 
 /*
@@ -144,7 +144,7 @@ func blend_color(c1, c2 Color) Color {
 
 // do we need this? maybe just get_color_at() -> *Color
 func (img *Image) put_color_no_blend(x, y int, c Color) {
-	img.Buffer3[y*img.Width + x] = c
+	img.Buffer[y*img.Width + x] = c
 }
 
 func (img *Image) put_color(x, y int, c Color) {
@@ -152,9 +152,9 @@ func (img *Image) put_color(x, y int, c Color) {
 	if (a == 255) {
 		img.put_color_no_blend(x, y, c)
 	} else {
-		color := img.Buffer3[y*img.Width + x]
+		color := img.Buffer[y*img.Width + x]
 		blended := blend_color(color, c)
-		img.Buffer3[y*img.Width + x] = blended
+		img.Buffer[y*img.Width + x] = blended
 	}
 }
 
@@ -206,7 +206,7 @@ func Draw_Rect_Outline[T Number](img *Image, _x, _y, _w, _h T, _inner_padding T,
 //go:noinline
 func (img *Image) Clear_background(c Color) {
 	for i := range img.Width*img.Height {
-		img.Buffer3[i] = c
+		img.Buffer[i] = c
 	}
 }
 
