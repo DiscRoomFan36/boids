@@ -1,7 +1,10 @@
 package main
 
 import (
+	"fmt"
+	"log"
 	"math"
+	"os"
 )
 
 type Color uint32
@@ -88,14 +91,14 @@ func (img *Image) To_RGBA_byte_array() []byte {
 	return Unsafe_Slice_Transmute[Color, byte](img.Buffer[:img.Width*img.Height])
 }
 
-/*
 func (img *Image) To_RGB_byte_array() []byte {
 	// this is RGB not RGBA
 	RGB_array := make([]byte, img.Width*img.Height*3)
-	for i := 0; i < img.Width*img.Height; i++ {
-		RGB_array[i*3+0] = img.Buffer[i*NUM_COLOR_COMPONENTS+0]
-		RGB_array[i*3+1] = img.Buffer[i*NUM_COLOR_COMPONENTS+1]
-		RGB_array[i*3+2] = img.Buffer[i*NUM_COLOR_COMPONENTS+2]
+	for i := range img.Width*img.Height {
+		r, g, b, _ := img.Buffer[i].to_rgba()
+		RGB_array[i*3+0] = r
+		RGB_array[i*3+1] = g
+		RGB_array[i*3+2] = b
 	}
 	return RGB_array
 }
@@ -113,7 +116,6 @@ func (img *Image) To_ppm(filename string) {
 	f.Write([]byte(header))
 	f.Write(body)
 }
-*/
 
 func (img *Image) point_within_bounds(x, y int) bool {
 	return 0 <= x && x < img.Width && 0 <= y && y < img.Height
