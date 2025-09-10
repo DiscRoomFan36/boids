@@ -337,8 +337,16 @@ func draw_spacial_array_into_image[T Number](img *Image, sp_array Spacial_Array[
 
 
 const (
+	// If I crank this number up to high,
+	// it effects the startup time.
+	//
+	// Would like to remove it entirely, but we need the colors to be consistent...
+	//
+	// maybe have the colors generated only when we need them?
+	// and use a hashmap to store the positions.
 	NUM_BOX_WIDE  = 256
-	NUM_BOX_HIGH  = 256
+	NUM_BOX_HIGH  = NUM_BOX_WIDE / 2
+
 	BOX_WIDTH     = 25
 	BOX_HEIGHT    = BOX_WIDTH
 
@@ -349,30 +357,31 @@ const (
 	BOX_BOB_SPEED = 0.25
 	BOX_BOB_MAX_OFFSET = 10
 
+	BOX_PATTERNS_REPEAT_EVERY = 10
+	
 	PI = math.Pi
 )
 
-type box_thing struct {
-	offset_y float64
-
-	color Color
-}
-
-var boxes [NUM_BOX_WIDE * NUM_BOX_HIGH]box_thing
+var box_y_offsets [NUM_BOX_WIDE * NUM_BOX_HIGH]float64
+var box_colors    [NUM_BOX_WIDE * NUM_BOX_HIGH]Color
 
 func init() {
 	for j := range NUM_BOX_HIGH {
 		for i := range NUM_BOX_WIDE {
-			box := &boxes[j * NUM_BOX_WIDE + i]
+			box_y_offset := &box_y_offsets[j * NUM_BOX_WIDE + i]
+			box_color    := &box_colors   [j * NUM_BOX_WIDE + i]
 
 			// box.offset_y = rand_f64() * 10
-			const PATTERNS_REPEAT_EVERY = 10
-			const INDEX_OFFSET = 2 * PI / PATTERNS_REPEAT_EVERY
-			box.offset_y = float64(i) * INDEX_OFFSET + float64(j) * INDEX_OFFSET
+			const INDEX_OFFSET = 2 * PI / BOX_PATTERNS_REPEAT_EVERY
+			// if the offset is deterministic, we could calculate this in
+			// the main loop and not store it here, but i think the
+			// 'HSL_to_RGB()' is the slow thing, not this
+			*box_y_offset = float64(i) * INDEX_OFFSET + float64(j) * INDEX_OFFSET
+
 
 			// a very muted rainbow color.
-			box.color = HSL_to_RGB(rand_f32() * 360, 0.35, 0.05)
-			// box.color = rgb(51, 51, 51)
+			*box_color = HSL_to_RGB(rand_f32() * 360, 0.35, 0.05)
+			// *box_color = rgb(51, 51, 51)
 		}
 	}
 }
@@ -413,7 +422,8 @@ func Draw_Cool_Background(img *Image, boid_sim *Boid_simulation, dt float64, inp
 
 	for j := range height_to_check {
 		for i := range width_to_check {
-			box := &boxes[j * NUM_BOX_WIDE + i]
+			box_y_offset := box_y_offsets[j * NUM_BOX_WIDE + i]
+			box_color    := box_colors   [j * NUM_BOX_WIDE + i]
 
 			// starting positions
 			//
@@ -422,7 +432,7 @@ func Draw_Cool_Background(img *Image, boid_sim *Boid_simulation, dt float64, inp
 			y := (j-1) * BOX_HEIGHT
 			w, h := BOX_WIDTH, BOX_HEIGHT
 
-			y += get_y_offset(time_base + box.offset_y)
+			y += get_y_offset(time_base + box_y_offset)
 
 			// NOTE this is the slow part of rendering, we draw an insane
 			// amount of these things, and each of them calls
@@ -432,7 +442,7 @@ func Draw_Cool_Background(img *Image, boid_sim *Boid_simulation, dt float64, inp
 				x + BOX_MARGIN, y + BOX_MARGIN,
 				w - BOX_MARGIN*2, h - BOX_MARGIN*2,
 				BOX_INNER_PAD,
-				box.color,
+				box_color,
 			)
 		}
 	}
