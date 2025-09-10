@@ -48,8 +48,6 @@ NEXT
 
 * put more personal stuff on the website. (email, maybe phone, ask somewhat what i should put there)
 
-* threading in the boid update, because it somehow did something the last time i did that.
-
 * add mouse delta to input, test if it works.
 
 * figure out the real reason the input numbers are off by 2%

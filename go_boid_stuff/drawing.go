@@ -2,7 +2,6 @@ package main
 
 import (
 	"math"
-	"sync"
 	"time"
 )
 
@@ -399,8 +398,11 @@ func get_y_offset(t float64) int {
 
 
 func Draw_Cool_Background(img *Image, boid_sim *Boid_simulation, dt float64, input Input_Status) {
-	// img.Clear_background(rgb(29, 29, 29))
+	// this call is super slow.
+	//
+	// who knew that writing to over a million pixels would be so slow?
 	img.Clear_background(rgb(29, 29, 29))
+
 
 	t := Get_Time_Repeating()
 	time_base := PI * 2 * BOX_BOB_SPEED * t
@@ -409,44 +411,31 @@ func Draw_Cool_Background(img *Image, boid_sim *Boid_simulation, dt float64, inp
 	height_to_check := Div_Ceil(img.Height, BOX_HEIGHT) + 2
 	width_to_check := Div_Ceil(img.Width, BOX_WIDTH) + 1
 
-	// little bit of multithreading, even though wasm doesn't have that I think...
-	// still, this makes it faster...
-	//
-	// we're iterating by 'i' in the outer loop bc, only the ones on the y axis
-	// could overlap for now. if we were ever to add some swaying back and forth
-	// in the x axis, this could lead to a race condition.
-	wg := sync.WaitGroup{}
-	wg.Add(width_to_check)
+	for j := range height_to_check {
+		for i := range width_to_check {
+			box := &boxes[j * NUM_BOX_WIDE + i]
 
-	for i := range width_to_check {
-		go func(i int) {
-			defer wg.Done()
+			// starting positions
+			//
+			// -1 is so it appears offscreen as well.
+			x := (i-1) * BOX_WIDTH
+			y := (j-1) * BOX_HEIGHT
+			w, h := BOX_WIDTH, BOX_HEIGHT
 
-			// doing more than one thing per 'thread' because im a good citizen
-			for j := range height_to_check {
-				box := &boxes[j * NUM_BOX_WIDE + i]
+			y += get_y_offset(time_base + box.offset_y)
 
-				// starting positions
-				//
-				// -1 is so it appears offscreen as well.
-				x := (i-1) * BOX_WIDTH
-				y := (j-1) * BOX_HEIGHT
-				w, h := BOX_WIDTH, BOX_HEIGHT
-
-				y += get_y_offset(time_base + box.offset_y)
-
-				Draw_Rect_Outline(
-					img,
-					x + BOX_MARGIN, y + BOX_MARGIN,
-					w - BOX_MARGIN*2, h - BOX_MARGIN*2,
-					BOX_INNER_PAD,
-					box.color,
-				)
-			}
-		}(i)
+			// NOTE this is the slow part of rendering, we draw an insane
+			// amount of these things, and each of them calls
+			// 'draw_rect_no_blend' 4 times.
+			Draw_Rect_Outline(
+				img,
+				x + BOX_MARGIN, y + BOX_MARGIN,
+				w - BOX_MARGIN*2, h - BOX_MARGIN*2,
+				BOX_INNER_PAD,
+				box.color,
+			)
+		}
 	}
-
-	wg.Wait()
 }
 
 

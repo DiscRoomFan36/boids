@@ -61,6 +61,7 @@ func HSL_to_RGB[T Float](H, S, L T) Color {
 	return rgba_to_color(uint8(r), uint8(g), uint8(b), 255)
 }
 
+
 type Image struct {
 	Buffer []Color // [RGBA][RGBA][RGBA]...
 	Width  int
@@ -117,20 +118,19 @@ func (img *Image) To_ppm(filename string) {
 	f.Write(body)
 }
 
+
 func (img *Image) point_within_bounds(x, y int) bool {
 	return 0 <= x && x < img.Width && 0 <= y && y < img.Height
 }
 
-/*
-func (img *Image) color_at(x, y int) Color {
-	return Color{
-		r: img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+0],
-		g: img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+1],
-		b: img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+2],
-		a: img.Buffer[(y*img.Width+x)*NUM_COLOR_COMPONENTS+3],
-	}
+//go:inline
+func (img *Image) get_color_at(x, y int) *Color {
+	return &img.Buffer[y*img.Width + x]
 }
-*/
+//go:inline
+func (img *Image) put_color_no_blend(x, y int, c Color) {
+	img.Buffer[y*img.Width + x] = c
+}
 
 // returned alpha is c1.a
 func blend_color(c1, c2 Color) Color {
@@ -144,22 +144,32 @@ func blend_color(c1, c2 Color) Color {
 	return rgba_to_color(uint8(r3), uint8(g3), uint8(b3), uint8(a1))
 }
 
-// do we need this? maybe just get_color_at() -> *Color
-func (img *Image) put_color_no_blend(x, y int, c Color) {
-	img.Buffer[y*img.Width + x] = c
-}
-
 func (img *Image) put_color(x, y int, c Color) {
+	// this could be slightly faster,
+	// just mask out the bits and compare
 	_, _, _, a := c.to_rgba()
 	if (a == 255) {
 		img.put_color_no_blend(x, y, c)
 	} else {
-		color := img.Buffer[y*img.Width + x]
-		blended := blend_color(color, c)
-		img.Buffer[y*img.Width + x] = blended
+		color := *img.get_color_at(x, y)
+		img.put_color_no_blend(x, y, blend_color(color, c))
 	}
 }
 
+
+// this function has noinline, because its gonna be super slow anyway,
+// (it has to write to 1,000,000 pixels at least), and makes the performance
+// graph make more sense.
+//
+// I would hope that go could auto-vectorize this,
+// but the wasm backend has disappointed me before.
+//
+//go:noinline
+func (img *Image) Clear_background(c Color) {
+	for i := range img.Width*img.Height {
+		img.Buffer[i] = c
+	}
+}
 
 // i wish go had macros or something so i didn't have to make this function twice.
 func Draw_Rect_int(img *Image, x, y, w, h int, c Color) {
@@ -188,8 +198,7 @@ func Draw_Rect[T Number](img *Image, x, y, w, h T, c Color) {
 	Draw_Rect_int(img, _x, _y, _w, _h, c)
 }
 
-// TODO this function is slow... how do we speed it up?
-func Draw_Rect_Outline[T Number](img *Image, _x, _y, _w, _h T, _inner_padding T, outer_color Color) {
+func Draw_Rect_Outline[T Number](img *Image, _x, _y, _w, _h T, _inner_padding T, color Color) {
 	x := Round(_x)
 	y := Round(_y)
 	w := Round(_w)
@@ -199,17 +208,10 @@ func Draw_Rect_Outline[T Number](img *Image, _x, _y, _w, _h T, _inner_padding T,
 	// do bounds out here for speed.
 	if (x + w <= 0) || (y + h <= 0) || (x >= img.Width) || (y >= img.Height) { return }
 
-	Draw_Rect_int_no_blend(img, x,                 y,                 w,             inner_padding,     outer_color) // top edge
-	Draw_Rect_int_no_blend(img, x,                 y+h-inner_padding, w,             inner_padding,     outer_color) // bottom edge
-	Draw_Rect_int_no_blend(img, x,                 y+inner_padding,   inner_padding, h-inner_padding*2, outer_color) // left edge
-	Draw_Rect_int_no_blend(img, x+w-inner_padding, y+inner_padding,   inner_padding, h-inner_padding*2, outer_color) // right edge
-}
-
-//go:noinline
-func (img *Image) Clear_background(c Color) {
-	for i := range img.Width*img.Height {
-		img.Buffer[i] = c
-	}
+	Draw_Rect_int_no_blend(img, x,                 y,                 w,             inner_padding,     color) // top edge
+	Draw_Rect_int_no_blend(img, x,                 y+h-inner_padding, w,             inner_padding,     color) // bottom edge
+	Draw_Rect_int_no_blend(img, x,                 y+inner_padding,   inner_padding, h-inner_padding*2, color) // left edge
+	Draw_Rect_int_no_blend(img, x+w-inner_padding, y+inner_padding,   inner_padding, h-inner_padding*2, color) // right edge
 }
 
 func Draw_Circle[T Number](img *Image, x, y, r T, c Color) {
