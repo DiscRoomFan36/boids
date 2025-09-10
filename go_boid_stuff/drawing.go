@@ -356,7 +356,7 @@ const (
 type box_thing struct {
 	offset_y float64
 
-	color Color_uint
+	color Color
 }
 
 var boxes [NUM_BOX_WIDE * NUM_BOX_HIGH]box_thing
@@ -400,7 +400,7 @@ func get_y_offset(t float64) int {
 
 func Draw_Cool_Background(img *Image, boid_sim *Boid_simulation, dt float64, input Input_Status) {
 	// img.Clear_background(rgb(29, 29, 29))
-	img.Clear_background_2(rgb(29, 29, 29))
+	img.Clear_background(rgb(29, 29, 29))
 
 	t := Get_Time_Repeating()
 	time_base := PI * 2 * BOX_BOB_SPEED * t
