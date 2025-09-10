@@ -356,7 +356,7 @@ const (
 type box_thing struct {
 	offset_y float64
 
-	color Color
+	color Color_uint
 }
 
 var boxes [NUM_BOX_WIDE * NUM_BOX_HIGH]box_thing
