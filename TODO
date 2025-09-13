@@ -51,6 +51,7 @@ NEXT
 * make the canvas it take up the entire page.
 * maybe remove the settings? or is that cool runtime reflection.
 * speed up so 1k boids works.
+* make Debug numbers provide better info.
 
 * add mouse delta to input, test if it works.
 
