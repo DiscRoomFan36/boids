@@ -46,7 +46,10 @@ DONE
 
 NEXT
 
-* put more personal stuff on the website. (email, maybe phone, ask somewhat what i should put there)
+* fix click circle being darker than i expect.
+* fix green background, kinda a flash bang
+* make the canvas it take up the entire page.
+* maybe remove the settings? or is that cool runtime reflection.
 
 * add mouse delta to input, test if it works.
 

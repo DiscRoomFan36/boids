@@ -27,7 +27,7 @@ type Position_And_Time struct {
 type Properties struct {
 	// in rough order of when their used
 
-	Max_Boids          int `Property:"int" Range:"0;5000" Default:"500"`
+	Max_Boids          int `Property:"int" Range:"0;5000" Default:"1000"`
 	// how many spawn / de-spawn per second.
 	Boid_Spawn_Rate    Boid_Float `Property:"float" Range:"10;1000" Default:"100"`
 
