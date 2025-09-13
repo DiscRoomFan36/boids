@@ -50,6 +50,7 @@ NEXT
 * fix green background, kinda a flash bang
 * make the canvas it take up the entire page.
 * maybe remove the settings? or is that cool runtime reflection.
+* speed up so 1k boids works.
 
 * add mouse delta to input, test if it works.
 
