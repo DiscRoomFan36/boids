@@ -48,6 +48,8 @@ DONE
 * fix green background, kinda a flash bang
 * make the canvas it take up the entire page.
 * maybe remove the settings? or is that cool runtime reflection.
+* make Debug numbers provide better info. (its more stylish now.)
+* make the html canvas always be in the background of the page? so the image follows even if you scroll down, can use this for camera movement later.
 
 
 
@@ -55,7 +57,6 @@ NEXT
 
 
 * speed up so 1k boids works.
-* make Debug numbers provide better info.
 
 * add mouse delta to input, test if it works.
 
@@ -67,7 +68,6 @@ NEXT
 * make the rendering a camera like, so you can scroll and what not.
 * draw an actual image instead of the triangles? <- would require major typescript rendering, i don't think wasm has got that speed.
 * have the go_boid_stuff/image use actual canvas stuff, for speed. would require a lot of refactoring on the typescript side.
-* make the html canvas always be in the background of the page? so the image follows even if you scroll down, can use this for camera movement later.
 
 * unify the collision stuff. currently 3 different systems. maybe make a collisional interface?
 * boid.go: // TODO calculate position at moment of collision

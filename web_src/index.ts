@@ -178,10 +178,10 @@ const renderTimes: number[] = []
 const deltaTimes: number[] = []
 // Credit: https://github.com/tsoding/koil
 function renderDebugInfo(display: Display, renderTime: number, deltaTime: number) {
-    const fontSize = 28;
-    display.ctx.font = `${fontSize}px bold`;
+    const FONT_SIZE = 28;
+    display.ctx.font = `${FONT_SIZE}px bold`;
 
-    const labels = [];
+    const labels: string[] = [];
 
     renderTimes.push(renderTime)
     if (renderTimes.length > 60) { renderTimes.shift() }
@@ -192,21 +192,21 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
     const renderAvg = renderTimes.reduce((a, b) => a + b, 0) / renderTimes.length;
     const deltaAvg = deltaTimes.reduce((a, b) => a + b, 0) / deltaTimes.length;
 
+    const frames_per_second = (1/deltaAvg*1000).toFixed(2);
+    const seconds_per_frame = (  deltaAvg/1000).toFixed(5);
+    labels.push(`F/S: ${frames_per_second}    S/F: ${seconds_per_frame}`);
 
-    labels.push(`FPS: ${(1/deltaAvg*1000).toFixed(2)}`);
-    labels.push(`ms per frame: ${deltaAvg.toFixed(2)}`);
-
-    labels.push(`Render Time Avg (ms): ${renderAvg.toFixed(2)}`);
+    labels.push(`WASM Render Time Avg (ms): ${renderAvg.toFixed(2)}`);
     labels.push(`Render/Sec (MAX): ${(1/renderAvg*1000).toFixed(2)}`);
 
 
-    const padding = 70;
-    const shadowOffset = fontSize*0.06;
+    const PADDING = 70;
+    const SHADOW_OFFSET = FONT_SIZE*0.06;
     for (let i = 0; i < labels.length; i++) {
         display.ctx.fillStyle = "black";
-        display.ctx.fillText(labels[i], padding, padding + fontSize*i);
+        display.ctx.fillText(labels[i], PADDING, PADDING + FONT_SIZE*i);
         display.ctx.fillStyle = "white";
-        display.ctx.fillText(labels[i], padding + shadowOffset, padding - shadowOffset + fontSize*i);
+        display.ctx.fillText(labels[i], PADDING + SHADOW_OFFSET, PADDING - SHADOW_OFFSET + FONT_SIZE*i);
     }
 }
 
