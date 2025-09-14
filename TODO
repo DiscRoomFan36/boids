@@ -58,6 +58,8 @@ NEXT
 
 * speed up so 1k boids works.
 
+* should the debug numbers stick around?
+
 * add mouse delta to input, test if it works.
 
 * figure out the real reason the input numbers are off by 2%
