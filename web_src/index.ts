@@ -86,17 +86,12 @@ const mouse: Mouse = {
     right_down:     false,
 };
 
-function adjust_x_coord(x: number): number {
-    // This is not exactly correct, but it reduces the total error.
-    return x * 1.02
-}
-
 function dom_rect_to_rect(dom_rect: DOMRect): Rect {
     return {
         x:      dom_rect.x,
         y:      dom_rect.y,
-        // give it a little room...
-        width:  adjust_x_coord(dom_rect.width) + 15,
+        width:  dom_rect.width,
+        // to account for letters like j
         height: dom_rect.height + 5,
     }
 }
@@ -242,7 +237,7 @@ function renderDebugInfo(display: Display, renderTime: number, deltaTime: number
 
         const root = document.getRootNode() as HTMLHtmlElement
         root.addEventListener('mousemove', (ev) => {
-            mouse.pos = {x: adjust_x_coord(ev.x), y: ev.y}
+            mouse.pos = {x: ev.x, y: ev.y}
         })
         // this will break if the user slides there mouse outside of the screen while clicking, but this is the web, people expect it to suck.
         root.addEventListener('mousedown', (ev) => {

@@ -51,6 +51,7 @@ DONE
 * make Debug numbers provide better info. (its more stylish now.)
 * make the html canvas always be in the background of the page? so the image follows even if you scroll down, can use this for camera movement later.
 * speed up so 1k boids works.
+* figure out the real reason the input numbers are off by 2% ('position: absolute;' had something to do with it, got fixed when set to 'fixed')
 
 
 
@@ -60,8 +61,6 @@ NEXT
 * should the debug numbers stick around?
 
 * add mouse delta to input, test if it works.
-
-* figure out the real reason the input numbers are off by 2%
 
 * fix boid mosh pit of death (when a bunch of boids get stuck in the corner)
 
