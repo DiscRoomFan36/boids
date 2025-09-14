@@ -63,18 +63,19 @@ canvas {
 #my_name_in_the_middle {
     margin: auto;
     margin-top: 2.5rem;
-    margin-bottom: 2.5rem;
-    /* must set this manually because something
-     * is weird with transferring coordinates from
-     * typescript to wasm, and if the box i too small,
-     * the collision box font fit the text.
-     */
-    /* width: 33rem; */
+    margin-bottom: 0rem;
     width: fit-content;
     color: var(--text-color);
 
     font-size: 6rem;
 }
+
+#heading_subtitle {
+    margin: auto;
+    margin-top: 0;
+    font-size: 2rem;
+}
+
 
 #random_statements {
     margin: auto;
@@ -97,9 +98,11 @@ p {
 }
 
 #not_my_passion {
-    /* Ditto reason in #my_name_in_the_middle */
-    width: fit-content;
-    /* width: 32rem; */
+    /* has special stuff because its only one line... */
+    /* maybe make into a class if i make more one line things. */
+    height: fit-content;
+    margin-top: auto;
+    margin-bottom: auto;
 }
 
 #NOT {
