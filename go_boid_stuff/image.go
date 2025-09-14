@@ -17,6 +17,7 @@ func (c Color) to_rgba() (uint8, uint8, uint8, uint8) {
 	return r, g, b, a
 }
 
+// packs it into a color with the correct endianness for this project.
 func rgba_to_color(r, g, b, a uint8) Color {
 	result := (uint32(r) << (8*0)) |
 			  (uint32(g) << (8*1)) |
@@ -25,11 +26,16 @@ func rgba_to_color(r, g, b, a uint8) Color {
 	return Color(result)
 }
 
+func convert_0_1_to_0_255[T Float](x T) uint8 {
+	a := Clamp(Round(x * 255), 0, 255)
+	return uint8(a)
+}
+
 func (c *Color) Set_Alpha(a float32) {
 	// this could be slightly faster...
 	// just skip the destructuring.
 	r, g, b, _ := c.to_rgba()
-	*c = rgba_to_color(r, g, b, uint8(Round(a * 255)))
+	*c = rgba_to_color(r, g, b, convert_0_1_to_0_255(a))
 }
 
 // my editor has a feature where if you put rgb(28, 110, 192),
@@ -39,7 +45,7 @@ func rgb(r, g, b uint8) Color {
 	return rgba_to_color(r, g, b, 255)
 }
 func rgba(r, g, b uint8, a float32) Color {
-	return rgba_to_color(r, g, b, uint8(Round(a * 255)))
+	return rgba_to_color(r, g, b, convert_0_1_to_0_255(a))
 }
 
 
@@ -55,10 +61,10 @@ func HSL_to_RGB[T Float](H, S, L T) Color {
 		return L - a*max(-1, min(k-3, 9-k, 1))
 	}
 
-	r := uint(f(0) * 255); r = min(r, 255)
-	g := uint(f(8) * 255); g = min(g, 255)
-	b := uint(f(4) * 255); b = min(b, 255)
-	return rgba_to_color(uint8(r), uint8(g), uint8(b), 255)
+	r := convert_0_1_to_0_255(f(0))
+	g := convert_0_1_to_0_255(f(8))
+	b := convert_0_1_to_0_255(f(4))
+	return rgba_to_color(r, g, b, 255)
 }
 
 
@@ -134,8 +140,15 @@ func (img *Image) put_color_no_blend(x, y int, c Color) {
 
 // returned alpha is c1.a
 func blend_color(c1, c2 Color) Color {
-	r1, g1, b1, a1 := c1.to_rgba()
-	r2, g2, b2, a2 := c2.to_rgba()
+	_r1, _g1, _b1, _a1 := c1.to_rgba()
+	_r2, _g2, _b2, _a2 := c2.to_rgba()
+
+	// has to be converted into a bigger int type,
+	// because theres not enough precision with the uint8's
+	//
+	// uint for speed? maybe?
+	r1, g1, b1, a1 := uint(_r1), uint(_g1), uint(_b1), uint(_a1)
+	r2, g2, b2, a2 := uint(_r2), uint(_g2), uint(_b2), uint(_a2)
 
 	r3 := (r1*(255 - a2) + r2*a2)/255; r3 = min(r3, 255)
 	g3 := (g1*(255 - a2) + g2*a2)/255; g3 = min(g3, 255)
@@ -152,7 +165,8 @@ func (img *Image) put_color(x, y int, c Color) {
 		img.put_color_no_blend(x, y, c)
 	} else {
 		color := *img.get_color_at(x, y)
-		img.put_color_no_blend(x, y, blend_color(color, c))
+		blended := blend_color(color, c)
+		img.put_color_no_blend(x, y, blended)
 	}
 }
 

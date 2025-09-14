@@ -176,8 +176,13 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 		// in image pixels
 		const RING_WIDTH = 2
 
-		size_factor := ease_out_quint(percent)
-		Draw_Ring(img, pos.x, pos.y, Boid_Float(size_factor*SIZE), Boid_Float(size_factor*SIZE+RING_WIDTH), color)
+		size_factor := Boid_Float(ease_out_quint(percent))
+		Draw_Ring(
+			img,
+			pos.x, pos.y,
+			size_factor*SIZE, size_factor*SIZE+RING_WIDTH,
+			color,
+		)
 	}
 
 

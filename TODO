@@ -43,11 +43,11 @@ DONE
 * Make into my personal website, aka put my name and links to my stuff on it.
 * Make colors just be uint32
 * put css in the right place.
+* fix click circle being darker than i expect.
 
 
 NEXT
 
-* fix click circle being darker than i expect.
 * fix green background, kinda a flash bang
 * make the canvas it take up the entire page.
 * maybe remove the settings? or is that cool runtime reflection.
