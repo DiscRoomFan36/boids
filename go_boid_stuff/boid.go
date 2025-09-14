@@ -844,10 +844,10 @@ func (boid_sim *Boid_simulation) many_rays_collide_against_all_lines_and_find_sm
 	// surrounding all the lines. to make a faster check hopefully.
 	rays_bounding_box := line_to_aabb(rays[0])
 	for _, ray := range rays {
-		rays_bounding_box.x1 = min(rays_bounding_box.x1, ray.x1, ray.x2)
-		rays_bounding_box.y1 = min(rays_bounding_box.y1, ray.y1, ray.y2)
-		rays_bounding_box.x2 = max(rays_bounding_box.x1, ray.x1, ray.x2)
-		rays_bounding_box.y2 = max(rays_bounding_box.y1, ray.y1, ray.y2)
+		rays_bounding_box.x1 = min(rays_bounding_box.x1, min(ray.x1, ray.x2))
+		rays_bounding_box.y1 = min(rays_bounding_box.y1, min(ray.y1, ray.y2))
+		rays_bounding_box.x2 = max(rays_bounding_box.x1, max(ray.x1, ray.x2))
+		rays_bounding_box.y2 = max(rays_bounding_box.y1, max(ray.y1, ray.y2))
 	}
 
 
@@ -934,26 +934,4 @@ func (boid_sim *Boid_simulation) many_rays_collide_against_all_lines_and_find_sm
 	return result
 }
 
-
-
-// assert(x1 <= x2 && y1 <= y2);
-type Axis_Aligned_Bounding_Box struct {
-	x1, y1, x2, y2 Boid_Float
-}
-
-func points_to_aabb(x1, y1, x2, y2 Boid_Float) Axis_Aligned_Bounding_Box {
-	return Axis_Aligned_Bounding_Box{
-		x1: min(x1, x2), y1: min(y1, y2),
-		x2: max(x1, x2), y2: max(y1, y2),
-	}
-}
-func line_to_aabb(l Line) Axis_Aligned_Bounding_Box { return points_to_aabb(l.x1, l.y1, l.x2, l.y2) }
-func rect_to_aabb(r Rectangle) Axis_Aligned_Bounding_Box {
-	x1, y1, x2, y2 := r.x, r.y, r.x + r.w, r.y + r.h
-	return points_to_aabb(x1, y1, x2, y2)
-}
-
-func aabb_aabb_collision(a, b Axis_Aligned_Bounding_Box) bool {
-	return (a.x2 >= b.x1) && (a.x1 <= b.x2) && (a.y2 >= b.y1) && (a.y1 <= b.y2)
-}
 

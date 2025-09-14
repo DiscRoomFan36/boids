@@ -181,6 +181,27 @@ func rectangle_to_lines_r(r Rectangle) [4]Line { return rectangle_to_lines(r.x, 
 
 
 
+// assert(x1 <= x2 && y1 <= y2);
+type Axis_Aligned_Bounding_Box struct {
+	x1, y1, x2, y2 Boid_Float
+}
+
+func points_to_aabb(x1, y1, x2, y2 Boid_Float) Axis_Aligned_Bounding_Box {
+	return Axis_Aligned_Bounding_Box{
+		x1: min(x1, x2), y1: min(y1, y2),
+		x2: max(x1, x2), y2: max(y1, y2),
+	}
+}
+//go:inline
+func line_to_aabb(l Line) Axis_Aligned_Bounding_Box { return points_to_aabb(l.x1, l.y1, l.x2, l.y2) }
+//go:inline
+func rect_to_aabb(r Rectangle) Axis_Aligned_Bounding_Box {
+	x1, y1, x2, y2 := r.x, r.y, r.x + r.w, r.y + r.h
+	return points_to_aabb(x1, y1, x2, y2)
+}
+
+
+
 ///////////////////////////////////////////////////////
 //              Collision Functions
 ///////////////////////////////////////////////////////
@@ -192,21 +213,6 @@ func point_rect_collision(x, y, rx, ry, rw, rh Boid_Float) bool {
 }
 //go:inline
 func point_rect_collision_vr(p Vec2[Boid_Float], r Rectangle) bool { return point_rect_collision(p.x, p.y, r.x, r.y, r.w, r.h) }
-
-
-// these might be good for AABB's
-
-// func fix_rectangle(rect Rectangle) Rectangle {
-// 	// fix the rectangle, no negative widths/hights
-// 	if rect.w < 0 { rect.x, rect.w = rect.x + rect.w, -rect.w }
-// 	if rect.h < 0 { rect.y, rect.h = rect.y + rect.h, -rect.h }
-// 	return rect
-// }
-
-// func rect_rect_intersection(x1, y1, w1, h1, x2, y2, w2, h2 Boid_Float) bool {
-// 	return (x1 + w1 >= x2) && (x1 <= x2 + w2) && (y1 + h1 >= y2) && (y1 <= y2 + h2)
-// }
-// func rect_rect_intersection_r(r1, r2 Rectangle) bool { return rect_rect_intersection(r1.x, r1.y, r1.w, r1.h, r2.x, r2.y, r2.w, r2.h) }
 
 
 // returns weather it hit, and the location of the hit.
@@ -227,4 +233,9 @@ func line_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4 Boid_Float) (bool, Ve
 }
 //go:inline
 func line_line_intersection_l(l1, l2 Line) (bool, Vec2[Boid_Float]) { return line_line_intersection(l1.x1, l1.y1, l1.x2, l1.y2, l2.x1, l2.y1, l2.x2, l2.y2) }
+
+
+func aabb_aabb_collision(a, b Axis_Aligned_Bounding_Box) bool {
+	return (a.x2 >= b.x1) && (a.x1 <= b.x2) && (a.y2 >= b.y1) && (a.y1 <= b.y2)
+}
 
