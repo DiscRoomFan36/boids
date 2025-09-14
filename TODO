@@ -50,13 +50,12 @@ DONE
 * maybe remove the settings? or is that cool runtime reflection.
 * make Debug numbers provide better info. (its more stylish now.)
 * make the html canvas always be in the background of the page? so the image follows even if you scroll down, can use this for camera movement later.
+* speed up so 1k boids works.
 
 
 
 NEXT
 
-
-* speed up so 1k boids works.
 
 * should the debug numbers stick around?
 
