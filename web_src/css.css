@@ -18,9 +18,8 @@ body {
 }
 
 #canvas_div {
-    /* if position is set to fixed, it acts as a background image */
     /* TODO ? have it know when its scrolling and scroll with it. */
-    position: absolute;
+    position: fixed;
     width: 100%;
     height: 100%;
     padding: 0;
