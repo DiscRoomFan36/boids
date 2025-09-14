@@ -45,13 +45,13 @@ DONE
 * put css in the right place.
 * fix click circle being darker than i expect.
 * cap boid speed. so they don't freak out after alt tabbing
+* fix green background, kinda a flash bang
 
 
 
 NEXT
 
 
-* fix green background, kinda a flash bang
 * make the canvas it take up the entire page.
 * maybe remove the settings? or is that cool runtime reflection.
 * speed up so 1k boids works.
