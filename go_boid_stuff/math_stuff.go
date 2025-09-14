@@ -9,6 +9,7 @@ import (
 // The Classic Vector, i wouldn't do all this [T Number] stuff if go has a better math library... well... maybe i would
 type Vec2[T Number] struct { x, y T }
 
+//go:inline
 func Make_Vec2[T Number](x, y T) Vec2[T] { return Vec2[T]{x, y} }
 
 func (a Vec2[Number]) Splat() (Number, Number) { return a.x, a.y }
@@ -55,6 +56,7 @@ func Mult[T Number](a Vec2[T], s T) Vec2[T] {
 	return a
 }
 
+//go:inline
 func Dot[T Number](a, b Vec2[T]) T { return a.x*b.x + a.y*b.y }
 func (a Vec2[Number]) Dot() Number { return Dot(a, a) }
 
@@ -86,7 +88,11 @@ func Normalized[T Float](a Vec2[T]) Vec2[T] {
 }
 
 func Dist   [T Number](a, b Vec2[T]) T { return Sub(a, b).Mag() }
-func DistSqr[T Number](a, b Vec2[T]) T { return Sub(a, b).Dot() }
+//go:inline
+func DistSqr[T Number](a, b Vec2[T]) T {
+	x, y := (a.x-b.x), (a.y-b.y)
+	return x*x + y*y
+}
 
 
 
@@ -170,6 +176,7 @@ func rectangle_to_lines(x, y, w, h Boid_Float) [4]Line {
 	lines[3] = Line{x,     y + h, x,     y}
 	return lines
 }
+//go:inline
 func rectangle_to_lines_r(r Rectangle) [4]Line { return rectangle_to_lines(r.x, r.y, r.w, r.h) }
 
 
@@ -183,6 +190,7 @@ func rectangle_to_lines_r(r Rectangle) [4]Line { return rectangle_to_lines(r.x, 
 func point_rect_collision(x, y, rx, ry, rw, rh Boid_Float) bool {
 	return (rx <= x && x <= rx + rw) && (ry <= y && y <= ry + rh)
 }
+//go:inline
 func point_rect_collision_vr(p Vec2[Boid_Float], r Rectangle) bool { return point_rect_collision(p.x, p.y, r.x, r.y, r.w, r.h) }
 
 
@@ -217,5 +225,6 @@ func line_line_intersection(x1, y1, x2, y2, x3, y3, x4, y4 Boid_Float) (bool, Ve
 	}
 	return false, Vec2[Boid_Float]{}
 }
+//go:inline
 func line_line_intersection_l(l1, l2 Line) (bool, Vec2[Boid_Float]) { return line_line_intersection(l1.x1, l1.y1, l1.x2, l1.y2, l2.x1, l2.y1, l2.x2, l2.y2) }
 
