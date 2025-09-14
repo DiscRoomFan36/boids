@@ -523,6 +523,9 @@ func (boid_sim *Boid_simulation) finally_move_and_collide(dt_ float64) {
 					v1.SetMag(BOID_MIN_SPEED)
 				}
 			}
+
+			const BOID_MAX_SPEED = 500
+			if v1_mag > BOID_MAX_SPEED { v1.SetMag(BOID_MAX_SPEED) }
 		}
 
 		// a very nice way to calculate displacement.
