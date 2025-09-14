@@ -58,6 +58,8 @@ DONE
 NEXT
 
 
+* get ray results just accepts a boid, can cut down on the number of min's and max's that way.
+
 * should the debug numbers stick around?
 
 * add mouse delta to input, test if it works.
