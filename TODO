@@ -64,7 +64,7 @@ NEXT
 
 * add mouse delta to input, test if it works.
 
-* fix boid mosh pit of death (when a bunch of boids get stuck in the corner)
+* fix boid waterfall? and maybe them showing up over my email at the bottom.
 
 * make proper profiling tools...
 
