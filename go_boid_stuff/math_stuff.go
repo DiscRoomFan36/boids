@@ -150,6 +150,15 @@ func (rect Rectangle) Splat_Vec() (Boid_Float, Boid_Float, Boid_Float, Boid_Floa
 	return rect.x, rect.y, rect.x + rect.w, rect.x + rect.h
 }
 
+func fix_rectangle_so_that_width_and_height_are_positive(r Rectangle) Rectangle {
+	x, y, w, h := r.Splat()
+
+	if w < 0 { x = x + w; w = -w }
+	if h < 0 { y = y + h; h = -h }
+
+	return make_rectangle(x, y, w, h)
+}
+
 
 
 type Line struct {
@@ -186,10 +195,18 @@ type Axis_Aligned_Bounding_Box struct {
 	x1, y1, x2, y2 Boid_Float
 }
 
+//go:inline
 func points_to_aabb(x1, y1, x2, y2 Boid_Float) Axis_Aligned_Bounding_Box {
 	return Axis_Aligned_Bounding_Box{
 		x1: min(x1, x2), y1: min(y1, y2),
 		x2: max(x1, x2), y2: max(y1, y2),
+	}
+}
+//go:inline
+func points_to_aabb_unchecked(x1, y1, x2, y2 Boid_Float) Axis_Aligned_Bounding_Box {
+	return Axis_Aligned_Bounding_Box{
+		x1: x1, y1: y1,
+		x2: x2, y2: y2,
 	}
 }
 //go:inline
@@ -198,6 +215,11 @@ func line_to_aabb(l Line) Axis_Aligned_Bounding_Box { return points_to_aabb(l.x1
 func rect_to_aabb(r Rectangle) Axis_Aligned_Bounding_Box {
 	x1, y1, x2, y2 := r.x, r.y, r.x + r.w, r.y + r.h
 	return points_to_aabb(x1, y1, x2, y2)
+}
+//go:inline
+func rect_to_aabb_unchecked(r Rectangle) Axis_Aligned_Bounding_Box {
+	x1, y1, x2, y2 := r.x, r.y, r.x + r.w, r.y + r.h
+	return points_to_aabb_unchecked(x1, y1, x2, y2)
 }
 
 

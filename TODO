@@ -52,19 +52,21 @@ DONE
 * make the html canvas always be in the background of the page? so the image follows even if you scroll down, can use this for camera movement later.
 * speed up so 1k boids works.
 * figure out the real reason the input numbers are off by 2% ('position: absolute;' had something to do with it, got fixed when set to 'fixed')
+* get ray results just accepts a boid, can cut down on the number of min's and max's that way.
 
 
 
 NEXT
 
-
-* get ray results just accepts a boid, can cut down on the number of min's and max's that way.
+* speed up the spacial array, its the slowest part right now. maybe just add more boxes?
 
 * should the debug numbers stick around?
 
 * add mouse delta to input, test if it works.
 
 * fix boid mosh pit of death (when a bunch of boids get stuck in the corner)
+
+* make proper profiling tools...
 
 * speed up the simulation, would like at least 3000 boids at once, the slow part is the rendering.
 * make the rendering a camera like, so you can scroll and what not.

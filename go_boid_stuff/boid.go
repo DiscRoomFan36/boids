@@ -237,6 +237,19 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 
 
 
+	{ // fix all rectangles so they all have positive values.
+		for i := range len(boid_sim.Rectangles) {
+			rect := &boid_sim.Rectangles[i]
+			*rect = fix_rectangle_so_that_width_and_height_are_positive(*rect)
+		}
+
+		// make sure not to modify the rectangles after this point!
+
+		// TODO do this with the walls maybe?
+	}
+
+
+
 	{ // Setup the spacial array.
 		// Clear out previous uses.
 		boid_sim.Spacial_array.Clear()
@@ -893,17 +906,18 @@ func (boid_sim *Boid_simulation) get_ray_results_for_boid_by_colliding_with_ever
 	}
 
 	for _, rect := range boid_sim.Rectangles {
-		// TODO this call is calling a lot of min's and max's
-		// and we do it every time for every rectangle for every boid.
+		// we *Know* that the rectangles have been
+		// fixed before calling this function.
 		//
-		// just fix the rectangles before we enter this function.
-		rect_aabb := rect_to_aabb(rect)
+		// this skips a lot of min's and max's
+		rect_aabb := rect_to_aabb_unchecked(rect)
 		if !aabb_aabb_collision(rays_bounding_box, rect_aabb) { continue }
 
 		// if the ray starts in the rectangle, don't hit the rectangle.
 		if point_rect_collision_vr(boid_pos, rect) { continue }
 
 		for i, ray := range rays {
+			// TODO should we run the aabb again for these guys?
 			lines := rectangle_to_lines(rect.x, rect.y, rect.w, rect.h)
 			// @Copypasta!
 			for _, line := range lines {
@@ -920,6 +934,7 @@ func (boid_sim *Boid_simulation) get_ray_results_for_boid_by_colliding_with_ever
 	}
 
 	if boid_sim.props.Toggle_Bounding {
+		// this rectangle could have negative widths and heights...
 		bounding_box := boid_sim.bounds_as_rect()
 
 		rect_aabb := rect_to_aabb(bounding_box)
