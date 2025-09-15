@@ -431,13 +431,14 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 	if !Sloppy_Equal(boid_sim.props.Boid_Vision_Factor, 0) || boid_sim.props.Num_Boid_Rays == 0 {
 
 		for i := range len(boid_sim.Boids) {
-			rays := boid_sim.get_boid_rays(boid_sim.Boids[i])
+			boid := boid_sim.Boids[i]
 
-			ray_results := boid_sim.many_rays_collide_against_all_lines_and_find_smallest(rays)
+			ray_results := boid_sim.get_ray_results_for_boid_by_colliding_with_every_wall(boid)
+
 			combined_ray := Vec2[Boid_Float]{}
 
-			for j, ray_result := range ray_results {
-				_, end := rays[j].to_vec()
+			for _, ray_result := range ray_results {
+				end := ray_result.end_point
 				// should be zero when it sees nothing, otherwise provides a push in the other direction.
 				new_force := Sub(ray_result.hit_point, end)
 				// square the vector. yes this is squaring
@@ -823,45 +824,67 @@ func (boid_sim *Boid_simulation) get_boid_rays(boid Boid) []Line {
 
 
 type Ray_Result struct {
-	dist_sqr Boid_Float
+	end_point Vec2[Boid_Float]
 	hit_point Vec2[Boid_Float]
+	dist_sqr Boid_Float
 }
 
 var static_ray_results_storage [MAX_RAYS]Ray_Result
 
-func (boid_sim *Boid_simulation) many_rays_collide_against_all_lines_and_find_smallest(rays []Line) ([]Ray_Result) {
+func (boid_sim *Boid_simulation) get_ray_results_for_boid_by_colliding_with_every_wall(boid Boid) ([]Ray_Result) {
+	boid_pos := boid.Position
+
+	// TODO maybe pull this in? the results can reconstruct this anyway...
+	// if i wanted to draw these.
+	//
+	// TODO remove these rays, just store stuff in the Ray_Result...
+	rays := boid_sim.get_boid_rays(boid)
+	// this is kinda dumb now.
 	num_rays := len(rays)
 
 	result := static_ray_results_storage[:num_rays]
 	if num_rays == 0 { return result }
 
-	for i := range num_rays {
-		start, end := rays[i].to_vec()
-		result[i].dist_sqr = DistSqr(start, end)
-		result[i].hit_point = end
+	// surrounding all the lines. to make a faster check hopefully.
+	//
+	// since we know all rays have the same starting position,
+	// we can start with this and just check the other end
+	//
+	// TODO maybe the ray can just be an ending position?
+	// not a line. I construct the line myself...
+	// or would that be slower?
+	rays_bounding_box := Axis_Aligned_Bounding_Box{
+		x1: boid.Position.x, y1: boid.Position.y,
+		x2: boid.Position.x, y2: boid.Position.y,
 	}
 
-	// surrounding all the lines. to make a faster check hopefully.
-	rays_bounding_box := line_to_aabb(rays[0])
-	for _, ray := range rays {
-		rays_bounding_box.x1 = min(rays_bounding_box.x1, min(ray.x1, ray.x2))
-		rays_bounding_box.y1 = min(rays_bounding_box.y1, min(ray.y1, ray.y2))
-		rays_bounding_box.x2 = max(rays_bounding_box.x1, max(ray.x1, ray.x2))
-		rays_bounding_box.y2 = max(rays_bounding_box.y1, max(ray.y1, ray.y2))
+	for i := range num_rays {
+		// start is just boid.Position
+		_, end := rays[i].to_vec()
+		result[i].end_point = end
+		result[i].dist_sqr = DistSqr(boid_pos, end)
+		result[i].hit_point = end
+
+		rays_bounding_box.x1 = min(rays_bounding_box.x1, end.x)
+		rays_bounding_box.y1 = min(rays_bounding_box.y1, end.y)
+		rays_bounding_box.x2 = max(rays_bounding_box.x2, end.x)
+		rays_bounding_box.y2 = max(rays_bounding_box.y2, end.y)
 	}
 
 
 	for _, line := range boid_sim.Walls {
+		// we don't have a lot of walls, (unless you make your own.)
+		// but the min's and max's in it are probably not good.
+		// maybe fix all the lines before coming into here?
 		line_aabb := line_to_aabb(line)
 		if !aabb_aabb_collision(rays_bounding_box, line_aabb) { continue }
 
 		for i, ray := range rays {
-			// god i hope this dose the right thing...
+			// god i hope this dose the right thing... (efficiently pass arguments)
 			hit, loc := line_line_intersection_l(ray, line)
 			if !hit { continue }
 
-			start := Make_Vec2(ray.x1, ray.y1)
-			dist_sqr := DistSqr(start, loc)
+			dist_sqr := DistSqr(boid_pos, loc)
 			if dist_sqr < result[i].dist_sqr {
 				result[i].dist_sqr = dist_sqr
 				result[i].hit_point = loc
@@ -870,26 +893,24 @@ func (boid_sim *Boid_simulation) many_rays_collide_against_all_lines_and_find_sm
 	}
 
 	for _, rect := range boid_sim.Rectangles {
+		// TODO this call is calling a lot of min's and max's
+		// and we do it every time for every rectangle for every boid.
+		//
+		// just fix the rectangles before we enter this function.
 		rect_aabb := rect_to_aabb(rect)
 		if !aabb_aabb_collision(rays_bounding_box, rect_aabb) { continue }
 
+		// if the ray starts in the rectangle, don't hit the rectangle.
+		if point_rect_collision_vr(boid_pos, rect) { continue }
+
 		for i, ray := range rays {
-			start := Make_Vec2(ray.x1, ray.y1)
-
-			// if the ray starts in the rectangle, don't hit the rectangle.
-			//
-			// TODO check if all the rays start in the same place...
-			// we don't have to do this every time...
-			// can we just assume that they all start in the same place...
-			if point_rect_collision_vr(start, rect) { continue }
-
 			lines := rectangle_to_lines(rect.x, rect.y, rect.w, rect.h)
 			// @Copypasta!
 			for _, line := range lines {
 				hit, loc := line_line_intersection_l(ray, line)
 				if !hit { continue }
 
-				dist_sqr := DistSqr(start, loc)
+				dist_sqr := DistSqr(boid_pos, loc)
 				if dist_sqr < result[i].dist_sqr {
 					result[i].dist_sqr = dist_sqr
 					result[i].hit_point = loc
@@ -904,22 +925,19 @@ func (boid_sim *Boid_simulation) many_rays_collide_against_all_lines_and_find_sm
 		rect_aabb := rect_to_aabb(bounding_box)
 		if aabb_aabb_collision(rays_bounding_box, rect_aabb) {
 
-			for i, ray := range rays {
-				start := Make_Vec2(ray.x1, ray.y1)
+			// if the start if outside of the bounding box, don't check
+			//
+			// TODO this will slightly fail if the boid is just
+			// outside and facing a different edge.
+			if point_rect_collision_vr(boid_pos, bounding_box) {
 
-				// if the start if outside of the bounding box, don't check
-				//
-				// TODO this will slightly fail if the boid is just
-				// outside and facing a different edge.
-				//
-				// this can also be pulled out if they all start in the same place...
-				if point_rect_collision_vr(start, bounding_box) {
+				for i, ray := range rays {
 					// @Copypasta!
 					for _, line := range rectangle_to_lines_r(bounding_box) {
 						hit, loc := line_line_intersection_l(ray, line)
 						if !hit { continue }
 
-						dist_sqr := DistSqr(start, loc)
+						dist_sqr := DistSqr(boid_pos, loc)
 						if dist_sqr < result[i].dist_sqr {
 							result[i].dist_sqr = dist_sqr
 							result[i].hit_point = loc
