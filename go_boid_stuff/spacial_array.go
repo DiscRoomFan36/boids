@@ -7,13 +7,15 @@ import (
 )
 
 
-const BOX_SIZE = 64
+const BOX_SIZE = 32
 
+// there must be less than 'maximum(BOX_ID_TYPE)'
+// points in the spacial array
 type BOX_ID_TYPE uint32
 
 type box[T Number] struct {
 	// how many slots are filled.
-	Count int
+	Count uint
 
 	// The next box in the linked list
 	Next *box[T]

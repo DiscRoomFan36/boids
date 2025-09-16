@@ -1,7 +1,17 @@
 
+@font-face {
+    font-family: 'Iosevka';
+    /* src: url('fonts/Iosevka-Regular.ttc'); */
+    src: url('fonts/Iosevka-Light.ttc');
+    /* src: url('fonts/Iosevka-ExtraLight.ttc'); */
+    /* src: url('fonts/Iosevka-Heavy.ttc'); */
+    /* src: url('fonts/Iosevka-Thin.ttc'); */
+}
+
+
 :root {
-    /* --text-color: rgb(109, 98, 238); */
     --text-color: rgb(196, 128, 57);
+    /* --text-color: rgb(109, 98, 238); */
 }
 
 html {
@@ -15,6 +25,8 @@ body {
     margin: 0;
     /* NOTE for some reason the canvas doesn't extend to the bottom of the page... */
     background-color: #181818;
+
+    font-family: 'Iosevka', serif;
 }
 
 #canvas_div {

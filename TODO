@@ -53,10 +53,12 @@ DONE
 * speed up so 1k boids works.
 * figure out the real reason the input numbers are off by 2% ('position: absolute;' had something to do with it, got fixed when set to 'fixed')
 * get ray results just accepts a boid, can cut down on the number of min's and max's that way.
+* maybe make the boids smaller so i can fit more of them.
 
 
 
 NEXT
+
 
 * speed up the spacial array, its the slowest part right now. maybe just add more boxes?
 

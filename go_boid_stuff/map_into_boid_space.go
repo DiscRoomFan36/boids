@@ -1,7 +1,7 @@
 package main
 
-
-const BOID_SCALE = 0.5
+// bigger number is smaller boid
+const BOID_SCALE = 0.75
 
 
 func World_to_boid[T Float](x T) T {
