@@ -1,11 +1,7 @@
 
 @font-face {
     font-family: 'Iosevka';
-    /* src: url('fonts/Iosevka-Regular.ttc'); */
-    src: url('fonts/Iosevka-Light.ttc');
-    /* src: url('fonts/Iosevka-ExtraLight.ttc'); */
-    /* src: url('fonts/Iosevka-Heavy.ttc'); */
-    /* src: url('fonts/Iosevka-Thin.ttc'); */
+    src: url('fonts/iosevka-light.ttf');
 }
 
 
