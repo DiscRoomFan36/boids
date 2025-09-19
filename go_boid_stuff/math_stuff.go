@@ -76,7 +76,7 @@ func (a *Vec2[Number]) ClampMag(mini, maxi Number) {
 		return
 	}
 
-	if mag < mini        { a.Mult(mini / mag)
+	if        mag < mini { a.Mult(mini / mag)
 	} else if mag > maxi { a.Mult(maxi / mag) }
 }
 

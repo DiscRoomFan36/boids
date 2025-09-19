@@ -264,7 +264,9 @@ func (boid_sim *Boid_simulation) Update_boids(dt float64, input Input_Status) {
 
 
 	// Reset Acceleration for new update.
-	for i := range len(boid_sim.Boids) { boid_sim.Boids[i].Acceleration = Vec2[Boid_Float]{} }
+	for i := range len(boid_sim.Boids) {
+		boid_sim.Boids[i].Acceleration = Vec2[Boid_Float]{}
+	}
 
 	// ------------------------------------
 	//   Separation, Alignment, Cohesion

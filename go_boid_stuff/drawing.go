@@ -31,10 +31,10 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 
 		margin := int(boid_sim.props.Margin * SCALE_FACTOR)
 		boundary_points := [4]Vec2[int]{
-			{x: margin, y: margin},
+			{x: margin,             y: margin},
 			{x: img.Width - margin, y: margin},
 			{x: img.Width - margin, y: img.Height - margin},
-			{x: margin, y: img.Height - margin},
+			{x: margin,             y: img.Height - margin},
 		}
 
 		for i := range len(boundary_points) {
@@ -111,17 +111,15 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 
 	// NOTE i would put this in a go routine, but wasm doesn't do multithreading, fuck
 	for _, b := range boid_sim.Boids {
-		// img.Draw_Circle(int(b.Position.X*scale_factor), int(b.Position.Y*scale_factor), BOID_DRAW_RADIUS, boid_color2)
-
 		// put them in img space
 		b.Position.Mult(SCALE_FACTOR)
 
 		// Draw boid body
 		// TODO maybe some LOD shit, where its just a triangle? 2x speed?
 		boid_shape := [4]Vec2[Boid_Float]{
-			{x: 0, y: 1},      // tip
-			{x: 0, y: -0.5},   // back
-			{x: 1, y: -0.75},  // wing1
+			{x:  0, y:  1},    // tip
+			{x:  0, y: -0.5},  // back
+			{x:  1, y: -0.75}, // wing1
 			{x: -1, y: -0.75}, // wing2
 		}
 
@@ -138,9 +136,8 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 
 		// get cool color for boid
 		//
-		// 100 <- random number, no basis in reality
+		// 40 <- random number, no basis in reality
 		// used to be based on Max_Speed but we got rid of that
-		// speed := b.Velocity.Mag() / 100
 		speed := b.Velocity.Mag() / 40
 
 		const SHIFT_FACTOR = 1

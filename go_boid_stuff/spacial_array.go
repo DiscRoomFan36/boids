@@ -3,7 +3,6 @@ package main
 import (
 	"iter"
 	"log"
-	"math"
 )
 
 
@@ -41,6 +40,8 @@ type Spacial_Array[T Number] struct {
 	Boxes []box[T]
 
 	// where the extra boxes are stored if there are to many to fit into one box.
+	//
+	// TODO just have an offset into the boxes array... to put them in the same place in memory
 	backup_boxes []box[T]
 	backup_boxes_in_use int
 }
@@ -118,26 +119,47 @@ func (array *Spacial_Array[T]) Append_points(points []Vec2[T], x_min_def, y_min_
 func (array Spacial_Array[T]) Iter_Over_Near(point Vec2[T], radius T) iter.Seq2[BOX_ID_TYPE, Vec2[T]] {
 	return func(yield func(BOX_ID_TYPE, Vec2[T]) bool) {
 		// get all near points...
-		box_x, box_y := array.point_to_box_loc(point)
-
-		box_step_x := array.Max_x - array.Min_x
-		box_step_y := array.Max_y - array.Min_y
-
-		// protect against 0's
-		if box_step_x == 0 { box_step_x = 1; }
-		if box_step_y == 0 { box_step_y = 1; }
 
 		// get the coverage range.
-		// TODO is this right? or is it over correcting?
-		rad_over_step_x := int(math.Ceil(float64(radius / box_step_x)))
-		rad_over_step_y := int(math.Ceil(float64(radius / box_step_y)))
-		min_x := max(box_x-rad_over_step_x, 0)
-		max_x := min(box_x+rad_over_step_x, array.Boxes_wide)
-		min_y := max(box_y-rad_over_step_y, 0)
-		max_y := min(box_y+rad_over_step_y, array.Boxes_high)
+		min_x, min_y := array.point_to_box_loc(Sub(point, Make_Vec2(radius, radius)))
+		max_x, max_y := array.point_to_box_loc(Add(point, Make_Vec2(radius, radius)))
 
-		for j := min_y; j < max_y; j++ {
-			for i := min_x; i < max_x; i++ {
+		/*
+		{
+			box_x, box_y := array.point_to_box_loc(point)
+
+			box_step_x := array.Max_x - array.Min_x
+			box_step_y := array.Max_y - array.Min_y
+
+			// protect against 0's
+			if box_step_x == 0 { box_step_x = 1; }
+			if box_step_y == 0 { box_step_y = 1; }
+
+			// TODO is this right? or is it over correcting?
+			rad_over_step_x := int(math.Ceil(float64(radius / box_step_x)))
+			rad_over_step_y := int(math.Ceil(float64(radius / box_step_y)))
+			_min_x := max(box_x-rad_over_step_x, 0)
+			_max_x := min(box_x+rad_over_step_x, array.Boxes_wide)
+			_min_y := max(box_y-rad_over_step_y, 0)
+			_max_y := min(box_y+rad_over_step_y, array.Boxes_high)
+
+			correct := (min_x == _min_x) &&
+					   (min_y == _min_y) &&
+					   (max_x == _max_x) &&
+					   (max_y == _max_y)
+
+			if !correct {
+				fmt.Printf("current: (%d, %d, %d, %d)\n", _min_x, _min_y, _max_x, _max_y)
+				fmt.Printf("real:    (%d, %d, %d, %d)\n",  min_x,  min_y,  max_x,  max_y)
+				fmt.Printf("correct: %v\n", correct)
+				panic("Oh no!")
+			}
+		}
+		*/
+
+
+		for j := min_y; j <= max_y; j++ {
+			for i := min_x; i <= max_x; i++ {
 
 				box := &array.Boxes[j*array.Boxes_wide+i]
 
@@ -204,6 +226,6 @@ func map_and_clamp_range[T Number](x, mini, maxi T) T {
 	diff := maxi - mini
 	if diff == 0 { return 0 }
 	y := (x - mini) / diff
-	return min(max(y, 0), 1)
+	return Clamp(y, 0, 1)
 }
 

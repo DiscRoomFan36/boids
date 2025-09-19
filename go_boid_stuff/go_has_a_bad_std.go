@@ -51,6 +51,7 @@ func mod1[T Float](x T) T {
 }
 
 func Clamp[T Number](x, mini, maxi T) T {
+	// TODO remove this?
 	if mini > maxi { panic("mini was bigger than maxi") }
 
 	if x < mini { return mini }
@@ -73,12 +74,6 @@ func Round[T Number](x T) int {
 	var rounded int
 	if x > 0 { rounded = int((x*2 + 1) / 2)
 	} else {   rounded = int((x*2 - 1) / 2) }
-
-	// // NOTE Speed up if we need it
-	// if Abs(T(rounded)-x) >= 1 {
-	// 	// Overflow!!!
-	// 	log.Fatalf("oh no, the rounding did not work!! orig: %v got: %v\n", x, rounded)
-	// }
 
 	return rounded
 }
