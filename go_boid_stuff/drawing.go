@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"math"
 	"time"
 )
@@ -229,18 +230,20 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 
 
 
-	/*
+	
 	var high_water_mark = 0 // this is a global
 	{
 		sp_array := &boid_sim.Spacial_array
 		maximum_in_boxes := 0
 		for i := range len(sp_array.Boxes) {
-			box := &sp_array.Boxes[i]
-
 			count := 0
-			for box != nil {
+
+			next := int16(i)
+
+			for next != BOX_INVALID_NEXT {
+				box := &sp_array.Boxes[next]
 				count += int(box.Count)
-				box = box.Next
+				next = box.Next
 			}
 
 			maximum_in_boxes = max(maximum_in_boxes, count)
@@ -249,7 +252,7 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 		high_water_mark = max(high_water_mark, maximum_in_boxes)
 		fmt.Printf("High Water Mark: %d, current max %d\n", high_water_mark, maximum_in_boxes)
 	}
-	*/
+	
 }
 
 

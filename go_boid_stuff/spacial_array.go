@@ -12,16 +12,25 @@ const BOX_SIZE = 32
 // points in the spacial array
 type BOX_ID_TYPE uint32
 
+
+// thought about making this zero or something,
+// but it makes some loops easier to form with -1.
+const BOX_INVALID_NEXT = -1
+
 type box[T Number] struct {
 	// how many slots are filled.
-	Count uint
+	Count uint16
 
 	// The next box in the linked list
-	Next *box[T]
+	// index into boxes array, -1 is "no next box"
+	//
+	// 32768 is more than enough boxes for everyone
+	Next int16
 
 	Points [BOX_SIZE]Vec2[T]
 	// TODO put these somewhere else?
-	// Indexes of the point that gave the corresponding point.
+	// Indexes of the point that gave the corresponding point,
+	// in the initially provided array
 	Indexes [BOX_SIZE]BOX_ID_TYPE
 }
 
@@ -37,12 +46,10 @@ type Spacial_Array[T Number] struct {
 	Max_x T
 	Max_y T
 
+	// the backup boxes are at the end of this array,
+	// hopefully the cache will like that. praise be.
 	Boxes []box[T]
 
-	// where the extra boxes are stored if there are to many to fit into one box.
-	//
-	// TODO just have an offset into the boxes array... to put them in the same place in memory
-	backup_boxes []box[T]
 	backup_boxes_in_use int
 }
 
@@ -59,16 +66,23 @@ func New_Spacial_Array[T Number]() Spacial_Array[T] {
 		Max_x: 0,
 		Max_y: 0,
 
-		// maybe give this thing some initial space?
-		backup_boxes: make([]box[T], 0),
 		backup_boxes_in_use: 0,
 	}
-	result.Boxes = make([]box[T], result.Boxes_wide*result.Boxes_high)
+
+	const EXTRA_SPACE_FOR_BACKUP_BOXES = 32
+
+	result.Boxes = make([]box[T], (result.Boxes_wide*result.Boxes_high) + EXTRA_SPACE_FOR_BACKUP_BOXES)
+
+	// have to do this to set Boxes[i].Next = BOX_INVALID_NEXT
+	result.Clear()
 
 	return result
 }
 
 // you can also pass in defaults, sets a min size.
+// 
+// TODO pass a "this is how many wide we want"?
+// or just make the boxes square and calc on the road.
 func (array *Spacial_Array[T]) Append_points(points []Vec2[T], x_min_def, y_min_def, x_max_def, y_max_def T) {
 	if array.inited { panic("cannot append 2 sets of points, sorry") }
 	array.inited = true
@@ -92,22 +106,31 @@ func (array *Spacial_Array[T]) Append_points(points []Vec2[T], x_min_def, y_min_
 
 		for the_box.Count == BOX_SIZE {
 			// get a new box into the linked list if next is nil.
-			if the_box.Next == nil {
+			if the_box.Next == BOX_INVALID_NEXT {
+
+				// hate the name, but it is slightly shorter, and we use this calc a lot...
+				// maybe just make this a call on the array? meh.
+				number_of_boxes_in_grid := array.Boxes_high*array.Boxes_wide
 
 				// make a new box if there are no spares.
-				if array.backup_boxes_in_use == len(array.backup_boxes) {
-					Append(&array.backup_boxes, box[T]{})
+				if number_of_boxes_in_grid + array.backup_boxes_in_use == len(array.Boxes) {
+					// this bad boy is gonna do one hell of a memcpy.
+					// but i left some space at the end of the array
+					// so hopefully this never occurs.
+					//
+					// TODO panic check this?
+					Append(&array.Boxes, box[T]{})
 				}
 
 				// get the next box
-				the_box.Next = &array.backup_boxes[array.backup_boxes_in_use]
+				the_box.Next = int16(number_of_boxes_in_grid + array.backup_boxes_in_use)
 				array.backup_boxes_in_use += 1
 
 				// reset the important fields.
-				the_box.Next.Count = 0
-				the_box.Next.Next = nil
+				array.Boxes[the_box.Next].Count = 0
+				array.Boxes[the_box.Next].Next  = BOX_INVALID_NEXT
 			}
-			the_box = the_box.Next
+			the_box = &array.Boxes[the_box.Next]
 		}
 
 		the_box.Points[the_box.Count] = point
@@ -124,23 +147,25 @@ func (array Spacial_Array[T]) Iter_Over_Near(point Vec2[T], radius T) iter.Seq2[
 
 		for j := min_y; j <= max_y; j++ {
 			for i := min_x; i <= max_x; i++ {
+				next := int16(j*array.Boxes_wide + i)
 
-				box := &array.Boxes[j*array.Boxes_wide+i]
-
-				// is this loop kinda ass? only needs to be real when box.count == BOX_SIZE
-				for box != nil {
+				for next != -1 {
+					box := &array.Boxes[next]
 
 					for k := range box.Count {
 						checking_point := box.Points[k]
+
+						// TODO
+						// if the entire box is covered in the radius, the point *must* be within the radius,
+						// is it worth doing a check outside of this loop to fast track that case...
 						if DistSqr(point, checking_point) < radius*radius {
 							point_index := box.Indexes[k]
 							if !yield(point_index, checking_point) { return }
 						}
 					}
 
-					box = box.Next
+					next = box.Next
 				}
-
 			}
 		}
 	}
@@ -151,7 +176,7 @@ func (array *Spacial_Array[T]) Clear() {
 
 	for i := range array.Boxes_wide*array.Boxes_high {
 		array.Boxes[i].Count = 0
-		array.Boxes[i].Next = nil
+		array.Boxes[i].Next = BOX_INVALID_NEXT
 	}
 
 	array.backup_boxes_in_use = 0

@@ -20,6 +20,14 @@ func Remove_Ordered[T any](s *[]T, index int) {
 }
 
 // why would i even want to use append?
+//
+// NOTE TO IDIOTS LIKE MYSELF,
+// pointers are invalid after calling this function.
+// This is not a pointer stable array.
+//
+// ...^ that would be fun to make...
+// ...don't have a pressing need for one of those though...
+// ...Also i hate the iterating thing in this language...
 func Append[T any](s *[]T, elems ...T) {
 	*s = append(*s, elems...)
 }
