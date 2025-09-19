@@ -15,7 +15,10 @@ type BOX_ID_TYPE uint32
 
 // thought about making this zero or something,
 // but it makes some loops easier to form with -1.
-const BOX_INVALID_NEXT = -1
+//
+// though you could make a case to use a uint and the max uint16,
+// might shave a few cycles, lol
+const BOX_INVALID_NEXT int16 = -1
 
 type box[T Number] struct {
 	// how many slots are filled.
