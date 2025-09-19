@@ -50,7 +50,7 @@ type Properties struct {
 	Wind_X_Factor Boid_Float `Property:"float" Range:"-10;10" Default:"0"`
 	Wind_Y_Factor Boid_Float `Property:"float" Range:"-10;10" Default:"0"`
 
-	Mouse_Draw_Factor Boid_Float `Property:"float" Range:"1;100" Default:"5"`
+	Mouse_Draw_Factor Boid_Float `Property:"float" Range:"1;20" Default:"2"`
 
 	Num_Boid_Rays      int        `Property:"int" Range:"1;10" Default:"5"`
 	// in radians
