@@ -230,8 +230,8 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 
 
 
-	
-	var high_water_mark = 0 // this is a global
+	/*
+	var high_water_mark = 0 // this is supposed to be a global
 	{
 		sp_array := &boid_sim.Spacial_array
 		maximum_in_boxes := 0
@@ -252,7 +252,7 @@ func Draw_Everything(img *Image, boid_sim *Boid_simulation, dt float64, input In
 		high_water_mark = max(high_water_mark, maximum_in_boxes)
 		fmt.Printf("High Water Mark: %d, current max %d\n", high_water_mark, maximum_in_boxes)
 	}
-	
+	*/
 }
 
 
